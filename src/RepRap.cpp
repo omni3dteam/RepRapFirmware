@@ -1790,6 +1790,22 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	}
 	response->cat(']');
 
+	for (Tool *tool = toolList; tool != nullptr; tool = tool->Next())
+	{
+		// Offset for tool 0 is always X0 Y0 so we need only offset for tool 1
+		if(tool->Number() == 1) {
+			// Offsets
+			response->cat(",\"offsets\":[");
+			for (size_t i = 0; i < numVisibleAxes; i++)
+			{
+				response->catf((i == 0) ? "%.2f" : ",%.2f", (double)tool->GetOffset(i));
+			}
+
+			// Do we have any more tools?
+			response->cat((tool->Next() != nullptr) ? "]," : "]");
+		}
+	}
+
 	if (printMonitor->IsPrinting())
 	{
 		// Send the fraction printed
