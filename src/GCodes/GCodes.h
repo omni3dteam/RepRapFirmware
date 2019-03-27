@@ -635,6 +635,7 @@ private:
 	static constexpr const char* CONFIG_FILAMENT_G = "config.g";
 	static constexpr const char* UNLOAD_FILAMENT_G = "unload.g";
 	static constexpr const char* RESUME_AFTER_POWER_FAIL_G = "resurrect.g";
+	static constexpr const char* STARTUP_G = "startup.g";
 	static constexpr const char* RESUME_PROLOGUE_G = "resurrect-prologue.g";
 	static constexpr const char* FILAMENT_CHANGE_G = "filament-change.g";
 #if HAS_SMART_DRIVERS

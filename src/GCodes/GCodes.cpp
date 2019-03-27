@@ -2052,6 +2052,8 @@ bool GCodes::LowVoltagePause()
 		isPowerFailPaused = true;
 
 		// Don't do any more here, we want the auto pause thread to run as soon as possible
+	} else {
+		SaveResumeInfo(true);
 	}
 
 	return true;
@@ -2199,6 +2201,12 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
+				// ask user about print
+				buf.printf("M291 P\"Power fault. Do you want to resume printing?\" S3\n");
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				buf.printf("M23 %s\nM26 S%" PRIu32 " P%.3f\n", printingFilename, pauseRestorePoint.filePos, (double)pauseRestorePoint.proportionDone);
 				ok = f->Write(buf.c_str());								// write filename and file position
 			}
@@ -2252,6 +2260,70 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				platform.DeleteSysFile(RESUME_AFTER_POWER_FAIL_G);
 				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", RESUME_AFTER_POWER_FAIL_G);
+			}
+		}
+	} else { // create startup file
+		FileStore * const f = platform.OpenSysFile(STARTUP_G, OpenMode::write);
+		if (f == nullptr)
+		{
+			platform.MessageF(ErrorMessage, "Failed to create file %s", STARTUP_G);
+		}
+		else
+		{
+			String<200> bufferSpace;
+			const StringRef buf = bufferSpace.GetRef();
+
+			// Write the header comment
+			buf.printf("; File startup");
+			if (platform.IsDateTimeSet())
+			{
+				time_t timeNow = platform.GetDateTime();
+				const struct tm * const timeInfo = gmtime(&timeNow);
+				buf.catf(" at %04u-%02u-%02u %02u:%02u",
+										timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
+			}
+			buf.cat('\n');
+			bool ok = f->Write(buf.c_str());
+			if (ok)
+			{
+				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
+				buf.copy("G92");
+				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
+				{
+					buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+				}
+				buf.cat('\n');
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
+				Tool *tool;
+				tool = reprap.GetTool(1);
+				buf.printf("G10 P1 X%.3f Y%.3f\n", (double)(tool->GetOffset(X_AXIS)), ((double)tool->GetOffset(Y_AXIS)));
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
+				buf.copy("M290");
+				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
+				{
+					buf.catf(" %c%.3f", axisLetters[axis], (double)GetTotalBabyStepOffset(axis));
+				}
+				buf.cat('\n');
+				ok = f->Write(buf.c_str());								// write baby stepping offsets
+			}
+			if (!f->Close())
+			{
+				ok = false;
+			}
+			if (ok)
+			{
+				platform.Message(LoggedGenericMessage, "Resume state saved\n");
+			}
+			else
+			{
+				platform.DeleteSysFile(STARTUP_G);
+				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", STARTUP_G);
 			}
 		}
 	}
