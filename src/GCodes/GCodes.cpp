@@ -2146,10 +2146,27 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 								timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
 			buf.cat('\n');
-			bool ok = f->Write(buf.c_str())
-					&& reprap.GetHeat().WriteBedAndChamberTempSettings(f)	// turn on bed and chamber heaters
-					&& reprap.WriteToolSettings(f)							// set tool temperatures, tool mix ratios etc.
-					&& reprap.GetMove().WriteResumeSettings(f);				// load grid, if we are using one
+			bool ok = f->Write(buf.c_str());
+			if (ok)
+			{
+				// Write a G92 Z Axis, we cannot lost this information
+				buf.copy("G92");
+				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
+				{
+					if(axis == Z_AXIS)
+					{
+						buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+					}
+				}
+				buf.cat('\n');
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
+				// ask user about print
+				buf.printf("M291 P\"Power fault. Do you want to resume printing? Restoring parameters may take a few minutes.\" S3\n");
+				ok = f->Write(buf.c_str());
+			}
 			if (ok)
 			{
 				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
@@ -2159,7 +2176,10 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 					buf.catf(" %c%.3f", axisLetters[axis], (double)pauseRestorePoint.moveCoords[axis]);
 				}
 				buf.cat('\n');
-				ok = f->Write(buf.c_str());
+				ok = f->Write(buf.c_str())
+						&& reprap.GetHeat().WriteBedAndChamberTempSettings(f)	// turn on bed and chamber heaters
+						&& reprap.WriteToolSettings(f)							// set tool temperatures, tool mix ratios etc.
+						&& reprap.GetMove().WriteResumeSettings(f);				// load grid, if we are using one;
 			}
 			if (ok)
 			{
@@ -2198,12 +2218,6 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				buf.printf("G92 E%.5f\n%s\n", (double)virtualExtruderPosition, (fileGCode->OriginalMachineState().drivesRelative) ? "M83" : "M82");
 				ok = f->Write(buf.c_str());								// write virtual extruder position and absolute/relative extrusion flag
-			}
-			if (ok)
-			{
-				// ask user about print
-				buf.printf("M291 P\"Power fault. Do you want to resume printing?\" S3\n");
-				ok = f->Write(buf.c_str());
 			}
 			if (ok)
 			{
@@ -2290,7 +2304,10 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				buf.copy("G92");
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
-					buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+					if(axis == Z_AXIS)
+					{
+						buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+					}
 				}
 				buf.cat('\n');
 				ok = f->Write(buf.c_str());

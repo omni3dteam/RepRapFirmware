@@ -11,7 +11,7 @@
 
 #ifndef VERSION
 #ifdef RTOS
-# define MAIN_VERSION	"2.03beta2+1(OMNI3D 2019-03-20)"
+# define MAIN_VERSION	"2.03beta2+1(OMNI3D 2019-03-27)"
 #else
 # define MAIN_VERSION	"1.24beta2+1"
 #endif
