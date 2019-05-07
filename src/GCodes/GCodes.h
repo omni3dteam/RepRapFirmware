@@ -206,6 +206,8 @@ public:
 
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
+	void SaveResumeInfo(bool wasPowerFailure);
+	void RunPowerMacro();
 
 #if HAS_VOLTAGE_MONITOR
 	bool LowVoltagePause();
@@ -392,8 +394,6 @@ private:
 
 	void EndSimulation(GCodeBuffer *gb);								// Restore positions etc. when exiting simulation mode
 	bool IsCodeQueueIdle() const;										// Return true if the code queue is idle
-
-	void SaveResumeInfo(bool wasPowerFailure);
 
 	const char* GetMachineModeString() const;							// Get the name of the current machine mode
 
@@ -633,6 +633,7 @@ private:
 	static constexpr const char* STARTUP_G = "startup.g";
 	static constexpr const char* RESUME_PROLOGUE_G = "resurrect-prologue.g";
 	static constexpr const char* FILAMENT_CHANGE_G = "filament-change.g";
+	static constexpr const char* POWER_G = "power.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif

@@ -1709,6 +1709,62 @@ void Platform::Spin()
 	}
 #endif
 
+#if OMNI_POWER_MONITOR
+	uint32_t powTime = millis();
+
+	if(powTime - lastPowTime > powCheckInterval)
+	{
+		lastPowTime = powTime;
+
+		const bool powerBtn = IoPort::ReadPin(endStopPins[4]);
+
+		if(powerBtn == true)
+		{
+			if(isPowerBtnActivated == true)
+			{
+				reprap.GetGCodes().RunPowerMacro();
+				powCheckInterval = 2000;
+			}
+			else
+			{
+				isPowerBtnActivated = true;
+			}
+		}
+		else
+		{
+			isPowerBtnActivated = false;
+			powCheckInterval = 1000;
+		}
+	}
+
+	if(powTime - lastPowDetected > detCheckInterval)
+	{
+		lastPowDetected = powTime;
+
+		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[4]);
+
+		if(lostPowerBtn == true)
+		{
+			if(isLostPowerDetected == true)
+			{
+				reprap.GetGCodes().SaveResumeInfo(true);
+				detCheckInterval = 2000;
+			}
+			else
+			{
+				isLostPowerDetected = true;
+			}
+		}
+		else
+		{
+			isLostPowerDetected = false;
+			detCheckInterval = 20;
+		}
+	}
+
+
+#endif
+
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)
 	{

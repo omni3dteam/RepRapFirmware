@@ -916,6 +916,16 @@ private:
 	AutoSaveState autoSaveState;
 #endif
 
+#if OMNI_POWER_MONITOR
+	bool isPowerBtnActivated;
+	uint32_t lastPowTime;
+	uint32_t powCheckInterval = 1000;
+
+	bool isLostPowerDetected;
+	uint32_t lastPowDetected;
+	uint32_t detCheckInterval = 1000;
+#endif
+
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 
 	// RTC

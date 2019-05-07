@@ -2338,6 +2338,12 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 	}
 }
 
+void GCodes::RunPowerMacro() {
+	String<StringLength20> filename;
+	filename.printf("%s%s", DEFAULT_SYS_DIR, POWER_G);
+	DoFileMacro(*daemonGCode, filename.c_str(), true);
+}
+
 void GCodes::Diagnostics(MessageType mtype)
 {
 	platform.Message(mtype, "=== GCodes ===\n");
