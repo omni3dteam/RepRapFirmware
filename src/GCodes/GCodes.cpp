@@ -2137,7 +2137,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				buf.catf(" at %04u-%02u-%02u %02u:%02u",
 								timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
-			buf.cat('\n');
+			buf.cat("\nG21\n");												// set units to mm because we will be writing positions in mm
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
@@ -2175,7 +2175,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				buf.printf("M98 P%s\n", RESUME_PROLOGUE_G);					// call the prologue - must contain at least M116
+				buf.printf("M98 P\"%s\"\n", RESUME_PROLOGUE_G);					// call the prologue - must contain at least M116
 				ok = f->Write(buf.c_str())
 					&& platform.WriteFanSettings(f);						// set the speeds of non-thermostatic fans
 			}
@@ -2213,7 +2213,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				buf.printf("M23 %s\nM26 S%" PRIu32 " P%.3f\n", printingFilename, pauseRestorePoint.filePos, (double)pauseRestorePoint.proportionDone);
+				buf.printf("M23 \"%s\"\nM26 S%" PRIu32 " P%.3f\n", printingFilename, pauseRestorePoint.filePos, (double)pauseRestorePoint.proportionDone);
 				ok = f->Write(buf.c_str());								// write filename and file position
 			}
 			if (ok)
@@ -2251,8 +2251,8 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 #if SUPPORT_LASER
 				}
 #endif
-				buf.cat("\nM24\n");
-				ok = f->Write(buf.c_str());								// restore feed rate and output bits
+				buf.catf("\n%s\nM24\n", (fileGCode->OriginalMachineState().usingInches) ? "G20" : "G21");
+				ok = f->Write(buf.c_str());								// restore feed rate, output bits or laser power, and inches/mm
 			}
 			if (!f->Close())
 			{
@@ -4575,6 +4575,14 @@ void GCodes::StopPrint(StopPrintReason reason)
 	codeQueue->Clear();
 
 	UnlockAll(*fileGCode);
+
+	// Deal with the Z hop from a G10 that has not been undone by G11
+	if (isRetracted)
+	{
+		currentUserPosition[Z_AXIS] += currentZHop;
+		currentZHop = 0.0;
+		isRetracted = false;
+	}
 
 	const char *printingFilename = reprap.GetPrintMonitor().GetPrintingFilename();
 	if (printingFilename == nullptr)
