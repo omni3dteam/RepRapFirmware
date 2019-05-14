@@ -2560,6 +2560,47 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+#ifdef OMNI_GCODES
+	case 391: // Set procedure step
+		isProcedure = true;
+
+		if (gb.Seen('P'))
+		{
+			String<MaxFilenameLength> procName;
+			gb.GetPossiblyQuotedString(procName.GetRef());
+			procedureName.copy(procName.c_str());
+		}
+		if (gb.Seen('R'))
+		{
+			String<MaxFilenameLength> procStepName;
+			gb.GetPossiblyQuotedString(procStepName.GetRef());
+			procedureStepName.copy(procStepName.c_str());
+		}
+		if (gb.Seen('S'))
+		{
+			procedureCurrentStep = gb.GetIValue();
+		}
+		if (gb.Seen('H'))
+		{
+			procedureMaxSteps = gb.GetIValue();
+		}
+
+		if (gb.Seen('I'))
+		{
+			procedureButtons = gb.GetIValue();
+		}
+		break;
+
+	case 392: // Get an answer the procedure
+
+		break;
+
+	case 393: // Stop doing the procedure
+		isProcedure = false;
+		break;
+
+#endif
+
 	case 400: // Wait for current moves to finish
 		if (!LockMovementAndWaitForStandstill(gb))
 		{
@@ -4320,40 +4361,6 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 929: // Start/stop event logging
 		result = platform.ConfigureLogging(gb, reply);
-		break;
-
-	case 980: // Set procedure step
-		isProcedure = true;
-
-		if (gb.Seen('P'))
-		{
-			String<MaxFilenameLength> procName;
-			gb.GetPossiblyQuotedString(procName.GetRef());
-			procedureName.copy(procName.c_str());
-		}
-		if (gb.Seen('R'))
-		{
-			String<MaxFilenameLength> procStepName;
-			gb.GetPossiblyQuotedString(procStepName.GetRef());
-			procedureStepName.copy(procStepName.c_str());
-		}
-		if (gb.Seen('S'))
-		{
-			procedureCurrentStep = gb.GetIValue();
-		}
-		if (gb.Seen('H'))
-		{
-			procedureMaxSteps = gb.GetIValue();
-		}
-
-		if (gb.Seen('I'))
-		{
-			procedureButtons = gb.GetIValue();
-		}
-		break;
-
-	case 981: // Stop doing procedure
-		isProcedure = false;
 		break;
 
 	case 997: // Perform firmware update

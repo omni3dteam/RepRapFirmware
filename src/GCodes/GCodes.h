@@ -245,8 +245,10 @@ public:
 #endif
 
 #if OMNI_GCODES
-	String<MaxFilenameLength> procedureName;
-	String<MaxFilenameLength> procedureStepName;
+	constexpr size_t MaxProcedureNameLength;
+
+	String<MaxProcedureNameLength> procedureName;
+	String<MaxProcedureNameLength> procedureStepName;
 
 	size_t procedureCurrentStep;
 	size_t procedureMaxSteps;

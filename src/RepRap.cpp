@@ -1922,44 +1922,34 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	}
 
 #if OMNI_GCODES
+	// Procedure name
+	response->cat(",\"procedure.procedureName\":");
+
+	// Check if we need to send full status
+	if(gCodes->isProcedure)
 	{
-		// Procedure information
-		response->cat(",\"procedure\":{");
+		// Get procedure name
+		response->EncodeString(gCodes->procedureName, false, false);
 
-		// Procedure name
-		response->cat("\"procedureName\":");
+		// Step name
+		response->cat(",\"procedure.stepName\":");
 
-		// Check if we need to send full status
-		if(gCodes->isProcedure)
-		{
-			// Get procedure name
-			response->EncodeString(gCodes->procedureName, false, false);
+		// Get step name
+		response->EncodeString(gCodes->procedureStepName, false, false);
 
-			// Step name
-			response->cat(",\"stepName\":");
+		// Indicate necessary buttons
+		response->catf(",\"procedure.buttons\":%d", gCodes->procedureButtons);
 
-			// Get step name
-			response->EncodeString(gCodes->procedureStepName, false, false);
+		// Get current step
+		response->catf(",\"procedure.currentStep\":%d", gCodes->procedureCurrentStep);
 
-			// Indicate necessary buttons
-			response->catf(",\"buttons\":%d", gCodes->procedureButtons);
-			{
-				// Send procedure steps
-				response->cat(",\"step\":{");
+		// How many steps we'll perform
+		response->catf(",\"procedure.totalStep\":%d", gCodes->procedureMaxSteps);
 
-				// Get current step
-				response->catf("\"current\":%d", gCodes->procedureCurrentStep);
-
-				// How many steps we'll perform
-				response->catf(",\"total\":%d}", gCodes->procedureMaxSteps);
-			}
-		} else {
-
-			// If we don't perform procedure, we send "none" string
-			response->EncodeString("none", false, false);
-		}
+	} else {
+		// If we don't perform procedure, we send "none" string
+		response->EncodeString("none", false, false);
 	}
-	response->cat('}');
 #endif
 
 	response->cat('}');
