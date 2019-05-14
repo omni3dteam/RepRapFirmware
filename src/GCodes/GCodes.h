@@ -244,6 +244,17 @@ public:
 	unsigned int GetWorkplaceCoordinateSystemNumber() const { return currentCoordinateSystem + 1; }
 #endif
 
+#if OMNI_GCODES
+	String<MaxFilenameLength> procedureName;
+	String<MaxFilenameLength> procedureStepName;
+
+	size_t procedureCurrentStep;
+	size_t procedureMaxSteps;
+	size_t procedureButtons;
+
+	bool isProcedure = false;
+#endif
+
 protected:
 	DECLARE_OBJECT_MODEL
 

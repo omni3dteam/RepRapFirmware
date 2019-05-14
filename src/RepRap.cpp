@@ -1508,6 +1508,47 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 		}
 	}
 
+#if OMNI_GCODES
+	{
+		// Procedure information
+		response->cat(",\"procedure\":{");
+
+		// Procedure name
+		response->cat("\"procedureName\":");
+
+		// Check if we need to send full status
+		if(gCodes->isProcedure)
+		{
+			// Get procedure name
+			response->EncodeString(gCodes->procedureName, false, false);
+
+			// Step name
+			response->cat(",\"stepName\":");
+
+			// Get step name
+			response->EncodeString(gCodes->procedureStepName, false, false);
+
+			// Indicate necessary buttons
+			response->catf(",\"buttons\":%d", gCodes->procedureButtons);
+			{
+				// Send procedure steps
+				response->cat(",\"step\":{");
+
+				// Get current step
+				response->catf("\"current\":%d", gCodes->procedureCurrentStep);
+
+				// How many steps we'll perform
+				response->catf(",\"total\":%d}", gCodes->procedureMaxSteps);
+			}
+		} else {
+
+			// If we don't perform procedure, we send "none" string
+			response->EncodeString("none", false, false);
+		}
+	}
+	response->cat('}');
+#endif
+
 	if (source == ResponseSource::AUX)
 	{
 		OutputBuffer *reply = platform->GetAuxGCodeReply();
@@ -1520,6 +1561,7 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 			response->EncodeReply(reply);												// also releases the OutputBuffer chain
 		}
 	}
+
 	response->cat('}');
 
 	return response;
@@ -1878,6 +1920,47 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		// Send the JSON response
 		response->EncodeReply(platform->GetAuxGCodeReply());				// also releases the OutputBuffer chain
 	}
+
+#if OMNI_GCODES
+	{
+		// Procedure information
+		response->cat(",\"procedure\":{");
+
+		// Procedure name
+		response->cat("\"procedureName\":");
+
+		// Check if we need to send full status
+		if(gCodes->isProcedure)
+		{
+			// Get procedure name
+			response->EncodeString(gCodes->procedureName, false, false);
+
+			// Step name
+			response->cat(",\"stepName\":");
+
+			// Get step name
+			response->EncodeString(gCodes->procedureStepName, false, false);
+
+			// Indicate necessary buttons
+			response->catf(",\"buttons\":%d", gCodes->procedureButtons);
+			{
+				// Send procedure steps
+				response->cat(",\"step\":{");
+
+				// Get current step
+				response->catf("\"current\":%d", gCodes->procedureCurrentStep);
+
+				// How many steps we'll perform
+				response->catf(",\"total\":%d}", gCodes->procedureMaxSteps);
+			}
+		} else {
+
+			// If we don't perform procedure, we send "none" string
+			response->EncodeString("none", false, false);
+		}
+	}
+	response->cat('}');
+#endif
 
 	response->cat('}');
 	return response;

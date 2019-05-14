@@ -5506,4 +5506,8 @@ void GCodes::SetItemStandbyTemperature(unsigned int itemNumber, float temp)
 
 #endif
 
+#if OMNI_GCODES
+//TODO: func...
+#endif
+
 // End
