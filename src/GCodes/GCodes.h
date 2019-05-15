@@ -245,7 +245,7 @@ public:
 #endif
 
 #if OMNI_GCODES
-	constexpr size_t MaxProcedureNameLength;
+	static constexpr size_t MaxProcedureNameLength = 120;
 
 	String<MaxProcedureNameLength> procedureName;
 	String<MaxProcedureNameLength> procedureStepName;

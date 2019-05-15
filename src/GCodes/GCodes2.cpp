@@ -2588,6 +2588,22 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		if (gb.Seen('I'))
 		{
 			procedureButtons = gb.GetIValue();
+
+			if (procedureButtons < 0 || procedureButtons > 4)
+			{
+				reply.copy("Invalid message box mode");
+				result = GCodeResult::error;
+				break;
+			}
+
+			// Don't lock the movement system, because if we do then only the channel that issues the M291 can move the axes
+			// If we need to wait for an acknowledgement, save the state and set waiting
+			if ((procedureButtons > 0) && Push(gb))						// stack the machine state including the file position
+			{
+				UnlockMovement(gb);												// allow movement so that e.g. an SD card print can call M291 and then DWC or PanelDue can be used to jog axes
+				gb.MachineState().fileState.Close();							// stop reading from file
+				gb.MachineState().waitingForAcknowledgement = true;				// flag that we are waiting for acknowledgement
+			}
 		}
 		break;
 
