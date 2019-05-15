@@ -2348,6 +2348,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+#ifdef OMNI_GCODES
+	case 392:
+#endif
 	case 292:	// Acknowledge message
 		{
 			reprap.ClearAlert();
@@ -2607,9 +2610,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-	case 392: // Get an answer the procedure
-
-		break;
+	//case 392 is the same as M292 // Get an answer the procedure
 
 	case 393: // Stop doing the procedure
 		isProcedure = false;
