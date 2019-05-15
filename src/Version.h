@@ -16,7 +16,7 @@
 # define MAIN_VERSION	"1.24RC2"
 #endif
 
-# define VERSION MAIN_VERSION
+# define VERSION MAIN_VERSION "-" OMNI_VERSION
 #endif
 
 #define OMNI_VERSION    "1.00beta1"
