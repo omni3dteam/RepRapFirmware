@@ -1568,5 +1568,11 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.516195201;cdt.managedbuild.config.gnu.cross.exe.release.516195201.;cdt.managedbuild.tool.gnu.cross.c.compiler.220085372;cdt.managedbuild.tool.gnu.c.compiler.input.1345445195">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.516195201.976458850.241502451.170574622;cdt.managedbuild.config.gnu.cross.exe.release.516195201.976458850.241502451.170574622.;cdt.managedbuild.tool.gnu.cross.c.compiler.463703707;cdt.managedbuild.tool.gnu.c.compiler.input.1065384487">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.516195201.976458850.241502451.170574622;cdt.managedbuild.config.gnu.cross.exe.release.516195201.976458850.241502451.170574622.;cdt.managedbuild.tool.gnu.cross.cpp.compiler.1697970502;cdt.managedbuild.tool.gnu.cpp.compiler.input.65828751">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

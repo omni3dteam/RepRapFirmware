@@ -1722,17 +1722,23 @@ void Platform::Spin()
 		{
 			if(isPowerBtnActivated == true)
 			{
-				reprap.GetGCodes().RunPowerMacro();
-				powCheckInterval = 2000;
+				if (isRunShutDownMacro == false)
+				{
+					debugPrintf("\n turnOffPower\n");
+					reprap.GetGCodes().RunShutDownMacro();
+					isRunShutDownMacro = true;
+				}
 			}
 			else
 			{
 				isPowerBtnActivated = true;
+				isRunShutDownMacro = false;
 			}
 		}
 		else
 		{
 			isPowerBtnActivated = false;
+			isRunShutDownMacro = false;
 			powCheckInterval = 1000;
 		}
 	}
@@ -1741,23 +1747,29 @@ void Platform::Spin()
 	{
 		lastPowDetected = powTime;
 
-		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[4]);
+		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[2]);
 
 		if(lostPowerBtn == true)
 		{
 			if(isLostPowerDetected == true)
 			{
-				reprap.GetGCodes().SaveResumeInfo(true);
-				detCheckInterval = 2000;
+				if (isSaveResumeInfo == false)
+				{
+					debugPrintf("\n saveResumeInfo\n");
+					reprap.GetGCodes().SaveResumeInfo(true);
+					isSaveResumeInfo = true;
+				}
 			}
 			else
 			{
 				isLostPowerDetected = true;
+				isSaveResumeInfo = false;
 			}
 		}
 		else
 		{
 			isLostPowerDetected = false;
+			isSaveResumeInfo = false;
 			detCheckInterval = 20;
 		}
 	}

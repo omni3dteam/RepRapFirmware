@@ -208,7 +208,7 @@ public:
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
 	void SaveResumeInfo(bool wasPowerFailure);
-	void RunPowerMacro();
+	void RunShutDownMacro();
 
 #if HAS_VOLTAGE_MONITOR
 	bool LowVoltagePause();
@@ -647,7 +647,7 @@ private:
 	static constexpr const char* STARTUP_G = "startup.g";
 	static constexpr const char* RESUME_PROLOGUE_G = "resurrect-prologue.g";
 	static constexpr const char* FILAMENT_CHANGE_G = "filament-change.g";
-	static constexpr const char* POWER_G = "power.g";
+	static constexpr const char* SHUTDOWN_G = "shutDown.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif
