@@ -2361,6 +2361,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				if (targetGb != nullptr)
 				{
 					targetGb->MessageAcknowledged(cancelled);
+#ifdef OMNI_GCODES
+					if(cancelled == true)
+					{
+						isProcedure = false;
+					}
+#endif
 				}
 			}
 		}
@@ -2569,13 +2575,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 		if (gb.Seen('P'))
 		{
-			String<MaxFilenameLength> procName;
+			String<MaxProcedureNameLength> procName;
 			gb.GetPossiblyQuotedString(procName.GetRef());
 			procedureName.copy(procName.c_str());
 		}
 		if (gb.Seen('R'))
 		{
-			String<MaxFilenameLength> procStepName;
+			String<MaxProcedureNameLength> procStepName;
 			gb.GetPossiblyQuotedString(procStepName.GetRef());
 			procedureStepName.copy(procStepName.c_str());
 		}
@@ -2601,7 +2607,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 			// Don't lock the movement system, because if we do then only the channel that issues the M291 can move the axes
 			// If we need to wait for an acknowledgement, save the state and set waiting
-			if ((procedureButtons > 0) && Push(gb))						// stack the machine state including the file position
+			if ((procedureButtons == 1 || procedureButtons == 3 || procedureButtons == 4) && Push(gb))	// stack the machine state including the file position
 			{
 				UnlockMovement(gb);												// allow movement so that e.g. an SD card print can call M291 and then DWC or PanelDue can be used to jog axes
 				gb.MachineState().fileState.Close();							// stop reading from file
