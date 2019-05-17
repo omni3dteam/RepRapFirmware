@@ -2571,6 +2571,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 #ifdef OMNI_GCODES
 	case 391: // Set procedure step
+	{
 		isProcedure = true;
 
 		if (gb.Seen('P'))
@@ -2614,6 +2615,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				gb.MachineState().waitingForAcknowledgement = true;				// flag that we are waiting for acknowledgement
 			}
 		}
+		// Send a standard status response for PanelDue
+		OutputBuffer * const statusBuf = GenerateJsonStatusResponse(lastAuxStatusReportType, -1, ResponseSource::AUX);
+		if (statusBuf != nullptr)
+		{
+			platform.AppendAuxReply(statusBuf, true);
+		}
+	}
 		break;
 
 	//case 392 is the same as M292 // Get an answer the procedure
