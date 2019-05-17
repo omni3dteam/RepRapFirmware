@@ -253,6 +253,7 @@ public:
 	size_t procedureCurrentStep;
 	size_t procedureMaxSteps;
 	size_t procedureButtons;
+	size_t procedureEnum;
 
 	bool isProcedure = false;
 #endif

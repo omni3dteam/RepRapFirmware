@@ -2574,13 +2574,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	{
 		isProcedure = true;
 
-		if (gb.Seen('P'))
+		if (gb.Seen('R'))
 		{
 			String<MaxProcedureNameLength> procName;
 			gb.GetPossiblyQuotedString(procName.GetRef());
 			procedureName.copy(procName.c_str());
 		}
-		if (gb.Seen('R'))
+		if (gb.Seen('P'))
 		{
 			String<MaxProcedureNameLength> procStepName;
 			gb.GetPossiblyQuotedString(procStepName.GetRef());
@@ -2594,8 +2594,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			procedureMaxSteps = gb.GetIValue();
 		}
-
-		if (gb.Seen('I'))
+		if (gb.Seen('D'))
+		{
+			procedureEnum = gb.GetIValue();
+		}
+		if (gb.Seen('B'))
 		{
 			procedureButtons = gb.GetIValue();
 
