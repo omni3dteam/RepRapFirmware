@@ -36,7 +36,8 @@ enum PrintEstimationMethod
 {
 	filamentBased,
 	fileBased,
-	layerBased
+	layerBased,
+	slicerBased
 };
 
 class PrintMonitor

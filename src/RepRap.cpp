@@ -1498,7 +1498,10 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 			response->catf(",\"filament\":%.1f", (double)(printMonitor->EstimateTimeLeft(filamentBased)));
 
 			// Based on layers
-			response->catf(",\"layer\":%.1f}", (double)(printMonitor->EstimateTimeLeft(layerBased)));
+			response->catf(",\"layer\":%.1f", (double)(printMonitor->EstimateTimeLeft(layerBased)));
+
+			// Based on slicer, most accurate so we calculate and send it to DWC
+			response->catf(",\"slicer\":%.1f}", (double)(printMonitor->EstimateTimeLeft(slicerBased)));
 		}
 	}
 
@@ -1888,10 +1891,11 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		if (printMonitor->IsPrinting())
 		{
 			// Send estimated times left based on file progress, filament usage, and layers
-			response->catf(",\"timesLeft\":[%.1f,%.1f,%.1f]",
+			response->catf(",\"timesLeft\":[%.1f,%.1f,%.1f,%.1f]",
 					(double)(printMonitor->EstimateTimeLeft(fileBased)),
 					(double)(printMonitor->EstimateTimeLeft(filamentBased)),
-					(double)(printMonitor->EstimateTimeLeft(layerBased)));
+					(double)(printMonitor->EstimateTimeLeft(layerBased)),
+					(double)(printMonitor->EstimateTimeLeft(slicerBased)));
 		}
 	}
 	else if (type == 3)

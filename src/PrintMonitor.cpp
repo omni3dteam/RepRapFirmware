@@ -397,6 +397,17 @@ float PrintMonitor::EstimateTimeLeft(PrintEstimationMethod method) const
 				return (timeLeft > 0.0) ? timeLeft : 0.1;
 			}
 			break;
+
+		case slicerBased:
+
+			if (printingFileInfo.isValid)
+			{
+				float slicerTime = printingFileInfo.printTime - realPrintDuration;
+				return (slicerTime > 0.0) ? slicerTime : 0.0;
+			}
+			return 0.0;
+
+			break;
 	}
 
 	return 0.0;
