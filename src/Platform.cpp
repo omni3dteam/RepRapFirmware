@@ -175,6 +175,7 @@ Platform::Platform()
 	  lastWarningMillis(0), deliberateError(false)
 {
 	massStorage = new MassStorage(this);
+	workTime = new WorkTime();
 }
 
 //*******************************************************************************************************************
@@ -251,6 +252,7 @@ void Platform::Init()
 	}
 
 	massStorage->Init();
+	workTime->Init();
 
 	ipAddress = DefaultIpAddress;
 	netMask = DefaultNetMask;
@@ -1000,7 +1002,11 @@ void Platform::UpdateFirmware()
 		else
 		{
 			// Fill up the remaining space with zeros
-			memset(data, 0, sizeof(data[0]) * sizeof(data));
+			/*memset(data, 0, sizeof(data[0]) * sizeof(data));
+			cpu_irq_disable();
+			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
+			cpu_irq_enable();*/
+			workTime->WriteDuringUpload();
 			cpu_irq_disable();
 			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
 			cpu_irq_enable();
@@ -1360,6 +1366,7 @@ void Platform::Spin()
 #endif
 
 	massStorage->Spin();
+	workTime->Spin();
 
 	// Try to flush messages to serial ports
 	(void)FlushMessages();

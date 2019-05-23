@@ -42,6 +42,7 @@ Licence: GPL
 #include "Spindle.h"
 #include "ZProbe.h"
 #include "ZProbeProgrammer.h"
+#include "WorkTime.h"
 #include <General/IPAddress.h>
 
 #if defined(DUET_NG)
@@ -371,6 +372,7 @@ public:
 
 	// File functions
 	MassStorage* GetMassStorage() const;
+	WorkTime* GetWorkTime() const;
 	FileStore* OpenFile(const char* folder, const char* fileName, OpenMode mode, uint32_t preAllocSize = 0) const;
 	bool Delete(const char* folder, const char *filename) const;
 	bool FileExists(const char* folder, const char *filename) const;
@@ -851,6 +853,7 @@ private:
 
 	// Files
 	MassStorage* massStorage;
+	WorkTime* workTime;
 	const char *sysDir;
   
 	// Data used by the tick interrupt handler
@@ -1176,6 +1179,11 @@ inline void Platform::SetNozzleDiameter(float diameter)
 inline MassStorage* Platform::GetMassStorage() const
 {
 	return massStorage;
+}
+
+inline WorkTime* Platform::GetWorkTime() const
+{
+	return workTime;
 }
 
 inline OutputBuffer *Platform::GetAuxGCodeReply()

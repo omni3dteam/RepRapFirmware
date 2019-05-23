@@ -2973,6 +2973,18 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+	case 520:
+	{
+		if(gb.Seen('S'))
+		{
+			platform.GetWorkTime()->SetAndWrite(gb.GetIValue());
+		}
+		else
+		{
+		reply.printf("M520 S%lu", platform.GetWorkTime()->Read());
+		}
+	}
+        break;
 	case 540: // Set/report MAC address
 		if (!gb.MachineState().runningM502)			// when running M502 we don't execute network-related commands
 		{
