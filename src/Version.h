@@ -19,7 +19,7 @@
 # define VERSION MAIN_VERSION "-" OMNI_VERSION
 #endif
 
-#define OMNI_VERSION    "1.00beta2"
+#define OMNI_VERSION    "1.00beta3"
 
 #ifndef DATE
 # define DATE "2019-05-14b2"
