@@ -3824,6 +3824,65 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		result = reprap.GetMove().ConfigureDynamicAcceleration(gb, reply);
 		break;
 
+	case 611: // Set LCD password - it's similar to M551
+	{
+		String<RepRapPasswordLength> password;
+		bool seen = false;
+		gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
+		if (seen)
+		{
+			int pass;
+			pass = SafeStrtol(password.c_str(), NULL, 10);
+			size_t len = strlen(password.c_str());
+
+			if( len == 4)
+			{
+				for(size_t i = 0; i < len; i++)
+				{
+					if(!isdigit(password[i]))
+					{
+						reply.printf("Incorrect input. Pin must have 4 digits");
+						break;
+					}
+				}
+				passLCD = pass;
+
+				FileStore * const f = platform.OpenSysFile(LCD_PASS_G, OpenMode::write);
+				if (f == nullptr)
+				{
+					platform.MessageF(ErrorMessage, "Failed to create file %s\n", LCD_PASS_G);
+				}
+				else
+				{
+					String<FormatStringLength> bufferSpace;
+					const StringRef buf = bufferSpace.GetRef();
+
+					buf.printf("M611 P\"%04d\"\n", passLCD);
+					bool ok = f->Write(buf.c_str());
+
+					if (!f->Close())
+					{
+						ok = false;
+					}
+					if (!ok)
+					{
+						platform.DeleteSysFile(LCD_PASS_G);
+						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", LCD_PASS_G);
+					}
+				}
+			}
+			else
+			{
+				reply.printf("Parameter is too long or short");
+			}
+		}
+		else
+		{
+			reply.printf("LCD Pass: %04d", passLCD);
+		}
+	}
+		break;
+
 	// For case 600, see 226
 
 	// M650 (set peel move parameters) and M651 (execute peel move) are no longer handled specially. Use macros to specify what they should do.

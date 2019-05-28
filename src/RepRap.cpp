@@ -1944,6 +1944,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		// If we don't perform procedure, we send "none" string
 		response->EncodeString("none", false, false);
 	}
+
+	// send pass to LCD
+	response->catf(",\"passLCD\":\"%04d\"", gCodes->passLCD);
 #endif
 
 	response->cat('}');

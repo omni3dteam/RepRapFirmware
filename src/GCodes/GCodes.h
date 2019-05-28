@@ -256,6 +256,8 @@ public:
 	size_t procedureEnum;
 
 	bool isProcedure = false;
+
+	int passLCD = 0;
 #endif
 
 protected:
@@ -655,6 +657,7 @@ private:
 	static constexpr const char* RESUME_PROLOGUE_G = "resurrect-prologue.g";
 	static constexpr const char* FILAMENT_CHANGE_G = "filament-change.g";
 	static constexpr const char* SHUTDOWN_G = "shutDown.g";
+	static constexpr const char* LCD_PASS_G = "lcd-pass.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif
