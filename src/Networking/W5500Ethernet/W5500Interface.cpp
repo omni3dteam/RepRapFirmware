@@ -370,7 +370,7 @@ void W5500Interface::Spin(bool full)
 		if (full)
 		{
 			InitSockets();
-			platform.MessageF(NetworkInfoMessage, "Network running, IP address = %s\n", IP4String(ipAddress).c_str());
+			platform.MessageF(LogMessage, "Network running, IP address = %s\n", IP4String(ipAddress).c_str());
 			state = NetworkState::active;
 		}
 		break;
