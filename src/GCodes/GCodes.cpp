@@ -3362,18 +3362,37 @@ GCodeResult GCodes::DoHome(GCodeBuffer& gb, const StringRef& reply)
 	}
 #endif
 
+	// Sometimes we have homed some axis and we don't want to lost time homing axes again
+	// Using Sxxx parameter we can check if axis is homed. If axis is homed, we bypass home.
+	bool checkHomeStatus = false;
+	bool isAnyLetter = false;
+
+	if(gb.Seen('S'))
+	{
+		checkHomeStatus = gb.GetIValue();
+	}
+
 	// Find out which axes we have been asked to home
 	toBeHomed = 0;
 	for (size_t axis = 0; axis < numTotalAxes; ++axis)
 	{
 		if (gb.Seen(axisLetters[axis]))
 		{
+			isAnyLetter = true;
+			if(checkHomeStatus)
+			{
+				if(GetAxisIsHomed(axis))
+				{
+					continue;
+				}
+			}
+
 			SetBit(toBeHomed, axis);
 			SetAxisNotHomed(axis);
 		}
 	}
 
-	if (toBeHomed == 0)
+	if (toBeHomed == 0 && !isAnyLetter)
 	{
 		SetAllAxesNotHomed();		// homing everything
 		toBeHomed = LowestNBits<AxesBitmap>(numVisibleAxes);
