@@ -1338,11 +1338,25 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			// Find the tool that the command applies to.
 			// This is the tool specified in the T parameter, else the current tool if there is one, else the default tool
 			Tool *applicableTool;
+			int toolNumberOrg;
 			if (gb.Seen('T'))
 			{
-				int toolNumber = gb.GetIValue();
+				int toolNumber = toolNumberOrg = gb.GetIValue();
+
 				toolNumber += gb.GetToolNumberAdjust();
 				applicableTool = reprap.GetTool(toolNumber);
+
+				// get comparative temperature
+				if (gb.Seen('H'))
+				{
+					float boundTemp;
+					boundTemp = gb.GetFValue();
+
+					if(applicableTool->GetToolHeaterActiveTemperature(toolNumberOrg) > boundTemp)
+					{
+						break;		// no need to heat up
+					}
+				}
 			}
 			else
 			{
