@@ -1755,7 +1755,7 @@ void Platform::Spin()
 	{
 		lastPowDetected = powTime;
 
-		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[2]);
+		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[3]);
 
 		if(lostPowerBtn == true)
 		{
