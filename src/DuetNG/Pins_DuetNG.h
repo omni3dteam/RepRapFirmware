@@ -20,7 +20,7 @@ constexpr size_t NumFirmwareUpdateModules = 4;		// 3 modules, plus one for manua
 #define HAS_VOLTAGE_MONITOR		1
 #define HAS_VREF_MONITOR		0
 #define ACTIVE_LOW_HEAT_ON		1
-#define OMNI_POWER_MONITOR      0
+#define OMNI_POWER_MONITOR      1
 #define OMNI_GCODES             1
 
 #define SUPPORT_INKJET			0					// set nonzero to support inkjet control

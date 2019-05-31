@@ -1902,6 +1902,8 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->EncodeString(myName, false);
 		response->cat(",\"firmwareName\":");
 		response->EncodeString(FIRMWARE_NAME, false);
+		response->cat(",\"firmwareVersion\":");
+		response->EncodeString(VERSION, false);
 	}
 
 	// Send the response to the last command. Do this last because it can be long and may need to be truncated.
