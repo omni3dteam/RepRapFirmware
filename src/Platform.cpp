@@ -1726,13 +1726,12 @@ void Platform::Spin()
 
 		const bool powerBtn = IoPort::ReadPin(endStopPins[4]);
 
-		if(powerBtn == true)
+		if(powerBtn == false)
 		{
 			if(isPowerBtnActivated == true)
 			{
 				if (isRunShutDownMacro == false)
 				{
-					debugPrintf("\n turnOffPower\n");
 					reprap.GetGCodes().RunShutDownMacro();
 					isRunShutDownMacro = true;
 				}
@@ -1763,7 +1762,6 @@ void Platform::Spin()
 			{
 				if (isSaveResumeInfo == false)
 				{
-					debugPrintf("\n saveResumeInfo\n");
 					reprap.GetGCodes().SaveResumeInfo(true);
 					isSaveResumeInfo = true;
 				}
