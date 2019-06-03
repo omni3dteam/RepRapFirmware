@@ -158,13 +158,11 @@ public:
 	bool RunConfigFile(const char* fileName);							// Start running the config file
 	bool IsDaemonBusy() const;											// Return true if the daemon is busy running config.g or a trigger file
 
-	bool GetAxisIsHomed(unsigned int axis) const						// Has the axis been homed?
+	bool IsAxisHomed(unsigned int axis) const							// Has the axis been homed?
 		{ return IsBitSet(axesHomed, axis); }
 	void SetAxisIsHomed(unsigned int axis);								// Tell us that the axis is now homed
-	void SetAxisNotHomed(unsigned int axis)								// Tell us that the axis is not homed
-		{ ClearBit(axesHomed, axis); }
-	void SetAllAxesNotHomed()											// Flag all axes as not homed
-		{ axesHomed = 0; }
+	void SetAxisNotHomed(unsigned int axis);							// Tell us that the axis is not homed
+	void SetAllAxesNotHomed();											// Flag all axes as not homed
 
 	float GetSpeedFactor() const;										// Return the current speed factor
 #if SUPPORT_12864_LCD
@@ -325,6 +323,7 @@ private:
 	GCodeResult SetPositions(GCodeBuffer& gb);									// Deal with a G92
 	GCodeResult DoDriveMapping(GCodeBuffer& gb, const StringRef& reply);		// Deal with a M584
 	GCodeResult ProbeTool(GCodeBuffer& gb, const StringRef& reply);				// Deal with a M585
+	GCodeResult FindCenterOfCavity(GCodeBuffer& gb, const StringRef& reply, const bool towardsMin = true);	// Deal with a M675
 	GCodeResult SetDateTime(GCodeBuffer& gb,const  StringRef& reply);			// Deal with a M905
 	GCodeResult SavePosition(GCodeBuffer& gb,const  StringRef& reply);			// Deal with G60
 	GCodeResult ConfigureDriver(GCodeBuffer& gb,const  StringRef& reply);		// Deal with M569
@@ -362,9 +361,9 @@ private:
 
 	void SetMachinePosition(const float positionNow[MaxTotalDrivers], bool doBedCompensation = true); // Set the current position to be this
 	void UpdateCurrentUserPosition();											// Get the current position from the Move class
-	void ToolOffsetTransform(const float coordsIn[MaxAxes], float coordsOut[MaxAxes], AxesBitmap explicitAxes = 0);
+	void ToolOffsetTransform(const float coordsIn[MaxAxes], float coordsOut[MaxAxes], AxesBitmap explicitAxes = 0) const;
 																				// Convert user coordinates to head reference point coordinates
-	void ToolOffsetInverseTransform(const float coordsIn[MaxAxes], float coordsOut[MaxAxes]);	// Convert head reference point coordinates to user coordinates
+	void ToolOffsetInverseTransform(const float coordsIn[MaxAxes], float coordsOut[MaxAxes]) const;	// Convert head reference point coordinates to user coordinates
 	float GetCurrentToolOffset(size_t axis) const;								// Get an axis offset of the current tool
 
 	const char *TranslateEndStopResult(EndStopHit es);							// Translate end stop result to text
@@ -522,6 +521,7 @@ private:
 	RestorePoint numberedRestorePoints[NumRestorePoints];				// Restore points accessible using the R parameter in the G0/G1 command
 	RestorePoint& pauseRestorePoint = numberedRestorePoints[1];			// The position and feed rate when we paused the print
 	RestorePoint& toolChangeRestorePoint = numberedRestorePoints[2];	// The position and feed rate when we freed a tool
+	RestorePoint& findCenterOfCavityRestorePoint = numberedRestorePoints[3];	// The position and feed rate when we found the lower boundary of cavity
 
 	size_t numTotalAxes;						// How many axes we have
 	size_t numVisibleAxes;						// How many axes are visible
@@ -573,6 +573,7 @@ private:
 	bool doingManualBedProbe;					// true if we are waiting for the user to jog the nozzle until it touches the bed
 	bool probeIsDeployed;						// true if M401 has been used to deploy the probe and M402 has not yet been used t0 retract it
 	bool hadProbingError;						// true if there was an error probing the last point
+	bool zDatumSetByProbing;					// true if the Z position was last set by probing, not by an endstop switch or by G92
 	uint8_t tapsDone;							// how many times we tapped the current point
 
 	float simulationTime;						// Accumulated simulation time

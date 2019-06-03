@@ -11,9 +11,9 @@
 
 #ifndef VERSION
 #ifdef RTOS
-# define MAIN_VERSION	"2.03RC3+1"
+# define MAIN_VERSION	"2.03RC4"
 #else
-# define MAIN_VERSION	"1.24RC3+1"
+# define MAIN_VERSION	"1.24RC4"
 #endif
 
 # define VERSION MAIN_VERSION "-" OMNI_VERSION
@@ -22,7 +22,7 @@
 #define OMNI_VERSION    "1.00RC1"
 
 #ifndef DATE
-# define DATE "2019-05-28b1"
+# define DATE "2019-05-29b4"
 #endif
 
 #define AUTHORS "reprappro, dc42, chrishamm, t3p3, dnewman, printm3d"
