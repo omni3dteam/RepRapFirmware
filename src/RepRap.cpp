@@ -1904,6 +1904,12 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->EncodeString(FIRMWARE_NAME, false);
 		response->cat(",\"firmwareVersion\":");
 		response->EncodeString(VERSION, false);
+
+		if (printMonitor->IsPrinting())
+		{
+			// If we start printig via WWW, we don't have any information about filename, so we need to inform LCD
+			response->catf(",\"printingFilename\":\"%s\"", printMonitor->GetPrintingFilename());
+		}
 	}
 
 	// Send the response to the last command. Do this last because it can be long and may need to be truncated.
