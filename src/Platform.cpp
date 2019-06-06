@@ -1732,7 +1732,7 @@ void Platform::Spin()
 			{
 				if (isRunShutDownMacro == false)
 				{
-					reprap.GetGCodes().RunShutDownMacro();
+					reprap.GetGCodes().RunShutdownMacro();
 					isRunShutDownMacro = true;
 				}
 			}

@@ -2448,7 +2448,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 	}
 }
 
-void GCodes::RunShutDownMacro() {
+void GCodes::RunShutdownMacro() {
 	String<StringLength20> filename;
 	filename.printf("%s%s", DEFAULT_SYS_DIR, SHUTDOWN_G);
 	DoFileMacro(*daemonGCode, filename.c_str(), true);
