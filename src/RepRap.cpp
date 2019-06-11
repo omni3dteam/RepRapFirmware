@@ -1707,9 +1707,11 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->catf("%c%.1f", ch, (double)(heat->GetTemperature(heater)));
 		ch = ',';
 	}
+	// If there is no chamber heater/temperature, send zero for PanelDue.
+	const int8_t chamberHeater = (NumChamberHeaters > 0) ? heat->GetChamberHeater(0) : -1;
+	response->catf("%c%.1f", ch, (double)((chamberHeater == -1) ? 0.0 : heat->GetTemperature(chamberHeater)));
+	ch = ',';
 	response->cat((ch == '[') ? "[]" : "]");
-
-	// TODO: add sending chamber to PanelDue as 4th element
 
 	// Send the heater active temperatures
 	response->catf(",\"active\":[%.1f", (double)((bedHeater == -1) ? 0.0 : heat->GetActiveTemperature(bedHeater)));
@@ -1717,7 +1719,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	{
 		response->catf(",%.1f", (double)(heat->GetActiveTemperature(heater)));
 	}
-	response->cat(']');
+	response->catf(",%.1f]", (double)((chamberHeater == -1) ? 0.0 : heat->GetActiveTemperature(chamberHeater)));
 
 	// Send the heater standby temperatures
 	response->catf(",\"standby\":[%.1f", (double)((bedHeater == -1) ? 0.0 : heat->GetStandbyTemperature(bedHeater)));
@@ -1725,7 +1727,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	{
 		response->catf(",%.1f", (double)(heat->GetStandbyTemperature(heater)));
 	}
-	response->cat(']');
+	response->catf(",%.1f]", (double)((chamberHeater == -1) ? 0.0 : heat->GetStandbyTemperature(chamberHeater)));
 
 	// Send the heater statuses (0=off, 1=standby, 2=active, 3 = fault)
 	response->catf(",\"hstat\":[%d", (bedHeater == -1) ? 0 : static_cast<int>(heat->GetStatus(bedHeater)));
@@ -1733,7 +1735,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	{
 		response->catf(",%d", static_cast<int>(heat->GetStatus(heater)));
 	}
-	response->cat(']');
+	response->catf(",%d]", (chamberHeater == -1) ? 0 : static_cast<int>(heat->GetStatus(chamberHeater)));
 
 	// Send XYZ positions
 	const size_t numVisibleAxes = gCodes->GetVisibleAxes();
