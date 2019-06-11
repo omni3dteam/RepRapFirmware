@@ -1709,6 +1709,8 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	}
 	response->cat((ch == '[') ? "[]" : "]");
 
+	// TODO: add sending chamber to PanelDue as 4th element
+
 	// Send the heater active temperatures
 	response->catf(",\"active\":[%.1f", (double)((bedHeater == -1) ? 0.0 : heat->GetActiveTemperature(bedHeater)));
 	for (size_t heater = DefaultE0Heater; heater < GetToolHeatersInUse(); heater++)
@@ -1905,6 +1907,12 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->cat(",\"firmwareVersion\":");
 		response->EncodeString(VERSION, false);
 
+		// send led brightness to panelDue
+		response->catf(",\"leds\":%d", gCodes->ledBrightness);
+
+		// send pass to LCD
+		response->catf(",\"passLCD\":\"%04d\"", gCodes->passLCD);
+
 		if (printMonitor->IsPrinting())
 		{
 			// If we start printig via WWW, we don't have any information about filename, so we need to inform LCD
@@ -1952,9 +1960,6 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		// If we don't perform procedure, we send "none" string
 		response->EncodeString("none", false, false);
 	}
-
-	// send pass to LCD
-	response->catf(",\"passLCD\":\"%04d\"", gCodes->passLCD);
 #endif
 
 	response->cat('}');

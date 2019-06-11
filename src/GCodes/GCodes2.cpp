@@ -1783,11 +1783,89 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-#if SUPPORT_DOTSTAR_LED
 	case 150:
+	{
+#if SUPPORT_DOTSTAR_LED
 		result = DotStarLed::SetColours(gb, reply);
-		break;
+#else
+		if (gb.Seen('Y'))
+		{
+			size_t brightness = gb.GetUIValue();
+
+			if( brightness < 256)
+			{
+				ledBrightness = brightness;
+
+				const LogicalPin logicalPin = 3;  // we use heater nr 3 to supply led strip
+				float val = ((float)ledBrightness) / 255.0;
+
+				bool usePwm;
+				uint16_t freq;
+				freq = DefaultPinWritePwmFreq;
+				usePwm = (val != 0.0 && val != 1.0);
+
+				Pin pin;
+				bool invert;
+				if (platform.GetFirmwarePin(logicalPin, (usePwm) ? PinAccess::pwm : PinAccess::write, pin, invert))
+				{
+					if (invert)
+					{
+						val = 1.0 - val;
+					}
+
+					if (usePwm)
+					{
+						IoPort::WriteAnalog(pin, val, freq);
+					}
+					else
+					{
+						IoPort::WriteDigital(pin, val == 1.0);
+					}
+				}
+				else
+				{
+					reply.printf("Logical pin %d is not available for writing", logicalPin);
+					result = GCodeResult::error;
+				}
+
+				FileStore * const f = platform.OpenSysFile(LED_STRIP_G, OpenMode::write);
+				if (f == nullptr)
+				{
+					platform.MessageF(ErrorMessage, "Failed to create file %s\n", LED_STRIP_G);
+				}
+				else
+				{
+					String<FormatStringLength> bufferSpace;
+					const StringRef buf = bufferSpace.GetRef();
+
+					// first step is deinit H3 as heater, and then set PWM for led strip
+					buf.printf("M307 H3 A-1 C-1 D-1\nM150 Y%d\n", ledBrightness);
+					bool ok = f->Write(buf.c_str());
+
+					if (!f->Close())
+					{
+						ok = false;
+					}
+					if (!ok)
+					{
+						platform.DeleteSysFile(LED_STRIP_G);
+						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", LED_STRIP_G);
+					}
+				}
+			}
+			else
+			{
+				reply.printf("Parameter is too long or short");
+			}
+		}
+		else
+		{
+			reply.printf("LED brightness: %d", ledBrightness);
+		}
 #endif
+	}
+	break;
+
 
 	case 190: // Set bed temperature and wait
 	case 191: // Set chamber temperature and wait
