@@ -2381,7 +2381,9 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", RESUME_AFTER_POWER_FAIL_G);
 			}
 		}
-	} else { // create startup file
+	}
+	else if (!isStateSaved)				// create startup file if we don't have this state saved
+	{
 		FileStore * const f = platform.OpenSysFile(STARTUP_G, OpenMode::write);
 		if (f == nullptr)
 		{
@@ -2448,6 +2450,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", STARTUP_G);
 			}
 		}
+		isStateSaved = true;
 	}
 }
 
@@ -3385,6 +3388,9 @@ void GCodes::EmergencyStop()
 			AbortPrint(*gbp);
 		}
 	}
+
+	// save necessary info
+	SaveResumeInfo(true);
 }
 
 // Run a file macro. Prior to calling this, 'state' must be set to the state we want to enter when the macro has been completed.

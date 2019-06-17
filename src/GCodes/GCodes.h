@@ -257,6 +257,8 @@ public:
 
 	int passLCD = 0;
 	size_t ledBrightness = 0;
+
+	bool isStateSaved = false;
 #endif
 
 protected:
