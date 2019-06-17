@@ -256,7 +256,7 @@ public:
 	bool isProcedure = false;
 
 	int passLCD = 0;
-	size_t ledBrightness;
+	size_t ledBrightness = 0;
 #endif
 
 protected:

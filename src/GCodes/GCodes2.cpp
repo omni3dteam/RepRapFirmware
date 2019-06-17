@@ -1797,7 +1797,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				ledBrightness = brightness;
 
 				const LogicalPin logicalPin = 3;  // we use heater nr 3 to supply led strip
-				float val = ((float)ledBrightness) / 255.0;
+				float val = ConvertOldStylePwm(ledBrightness);
 
 				bool usePwm;
 				uint16_t freq;
