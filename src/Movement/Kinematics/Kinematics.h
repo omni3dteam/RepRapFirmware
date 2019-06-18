@@ -219,6 +219,7 @@ protected:
 	float minSegmentLength;					// if we are using segmentation, the minimum segment size
 
 	static const char * const HomeAllFileName;
+	static const char * const HomeXYFileName;
 
 private:
 	bool useSegmentation;					// true if we have to approximate linear movement using segmentation

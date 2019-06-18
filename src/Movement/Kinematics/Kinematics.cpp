@@ -20,6 +20,7 @@
 #include "GCodes/GCodes.h"
 
 const char * const Kinematics::HomeAllFileName = "homeall.g";
+const char * const Kinematics::HomeXYFileName = "homexy.g";
 
 // Constructor. Pass segsPerSecond <= 0.0 to get non-segmented kinematics.
 Kinematics::Kinematics(KinematicsType t, float segsPerSecond, float minSegLength, bool doUseRawG0)
@@ -110,6 +111,12 @@ AxesBitmap Kinematics::GetHomingFileName(AxesBitmap toBeHomed, AxesBitmap alread
 	if ((toBeHomed & allAxes) == allAxes)
 	{
 		filename.copy(HomeAllFileName);
+		return 0;
+	}
+
+	if (toBeHomed  == (1 << X_AXIS | 1 << Y_AXIS))
+	{
+		filename.copy(HomeXYFileName);
 		return 0;
 	}
 

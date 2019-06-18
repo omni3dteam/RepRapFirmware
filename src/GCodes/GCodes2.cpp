@@ -1194,12 +1194,22 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case 98: // Call Macro/Subprogram
-		if (gb.Seen('P'))
 		{
-			String<MaxFilenameLength> filename;
-			gb.GetPossiblyQuotedString(filename.GetRef());
-			DoFileMacro(gb, filename.c_str(), true, code);
-		}
+			bool isReportNeeded = true;
+
+			// Sometimes we don't need to report information about missing file
+			if (gb.Seen('S'))
+			{
+				isReportNeeded = gb.GetIValue();
+			}
+
+			if (gb.Seen('P'))
+			{
+				String<MaxFilenameLength> filename;
+				gb.GetPossiblyQuotedString(filename.GetRef());
+				DoFileMacro(gb, filename.c_str(), isReportNeeded, code);
+			}
+	   }
 		break;
 
 	case 99: // Return from Macro/Subprogram
@@ -1796,7 +1806,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				ledBrightness = brightness;
 
-				const LogicalPin logicalPin = 3;  // we use heater nr 3 to supply led strip
+				const LogicalPin logicalPin = 4;  // we use heater nr 4 to supply led strip
 				float val = ConvertOldStylePwm(ledBrightness);
 
 				bool usePwm;
@@ -1839,7 +1849,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					const StringRef buf = bufferSpace.GetRef();
 
 					// first step is deinit H3 as heater, and then set PWM for led strip
-					buf.printf("M307 H3 A-1 C-1 D-1\nM150 Y%d\n", ledBrightness);
+					buf.printf("M307 H%d A-1 C-1 D-1\nM150 Y%d\n", logicalPin, ledBrightness);
 					bool ok = f->Write(buf.c_str());
 
 					if (!f->Close())
