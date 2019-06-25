@@ -1350,29 +1350,28 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			// Find the tool that the command applies to.
 			// This is the tool specified in the T parameter, else the current tool if there is one, else the default tool
 			Tool *applicableTool;
-			int toolNumberOrg;
+			int toolNumberOrg = reprap.GetCurrentToolNumber();
 			if (gb.Seen('T'))
 			{
 				int toolNumber = toolNumberOrg = gb.GetIValue();
 
 				toolNumber += gb.GetToolNumberAdjust();
 				applicableTool = reprap.GetTool(toolNumber);
-
-				// get comparative temperature
-				if (gb.Seen('H'))
-				{
-					float boundTemp;
-					boundTemp = gb.GetFValue();
-
-					if(applicableTool->GetToolHeaterActiveTemperature(toolNumberOrg) > boundTemp)
-					{
-						break;		// no need to heat up
-					}
-				}
 			}
 			else
 			{
 				applicableTool = reprap.GetCurrentOrDefaultTool();
+			}
+
+			// get comparative temperature
+			if (gb.Seen('H'))
+			{
+				float boundTemp = gb.GetFValue();
+
+				if(applicableTool->GetToolHeaterActiveTemperature(toolNumberOrg) > boundTemp)
+				{
+					break;		// no need to heat up
+				}
 			}
 
 			// Check that we have a tool
@@ -4567,7 +4566,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
-			DoFileMacro(gb, RESUME_AFTER_POWER_FAIL_G, true);
+			DoFileMacro(gb, RESUME_AFTER_POWER_FAIL_G, false);
 		}
 		break;
 
