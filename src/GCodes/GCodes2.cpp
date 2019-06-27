@@ -4554,20 +4554,14 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 #endif
 
 	case 916:
-		if (!platform.SysFileExists(RESUME_AFTER_POWER_FAIL_G))
+		if (platform.SysFileExists(RESUME_AFTER_POWER_FAIL_G))
 		{
-			reply.copy("No resume file found");
-			result = GCodeResult::error;
+			if (platform.SysFileExists(RESUME_PROLOGUE_G))
+			{
+				DoFileMacro(gb, RESUME_AFTER_POWER_FAIL_G, false);
+			}
 		}
-		else if (!platform.SysFileExists(RESUME_PROLOGUE_G))
-		{
-			reply.printf("Resume prologue file '%s' not found", RESUME_PROLOGUE_G);
-			result = GCodeResult::error;
-		}
-		else
-		{
-			DoFileMacro(gb, RESUME_AFTER_POWER_FAIL_G, false);
-		}
+		result = GCodeResult::ok;
 		break;
 
 		// For case 917, see 906

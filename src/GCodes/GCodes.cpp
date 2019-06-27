@@ -2228,6 +2228,11 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
+				buf.printf("M291 P\"Printer is restoring parameters. Heating up platform. It can take a few minutes.\" S0 T600\n");
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
 				// The paused coordinates include any tool offsets and baby step offsets, so remove those.
 				// Also ensure that no tool is selected, in case config.g selects one and it has an offset.
@@ -2315,8 +2320,18 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
+				buf.printf("M291 P\"Printer is heating up extruders.\" S0 T600\n");
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				buf.printf("M116\nG92 E%.5f\n%s\n", (double)virtualExtruderPosition, (fileGCode->OriginalMachineState().drivesRelative) ? "M83" : "M82");
 				ok = f->Write(buf.c_str());									// write virtual extruder position and absolute/relative extrusion flag
+			}
+			if (ok)
+			{
+				buf.printf("M291 P\"Printer is reading file to print.\" S0 T5\n");
+				ok = f->Write(buf.c_str());
 			}
 			if (ok)
 			{
