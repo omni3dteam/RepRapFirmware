@@ -1783,6 +1783,31 @@ void Platform::Spin()
 
 #endif
 
+#if OMNI_DOORS_CHECK
+	if(millis() - lastDoorsCheckTime > checkDoorsInterval)
+	{
+		lastDoorsCheckTime = millis();
+
+		for (uint8_t i = 0; i < numberOfDoors; ++i)
+		{
+			doorState[i] = IoPort::ReadPin(doorsDuexPins[i]);
+
+			if(doorState[i] == true)
+			{
+				if(isDoorStateChanged[i] == true)
+				{
+					SendAlert(GenericMessage, doorsDuexPins[i] == doorsDuexPins[0] ? "Upper door" : "Bottom door", "The door has been opened", 1, 0.0, 0);
+					isDoorStateChanged[i] = false;
+				}
+			}
+			else
+			{
+				isDoorStateChanged[i] = true;
+			}
+		}
+	}
+#endif
+
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)
 	{

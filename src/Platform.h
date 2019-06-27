@@ -929,6 +929,14 @@ private:
 	uint32_t lastPowDetected;
 	uint32_t detCheckInterval = 1000;
 #endif
+#if OMNI_DOORS_CHECK
+	static const size_t numberOfDoors = 2;
+	uint16_t checkDoorsInterval = 500;
+	uint32_t lastDoorsCheckTime;
+	bool doorState[numberOfDoors];
+	bool isDoorStateChanged[numberOfDoors];
+	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};
+#endif
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 

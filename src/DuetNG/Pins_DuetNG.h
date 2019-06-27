@@ -22,6 +22,7 @@ constexpr size_t NumFirmwareUpdateModules = 4;		// 3 modules, plus one for manua
 #define ACTIVE_LOW_HEAT_ON		1
 #define OMNI_POWER_MONITOR      1
 #define OMNI_GCODES             1
+#define OMNI_DOORS_CHECK		1
 
 #define SUPPORT_INKJET			0					// set nonzero to support inkjet control
 #define SUPPORT_ROLAND			0					// set nonzero to support Roland mill
