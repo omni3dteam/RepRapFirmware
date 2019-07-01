@@ -9,18 +9,11 @@
 
 void WorkTime::Init()
 {
-	uint32_t tmpHours = Read();
-	SetHours(tmpHours);
+	uint64_t tempVal = *reinterpret_cast<uint64_t *>(timeAddress);
+	SetSeconds(tempVal);
 }
 
-uint32_t WorkTime::Read()
-{
-	uint32_t tempVal = *reinterpret_cast<uint32_t *>(timeAddress);
-	SetHours(tempVal);
-	return tempVal;
-}
-
-void WorkTime::Write(uint32_t val)
+void WorkTime::WriteToFlash(uint64_t val)
 {
 	cpu_irq_disable();
 	flash_unlock(startAddress, endAddress, 0, 0);
@@ -30,23 +23,7 @@ void WorkTime::Write(uint32_t val)
 	cpu_irq_enable();
 }
 
-void WorkTime::WriteDuringUpload()
+void WorkTime::Write()
 {
-	Write(GetHours());
-}
-
-void WorkTime::SetAndWrite(uint32_t h)
-{
-	Write(h);
-	SetHours(h);
-}
-
-void WorkTime::Spin()
-{
-	// 3600000ms = 1h
-	if(millis() - workTimeLocal > 3600000)
-	{
-		workTimeLocal = millis();
-		Write(GetHours() + 1);
-	}
+	WriteToFlash(GetSeconds());
 }

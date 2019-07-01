@@ -13,34 +13,35 @@
 class WorkTime
 {
 private:
-	uint32_t hours;
+	uint64_t secondsSaved;
 public:
 	static constexpr uint32_t startAddress = 0x0047F800;
 	static constexpr uint32_t endAddress   = 0x0047FFFF;
 	static constexpr uint32_t timeAddress  = 0x0047F800;
 
-	uint32_t workTimeLocal = 0;
-
 	void Init();
-    void Spin();
-    void WriteDuringUpload();
-    void Write(uint32_t);
-    void SetAndWrite(uint32_t);
-    uint32_t Read();
+    void Write();
+    void WriteToFlash(uint64_t);
 
-    uint32_t GetHours()
+    uint64_t GetSeconds()
     {
-    	return hours;
+    	return secondsSaved + millis() / 1000;
     }
 
-    void SetHours(uint32_t h)
+    void SetSeconds(uint64_t h)
     {
-    	Write(h);
-    	hours = h;
+    	secondsSaved = h;
     }
 
+    uint16_t GetHours()
+    {
+    	return GetSeconds() / 3600;
+    }
+
+    void SetHours(uint16_t h)
+    {
+    	secondsSaved = h * 3600;
+    }
 };
-
-
 
 #endif /* SRC_WORKTIME_H_ */

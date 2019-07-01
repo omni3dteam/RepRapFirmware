@@ -1007,7 +1007,7 @@ void Platform::UpdateFirmware()
 			cpu_irq_disable();
 			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
 			cpu_irq_enable();*/
-			workTime->WriteDuringUpload();
+			workTime->Write();
 			cpu_irq_disable();
 			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
 			cpu_irq_enable();
@@ -1367,7 +1367,6 @@ void Platform::Spin()
 #endif
 
 	massStorage->Spin();
-	workTime->Spin();
 
 	// Try to flush messages to serial ports
 	(void)FlushMessages();
@@ -1763,6 +1762,7 @@ void Platform::Spin()
 				if (isSaveResumeInfo == false)
 				{
 					reprap.GetGCodes().SaveResumeInfo(true);
+					workTime->Write();
 					isSaveResumeInfo = true;
 				}
 			}

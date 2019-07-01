@@ -3076,11 +3076,15 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	{
 		if(gb.Seen('S'))
 		{
-			platform.GetWorkTime()->SetAndWrite(gb.GetIValue());
+			 platform.GetWorkTime()->Write();
+		}
+		else if(gb.Seen('H'))
+		{
+			platform.GetWorkTime()->SetHours(gb.GetIValue());
 		}
 		else
 		{
-		reply.printf("M520 S%lu", platform.GetWorkTime()->Read());
+			reply.printf("Printer work time, Hours: %d Seconds: %" PRIu64, platform.GetWorkTime()->GetHours(), platform.GetWorkTime()->GetSeconds());
 		}
 	}
         break;
