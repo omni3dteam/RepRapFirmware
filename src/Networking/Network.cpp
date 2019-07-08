@@ -11,6 +11,7 @@
 #include "Network.h"
 #include "NetworkBuffer.h"
 #include "NetworkInterface.h"
+#include "Mikrotik.h"
 
 #if HAS_LWIP_NETWORKING
 #include "LwipEthernet/LwipEthernetInterface.h"
@@ -375,6 +376,8 @@ bool Network::IsWiFiInterface(unsigned int interface) const
 void Network::Spin(bool full)
 {
 	const uint32_t lastTime = StepTimer::GetInterruptClocks();
+
+	reprap.GetMikrotikInstance().Spin();
 
 	// Keep the network modules running
 	for (NetworkInterface *iface : interfaces)

@@ -25,6 +25,7 @@ Licence: GPL
 #include "ObjectModel/ObjectModel.h"
 #include "MessageType.h"
 #include "RTOSIface/RTOSIface.h"
+#include "Mikrotik.h"
 
 enum class ResponseSource
 {
@@ -95,6 +96,7 @@ public:
 	Heat& GetHeat() const;
 	GCodes& GetGCodes() const;
 	Network& GetNetwork() const;
+	Mikrotik& GetMikrotikInstance() const;
 	Roland& GetRoland() const;
 	Scanner& GetScanner() const;
 	PrintMonitor& GetPrintMonitor() const;
@@ -153,6 +155,7 @@ private:
 
 	Platform* platform;
 	Network* network;
+	Mikrotik* mikrotik;
 	Move* move;
 	Heat* heat;
 	GCodes* gCodes;
@@ -208,6 +211,7 @@ inline Move& RepRap::GetMove() const { return *move; }
 inline Heat& RepRap::GetHeat() const { return *heat; }
 inline GCodes& RepRap::GetGCodes() const { return *gCodes; }
 inline Network& RepRap::GetNetwork() const { return *network; }
+inline Mikrotik& RepRap::GetMikrotikInstance() const { return *mikrotik; }
 inline Roland& RepRap::GetRoland() const { return *roland; }
 inline Scanner& RepRap::GetScanner() const { return *scanner; }
 inline PrintMonitor& RepRap::GetPrintMonitor() const { return *printMonitor; }

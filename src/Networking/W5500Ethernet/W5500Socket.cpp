@@ -22,7 +22,7 @@ W5500Socket::W5500Socket(NetworkInterface *iface)
 {
 }
 
-// Initialise a TCP socket
+// Initialize a TCP socket
 void W5500Socket::Init(SocketNumber skt, Port serverPort, NetworkProtocol p)
 {
 	socketNum = skt;
@@ -250,7 +250,7 @@ void W5500Socket::ReceiveData()
 				NetworkBuffer::AppendToList(&receivedData, buf);
 				if (reprap.Debug(moduleNetwork))
 				{
-					debugPrintf("Received %u bytes\n", (unsigned int)len);
+					//debugPrintf("Received %u bytes\n", (unsigned int)len);
 				}
 			}
 		}

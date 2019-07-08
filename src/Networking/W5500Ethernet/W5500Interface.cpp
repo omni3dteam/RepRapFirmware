@@ -318,14 +318,14 @@ void W5500Interface::Spin(bool full)
 				if (usingDhcp)
 				{
 					// IP address is all zeros, so use DHCP
-//					debugPrintf("Link established, getting IP address\n");
+					debugPrintf("Link established, getting IP address\n");
 					DHCP_init(DhcpSocketNumber, platform.Random(), reprap.GetNetwork().GetHostname());
 					lastTickMillis = millis();
 					state = NetworkState::obtainingIP;
 				}
 				else
 				{
-//					debugPrintf("Link established, network running\n");
+					debugPrintf("Link established, network running\n");
 					state = NetworkState::connected;
 				}
 			}
@@ -348,7 +348,7 @@ void W5500Interface::Spin(bool full)
 				const DhcpRunResult ret = DHCP_run();
 				if (ret == DhcpRunResult::DHCP_IP_ASSIGN)
 				{
-//					debugPrintf("IP address obtained, network running\n");
+					debugPrintf("IP address obtained, network running\n");
 					getSIPR(ipAddress);
 					// Send mDNS announcement so that some routers can perform hostname mapping
 					// if this board is connected via a non-IGMP capable WiFi bridge (like the TP-Link WR701N)
@@ -358,7 +358,7 @@ void W5500Interface::Spin(bool full)
 			}
 			else
 			{
-//				debugPrintf("Lost phy link\n");
+				debugPrintf("Lost phy link\n");
 				DHCP_stop();
 				TerminateSockets();
 				state = NetworkState::establishingLink;
@@ -369,6 +369,7 @@ void W5500Interface::Spin(bool full)
 	case NetworkState::connected:
 		if (full)
 		{
+			debugPrintf("\nFULL\n");
 			InitSockets();
 			platform.MessageF(LogMessage, "Network running, IP address = %s\n", IP4String(ipAddress).c_str());
 			state = NetworkState::active;
@@ -411,7 +412,7 @@ void W5500Interface::Spin(bool full)
 			}
 			else if (full)
 			{
-//				debugPrintf("Lost phy link\n");
+				debugPrintf("Lost phy link 2!\n");
 				if (usingDhcp)
 				{
 					DHCP_stop();

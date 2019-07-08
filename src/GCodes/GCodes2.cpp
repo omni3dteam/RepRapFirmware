@@ -7,6 +7,7 @@
  *  This file contains the code to see what G, M or T command we have and start processing it.
  */
 
+#include "Mikrotik.h"
 #include "GCodes.h"
 
 #include "GCodeBuffer.h"
@@ -4215,6 +4216,27 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			reply.copy("No tool selected");
 		}
 		break;
+	case 720:
+		if (gb.Seen('C'))
+		{
+			//reprap.GetMikrotikInstance().Run(gb.GetUIValue());
+		}
+		break;
+
+	case 724:
+		{
+			uint32_t before = millis();
+
+			//#warning "How to return an error???"
+			char uptime[MIKROTIK_MAX_ANSWER] = { 0 };
+			reprap.GetMikrotikInstance().GetUpTime( uptime );
+			reply.printf("Uptime: %s", uptime );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time of M724: %ims\n", (int)(after - before) );
+		}
+		break;
+
 
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension

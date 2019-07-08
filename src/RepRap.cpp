@@ -183,6 +183,7 @@ RepRap::RepRap() : toolList(nullptr), currentTool(nullptr), lastWarningMillis(0)
 	OutputBuffer::Init();
 	platform = new Platform();
 	network = new Network(*platform);
+	mikrotik = new Mikrotik();
 	gCodes = new GCodes(*platform);
 	move = new Move();
 	heat = new Heat(*platform);
@@ -315,6 +316,7 @@ void RepRap::Init()
 
 	// Enable network (unless it's disabled)
 	network->Activate();			// need to do this here, as the configuration GCodes may set IP address etc.
+	mikrotik->Activate();
 
 #if HAS_HIGH_SPEED_SD
 	hsmci_set_idle_func(hsmciIdle);
