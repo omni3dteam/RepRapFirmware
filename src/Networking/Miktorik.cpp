@@ -81,6 +81,7 @@ bool Mikrotik::GetUpTime( char *buffer )
 }
 
 
+// https://wiki.mikrotik.com/wiki/Manual:Making_a_simple_wireless_AP
 bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 {
 	DisableWirelessNetwork( !is5G );
@@ -124,9 +125,9 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 
 	char sp[50] = "=security-profile=";
 	if ( pass == NULL )
-		strcat( sp, "default" );
+		strcat( sp, SP_DEFAULT );
 	else
-		strcat( sp, "omni" );
+		strcat( sp, SP_MODE_ACCESS_POINT );
 
 	addWordToSentence( &stSentence, sp );
 
@@ -136,6 +137,64 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 	while( isRequestWaiting );
 
 	// 3. TODO Analyze router response
+	clearSentence( &stSentence );
+
+	EnableWirelessNetwork( is5G );
+	SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "done" );
+	return true;
+}
+
+
+// https://wiki.mikrotik.com/wiki/Manual:Wireless_AP_Client#Additional_Station_Configuration
+bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, bool is5G )
+{
+	DisableWirelessNetwork( !is5G );
+
+	// 0. PRECONFIG ROUTER
+
+	if ( pass != NULL )
+		if ( !changeWiFiStationPass( pass ) )
+		{
+			SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
+			debugPrintf( "ERROR: %s\n", answer );
+			return false;
+		}
+
+	// 1. PREPARE REQUEST
+
+	// initialize first sentence
+	initializeSentence( &stSentence );
+
+	// wlan1 is 2G, wlan2 - 5G
+	int interfaceNum = is5G ? 2 : 1;
+	char wlanID[20];
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=wlan%i", interfaceNum );
+
+	char networkName[MIKROTIK_MAX_ANSWER];
+	SafeSnprintf( networkName, sizeof( networkName ), "=ssid=%s", ssid );
+
+	const char *cmd[] = { "/interface/wireless/set", "=mode=station" };
+
+	addWordToSentence( &stSentence, cmd[0] );
+	addWordToSentence( &stSentence, wlanID );
+	addWordToSentence( &stSentence, networkName );
+	addWordToSentence( &stSentence, cmd[1] );
+
+	char sp[50] = "=security-profile=";
+	if ( pass == NULL )
+		strcat( sp, SP_DEFAULT );
+	else
+		strcat( sp, SP_MODE_STATION );
+
+	addWordToSentence( &stSentence, sp );
+
+	// 2. WAIT FOR EXECUTION
+
+	isRequestWaiting = true;
+	while( isRequestWaiting );
+
+	// 3. TODO Analyze router response
+
 	clearSentence( &stSentence );
 
 	EnableWirelessNetwork( is5G );
@@ -350,17 +409,19 @@ bool Mikrotik::parseAnswer( const char *pSearchText )
 }
 
 
-bool Mikrotik::getSecurityProfileID( char *spID )
+bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
 {
 	// 1. PREPARE REQUEST
+	char reqSP[20];
+	SafeSnprintf( reqSP, sizeof( reqSP ), "?name=%s", mode );
 
 	// initialize first sentence
 	initializeSentence( &stSentence );
 
-	const char *cmd[] = { "/interface/wireless/security-profiles/print", "?name=omni", "=.proplist=.id" };
+	const char *cmd[] = { "/interface/wireless/security-profiles/print", "=.proplist=.id" };
 	addWordToSentence( &stSentence, cmd[0] );
+	addWordToSentence( &stSentence, reqSP );
 	addWordToSentence( &stSentence, cmd[1] );
-	addWordToSentence( &stSentence, cmd[2] );
 
 	// 2. WAIT FOR EXECUTION
 
@@ -389,7 +450,7 @@ bool Mikrotik::getSecurityProfileID( char *spID )
 bool Mikrotik::changeAccessPointPass( const char *pass )
 {
 	char spID[10] = { 0 };
-	if ( !getSecurityProfileID( spID ) )
+	if ( !getSecurityProfileID( spID, SP_MODE_ACCESS_POINT ) )
 		return false;
 
 	const char cmd[] = "/interface/wireless/security-profiles/set";
@@ -403,6 +464,47 @@ bool Mikrotik::changeAccessPointPass( const char *pass )
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, id );
 	addWordToSentence( &stSentence, newPass );
+
+	// 2. WAIT FOR EXECUTION
+
+	isRequestWaiting = true;
+	while( isRequestWaiting );
+
+	// 3. TODO Analyze router response
+	clearSentence( &stSentence );
+
+	return true;
+}
+
+
+bool Mikrotik::changeWiFiStationPass( const char *pass )
+{
+	char spID[10] = { 0 };
+	if ( !getSecurityProfileID( spID, SP_MODE_STATION ) )
+		return false;
+
+	const char cmd[] = "/interface/wireless/security-profiles/set";
+
+	char id[25];
+	SafeSnprintf( id, sizeof( id ), "=.id=%s", spID );
+
+	// We have no idea about encryption type
+	// Thats why we're going to set all pass types in security profile
+
+	char wpaPass[100];
+	SafeSnprintf( wpaPass, sizeof( wpaPass ), "=wpa2-pre-shared-key=%s", pass );
+
+	char wpa2Pass[100];
+	SafeSnprintf( wpa2Pass, sizeof( wpa2Pass ), "=wpa2-pre-shared-key=%s", pass );
+
+	char supplicantPass[100];
+	SafeSnprintf( supplicantPass, sizeof( supplicantPass ), "=supplicant-identity=%s", pass );
+
+	addWordToSentence( &stSentence, cmd );
+	addWordToSentence( &stSentence, id );
+	addWordToSentence( &stSentence, wpaPass );
+	addWordToSentence( &stSentence, wpa2Pass );
+	addWordToSentence( &stSentence, supplicantPass );
 
 	// 2. WAIT FOR EXECUTION
 

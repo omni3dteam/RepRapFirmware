@@ -14,6 +14,11 @@ extern "C"
 #define MIKROTIK_MAX_ANSWER	100
 #define MIKROTIK_SOCK_NUM	(uint8_t)5
 
+// Security profile names
+#define SP_DEFAULT			    "default"
+#define SP_MODE_ACCESS_POINT	"omni_AP"
+#define SP_MODE_STATION			"omni_station"
+
 class Mikrotik
 {
 public:
@@ -25,6 +30,7 @@ public:
 	bool GetUpTime( char *buffer );
 
 	bool CreateAP( const char *ssid, const char *pass, bool is5G );
+	bool ConnectToWiFi( const char *ssid, const char *pass, bool is5G );
 
 	bool EnableWirelessNetwork( bool is5G );
 	bool DisableWirelessNetwork( bool is5G );
@@ -48,8 +54,9 @@ private:
 
 	bool parseAnswer( const char *pReqVal );
 
-	bool getSecurityProfileID( char *spID );
+	bool getSecurityProfileID( char *spID, const char *mode );
 	bool changeAccessPointPass( const char *pass );
+	bool changeWiFiStationPass( const char *pass );
 };
 
 #endif

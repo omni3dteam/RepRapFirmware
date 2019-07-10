@@ -4241,7 +4241,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", false );
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d", "Omn!p@ss", false );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4252,7 +4252,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", true );
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d5", "Omn!p@ss", true );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4263,7 +4263,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().DisableWirelessNetwork( false );
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", false );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4271,6 +4271,28 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			break;
 
 	case 728:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", true );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 729:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().DisableWirelessNetwork( false );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 730:
 			{
 				uint32_t before = millis();
 
