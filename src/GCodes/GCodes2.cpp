@@ -4233,9 +4233,53 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			reply.printf("Uptime: %s", uptime );
 
 			uint32_t after = millis();
-			debugPrintf( "Execution time of M724: %ims\n", (int)(after - before) );
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
 		}
 		break;
+
+	case 725:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", false );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 726:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", true );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 727:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().DisableWirelessNetwork( false );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 728:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().DisableWirelessNetwork( true );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
 
 
 #if SUPPORT_SCANNER

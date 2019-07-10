@@ -12,6 +12,7 @@ extern "C"
 #define IP_V4_TEXT_MAXLEN	17
 #define MAC_TEXT_MAXLEN		18
 #define MIKROTIK_MAX_ANSWER	100
+#define MIKROTIK_SOCK_NUM	(uint8_t)5
 
 class Mikrotik
 {
@@ -23,26 +24,32 @@ public:
 	bool GetNetworkParams( char *ip, char *mask, char *gw );
 	bool GetUpTime( char *buffer );
 
+	bool CreateAP( const char *ssid, const char *pass, bool is5G );
+
+	bool EnableWirelessNetwork( bool is5G );
+	bool DisableWirelessNetwork( bool is5G );
+
 	volatile bool isRequestWaiting;
 
 private:
-	uint8_t socket = 5;
 	bool isLogged    = false;
 	bool isConnected = false;
 
 	// Mikrotik variables
 	struct Sentence stSentence;
-	struct Block stBlock;
+	struct Block    stBlock;
 
 	char answer[MIKROTIK_MAX_ANSWER];
-	uint16_t answSize;
 
 	bool Connect( uint8_t *d_ip, uint16_t d_port );
 	void Disconnect();
 	bool Login();
 	bool ProcessRequest();
 
-	void TestN();
+	bool parseAnswer( const char *pReqVal );
+
+	bool getSecurityProfileID( char *spID );
+	bool changeAccessPointPass( const char *pass );
 };
 
 #endif

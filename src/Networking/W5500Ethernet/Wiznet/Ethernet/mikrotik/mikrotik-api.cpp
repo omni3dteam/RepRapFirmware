@@ -319,17 +319,10 @@ void writeSentence( int fdSock, struct Sentence *stWriteSentence )
     int iIndex;
 
     if ( stWriteSentence->iLength == 0 )
-    {
         return;
-    }
-
-//    // ? //Printf( "Writing sentence\n" ) : 0;
-//    // ? printSentence( stWriteSentence ) : 0;
 
     for ( iIndex = 0; iIndex < stWriteSentence->iLength; iIndex++ )
-    {
         writeWord( fdSock, stWriteSentence->szSentence[iIndex] );
-    }
 
     writeWord( fdSock, "" );
 }
@@ -575,6 +568,7 @@ struct Block readBlock( int fdSock )
     {
         stSentence = readSentence( fdSock );
         // ? //Printf( "readSentence succeeded.\n" ) : 0;
+        printSentence( &stSentence );
 
         addSentenceToBlock( &stBlock, &stSentence );
         // ? //Printf( "addSentenceToBlock succeeded\n" ) : 0;
