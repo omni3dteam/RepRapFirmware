@@ -6,7 +6,7 @@
 constexpr size_t ClientStackWords = 550;
 static Task<ClientStackWords> clientTask;
 
-static const char *pIface[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+static const char *IFACE_NAME_TABLE[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 
 Mikrotik::Mikrotik() : isRequestWaiting(false)
@@ -86,10 +86,17 @@ bool Mikrotik::GetUpTime( char *buffer )
 // https://wiki.mikrotik.com/wiki/Manual:Making_a_simple_wireless_AP
 bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 {
+	// Only WiFi allowed here
 	if ( iface == ether1 )
 		return false;
 
-	DisableWirelessNetwork( iface );
+	DisableWirelessNetwork( iface == wifi5g ? wifi2g : wifi5g );
+
+	if( !SetDhcpState( iface, Disabled, DhcpClient ) )
+		return false;
+
+	if( !SetDhcpState( iface, Enabled, DhcpServer ) )
+		return false;
 
 	// 0. PRECONFIG ROUTER
 
@@ -107,7 +114,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 	initializeSentence( &stSentence );
 
 	char wlanID[20];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
 
 	char band[50];
 	if ( iface == wifi2g )
@@ -151,12 +158,19 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 // https://wiki.mikrotik.com/wiki/Manual:Wireless_AP_Client#Additional_Station_Configuration
 bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface iface )
 {
+	// Only WiFi allowed here
 	if ( iface == ether1 )
 		return false;
 
-	DisableWirelessNetwork( iface );
+	DisableWirelessNetwork( iface == wifi5g ? wifi2g : wifi5g );
 
-	// 0. PRECONFIG ROUTER
+	if( !SetDhcpState( iface, Disabled, DhcpServer ) )
+		return false;
+
+	if( !SetDhcpState( iface, Enabled, DhcpClient ) )
+		return false;
+
+	// PRECONFIG ROUTER
 
 	if ( pass != NULL )
 		if ( !changeWiFiStationPass( pass ) )
@@ -172,7 +186,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
 	initializeSentence( &stSentence );
 
 	char wlanID[20];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
 
 	char networkName[MIKROTIK_MAX_ANSWER];
 	SafeSnprintf( networkName, sizeof( networkName ), "=ssid=%s", ssid );
@@ -219,7 +233,7 @@ bool Mikrotik::EnableWirelessNetwork( TInterface iface )
 	const char cmd[] = "/interface/wireless/enable";
 
 	char wlanID[15];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
 
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, wlanID );
@@ -238,7 +252,14 @@ bool Mikrotik::EnableWirelessNetwork( TInterface iface )
 
 bool Mikrotik::DisableWirelessNetwork( TInterface iface )
 {
+	// Only WiFi allowed
 	if ( iface == ether1 )
+		return false;
+
+	if( !SetDhcpState( iface, Disabled, DhcpServer ) )
+		return false;
+
+	if( !SetDhcpState( iface, Disabled, DhcpClient ) )
 		return false;
 
 	// 1. PREPARE REQUEST
@@ -249,7 +270,7 @@ bool Mikrotik::DisableWirelessNetwork( TInterface iface )
 
 	// wlan1 is 2G, wlan2 - 5G
 	char wlanID[15];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
 
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, wlanID );
@@ -261,6 +282,94 @@ bool Mikrotik::DisableWirelessNetwork( TInterface iface )
 
 	// 3. TODO Analyze router response
 	clearSentence( &stSentence );
+	return true;
+}
+
+
+// Router has few preconfigured DHCP-client params for ethernet and wifi ifaces
+bool Mikrotik::SetDhcpState( TInterface iface, TEnableState state, TDhcpMode dhcpMode )
+{
+	// Only WiFi allowed here
+	if ( iface == ether1 )
+		return false;
+
+	char id[10] = { 0 };
+	if ( !getDhcpID( id, iface, dhcpMode ) )
+		return false;
+
+	// 1. PREPARE REQUEST
+
+	initializeSentence( &stSentence );
+
+	const char *cmdServer = "/ip/dhcp-server/set";
+	const char *cmdClient = "/ip/dhcp-client/set";
+
+	char cmdWlanId[30];
+	SafeSnprintf( cmdWlanId, sizeof( cmdWlanId ), "=.id=%s", id );
+
+	char cmdState[30];
+	SafeSnprintf( cmdState, sizeof( cmdState ), "=disabled=%s", state == Enabled ? "false" : "true" );
+
+	addWordToSentence( &stSentence, dhcpMode == DhcpServer ? cmdServer : cmdClient );
+	addWordToSentence( &stSentence, cmdWlanId );
+	addWordToSentence( &stSentence, cmdState );
+
+	// 2. WAIT FOR EXECUTION
+
+	isRequestWaiting = true;
+	while( isRequestWaiting );
+
+	// 3. TODO Analyze router response
+	clearSentence( &stSentence );
+
+	return true;
+}
+
+
+bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState )
+{
+	// Only WiFi allowed here
+	if ( iface == ether1 )
+		return false;
+
+	// 1. PREPARE REQUEST
+
+	initializeSentence( &stSentence );
+
+	const char *cmdServer = "/ip/dhcp-server/print";
+	const char *cmdClient = "/ip/dhcp-client/print";
+
+	char cmdWlan[30];
+	SafeSnprintf( cmdWlan, sizeof( cmdWlan ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+
+	char cmdOpt[30];
+	SafeSnprintf( cmdOpt, sizeof( cmdOpt ), "=.proplist=disabled" );
+
+	addWordToSentence( &stSentence, dhcpMode == DhcpServer ? cmdServer : cmdClient );
+	addWordToSentence( &stSentence, cmdWlan );
+	addWordToSentence( &stSentence, cmdOpt );
+
+	// 2. WAIT FOR EXECUTION
+
+	isRequestWaiting = true;
+	while( isRequestWaiting );
+
+
+	// 3. PROCESS ANSWER
+
+	bool success = parseAnswer( "disabled" );
+	clearSentence( &stSentence );
+
+	if ( !success )
+		return false;
+
+	if ( strstr( answer, "false" ) )
+		*pState = Enabled;
+	else if ( strstr( answer, "true" ) )
+		*pState = Disabled;
+	else
+		return false;
+
 	return true;
 }
 
@@ -416,6 +525,47 @@ bool Mikrotik::parseAnswer( const char *pSearchText )
 }
 
 
+bool Mikrotik::getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode )
+{
+	// 1. PREPARE REQUEST
+	char cmdIface[20];
+	SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+
+	// initialize first sentence
+	initializeSentence( &stSentence );
+
+	const char *cmdServer = "/ip/dhcp-server/print";
+	const char *cmdClient = "/ip/dhcp-client/print";
+	const char *cmdOpt = "=.proplist=.id";
+
+	addWordToSentence( &stSentence, dhcpMode == DhcpServer ? cmdServer : cmdClient );
+	addWordToSentence( &stSentence, cmdIface );
+	addWordToSentence( &stSentence, cmdOpt );
+
+	// 2. WAIT FOR EXECUTION
+
+	isRequestWaiting = true;
+	while( isRequestWaiting );
+
+	// 3. PROCESS ANSWER
+
+	// Extract security profile ID from answer
+
+	bool success = parseAnswer( ".id" );
+
+	if ( success )
+	{
+		strcpy( pID, answer );
+		debugPrintf( "%s() - id is %s\n", __func__, pID );
+	}
+	else
+		debugPrintf( "%s() - id not found\n", __func__ );
+
+	clearSentence( &stSentence );
+	return success;
+}
+
+
 bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
 {
 	// 1. PREPARE REQUEST
@@ -442,10 +592,7 @@ bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
 	bool success = parseAnswer( ".id" );
 
 	if ( success )
-	{
 		strcpy( spID, answer );
-		debugPrintf( "%s() - id is %s\n", __func__, spID );
-	}
 	else
 		debugPrintf( "%s() - id not found\n", __func__ );
 
@@ -465,12 +612,16 @@ bool Mikrotik::changeAccessPointPass( const char *pass )
 	char id[25];
 	SafeSnprintf( id, sizeof( id ), "=.id=%s", spID );
 
-	char newPass[100];
-	SafeSnprintf( newPass, sizeof( newPass ), "=supplicant-identity=%s", pass );
+	char newPassWpa2[100];
+	SafeSnprintf( newPassWpa2, sizeof( newPassWpa2 ), "=wpa2-pre-shared-key=%s", pass );
+
+	char newPassSupplicant[100];
+	SafeSnprintf( newPassSupplicant, sizeof( newPassSupplicant ), "=supplicant-identity=%s", pass );
 
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, id );
-	addWordToSentence( &stSentence, newPass );
+	addWordToSentence( &stSentence, newPassWpa2 );
+	addWordToSentence( &stSentence, newPassSupplicant );
 
 	// 2. WAIT FOR EXECUTION
 

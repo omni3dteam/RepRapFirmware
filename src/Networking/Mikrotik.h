@@ -33,8 +33,14 @@ typedef enum
 
 typedef enum
 {
-	disabled = 0,
-	enabled
+	DhcpServer = 0,
+	DhcpClient
+} TDhcpMode;
+
+typedef enum
+{
+	Disabled = 0,
+	Enabled
 } TEnableState;
 
 
@@ -55,6 +61,9 @@ public:
 	bool EnableWirelessNetwork( TInterface iface );
 	bool DisableWirelessNetwork( TInterface iface );
 
+	bool SetDhcpState( TInterface iface, TEnableState state, TDhcpMode dhcpMode );
+	bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
+
 	volatile bool isRequestWaiting;
 
 private:
@@ -74,7 +83,9 @@ private:
 
 	bool parseAnswer( const char *pReqVal );
 
+	bool getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode );
 	bool getSecurityProfileID( char *spID, const char *mode );
+
 	bool changeAccessPointPass( const char *pass );
 	bool changeWiFiStationPass( const char *pass );
 };
