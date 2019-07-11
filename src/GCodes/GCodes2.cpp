@@ -4241,7 +4241,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d", "Omn!p@ss", false );
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d", "Omn!p@ss", wifi2g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4252,7 +4252,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d5", "Omn!p@ss", true );
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d5", "Omn!p@ss", wifi5g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4263,7 +4263,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", false );
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", wifi2g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4274,7 +4274,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", true );
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", wifi5g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4285,7 +4285,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().DisableWirelessNetwork( false );
+				reprap.GetMikrotikInstance().DisableWirelessNetwork( wifi2g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4296,7 +4296,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().DisableWirelessNetwork( true );
+				reprap.GetMikrotikInstance().DisableWirelessNetwork( wifi5g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );

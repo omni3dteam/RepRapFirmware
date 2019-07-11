@@ -6,6 +6,8 @@
 constexpr size_t ClientStackWords = 550;
 static Task<ClientStackWords> clientTask;
 
+static const char *pIface[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+
 
 Mikrotik::Mikrotik() : isRequestWaiting(false)
 {
@@ -82,9 +84,12 @@ bool Mikrotik::GetUpTime( char *buffer )
 
 
 // https://wiki.mikrotik.com/wiki/Manual:Making_a_simple_wireless_AP
-bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
+bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 {
-	DisableWirelessNetwork( !is5G );
+	if ( iface == ether1 )
+		return false;
+
+	DisableWirelessNetwork( iface );
 
 	// 0. PRECONFIG ROUTER
 
@@ -101,13 +106,11 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 	// initialize first sentence
 	initializeSentence( &stSentence );
 
-	// wlan1 is 2G, wlan2 - 5G
-	int interfaceNum = is5G ? 2 : 1;
 	char wlanID[20];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=wlan%i", interfaceNum );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
 
 	char band[50];
-	if ( is5G )
+	if ( iface == wifi2g )
 		SafeSnprintf( band, sizeof( band ), "%s", "=band=2ghz-b/g/n" );
 	else
 		SafeSnprintf( band, sizeof( band ), "%s", "=band=5ghz-a/n/ac" );
@@ -115,13 +118,14 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 	char apName[MIKROTIK_MAX_ANSWER];
 	SafeSnprintf( apName, sizeof( apName ), "=ssid=%s", ssid );
 
-	const char *cmd[] = { "/interface/wireless/set", "=frequency=auto", "=mode=ap-bridge" };
+	const char *cmd[] = { "/interface/wireless/set", "=frequency=auto", "=mode=ap-bridge", "=disabled=false" };
 
 	addWordToSentence( &stSentence, cmd[0] );
 	addWordToSentence( &stSentence, wlanID );
 	addWordToSentence( &stSentence, apName );
 	addWordToSentence( &stSentence, cmd[1] );
 	addWordToSentence( &stSentence, cmd[2] );
+	addWordToSentence( &stSentence, cmd[3] );
 
 	char sp[50] = "=security-profile=";
 	if ( pass == NULL )
@@ -139,16 +143,18 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, bool is5G )
 	// 3. TODO Analyze router response
 	clearSentence( &stSentence );
 
-	EnableWirelessNetwork( is5G );
 	SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "done" );
 	return true;
 }
 
 
 // https://wiki.mikrotik.com/wiki/Manual:Wireless_AP_Client#Additional_Station_Configuration
-bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, bool is5G )
+bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface iface )
 {
-	DisableWirelessNetwork( !is5G );
+	if ( iface == ether1 )
+		return false;
+
+	DisableWirelessNetwork( iface );
 
 	// 0. PRECONFIG ROUTER
 
@@ -165,20 +171,19 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, bool is5G )
 	// initialize first sentence
 	initializeSentence( &stSentence );
 
-	// wlan1 is 2G, wlan2 - 5G
-	int interfaceNum = is5G ? 2 : 1;
 	char wlanID[20];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=wlan%i", interfaceNum );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
 
 	char networkName[MIKROTIK_MAX_ANSWER];
 	SafeSnprintf( networkName, sizeof( networkName ), "=ssid=%s", ssid );
 
-	const char *cmd[] = { "/interface/wireless/set", "=mode=station" };
+	const char *cmd[] = { "/interface/wireless/set", "=mode=station", "=disabled=false" };
 
 	addWordToSentence( &stSentence, cmd[0] );
 	addWordToSentence( &stSentence, wlanID );
 	addWordToSentence( &stSentence, networkName );
 	addWordToSentence( &stSentence, cmd[1] );
+	addWordToSentence( &stSentence, cmd[2] );
 
 	char sp[50] = "=security-profile=";
 	if ( pass == NULL )
@@ -197,24 +202,24 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, bool is5G )
 
 	clearSentence( &stSentence );
 
-	EnableWirelessNetwork( is5G );
 	SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "done" );
 	return true;
 }
 
 
-bool Mikrotik::EnableWirelessNetwork( bool is5G )
+bool Mikrotik::EnableWirelessNetwork( TInterface iface )
 {
+	if ( iface == ether1 )
+		return false;
+
 	// 1. PREPARE REQUEST
 
 	initializeSentence( &stSentence );
 
 	const char cmd[] = "/interface/wireless/enable";
 
-	// wlan1 is 2G, wlan2 - 5G
-	int interfaceNum = is5G ? 2 : 1;
 	char wlanID[15];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=wlan%i", interfaceNum );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
 
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, wlanID );
@@ -231,8 +236,11 @@ bool Mikrotik::EnableWirelessNetwork( bool is5G )
 }
 
 
-bool Mikrotik::DisableWirelessNetwork( bool is5G )
+bool Mikrotik::DisableWirelessNetwork( TInterface iface )
 {
+	if ( iface == ether1 )
+		return false;
+
 	// 1. PREPARE REQUEST
 
 	initializeSentence( &stSentence );
@@ -240,9 +248,8 @@ bool Mikrotik::DisableWirelessNetwork( bool is5G )
 	const char cmd[] = "/interface/wireless/disable";
 
 	// wlan1 is 2G, wlan2 - 5G
-	int interfaceNum = is5G ? 2 : 1;
 	char wlanID[15];
-	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=wlan%i", interfaceNum );
+	SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", pIface[iface] );
 
 	addWordToSentence( &stSentence, cmd );
 	addWordToSentence( &stSentence, wlanID );

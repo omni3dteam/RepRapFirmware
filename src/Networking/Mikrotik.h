@@ -19,6 +19,26 @@ extern "C"
 #define SP_MODE_ACCESS_POINT	"omni_AP"
 #define SP_MODE_STATION			"omni_station"
 
+// Router interface names
+#define IFACE_ETHERNET	"ether1"
+#define IFACE_WIFI2G	"wlan1"
+#define IFACE_WIFI5G	"wlan2"
+
+typedef enum
+{
+	ether1 = 0,
+	wifi2g,
+	wifi5g
+} TInterface;
+
+typedef enum
+{
+	disabled = 0,
+	enabled
+} TEnableState;
+
+
+// @todo Refactor ---> 'Singleton'
 class Mikrotik
 {
 public:
@@ -29,11 +49,11 @@ public:
 	bool GetNetworkParams( char *ip, char *mask, char *gw );
 	bool GetUpTime( char *buffer );
 
-	bool CreateAP( const char *ssid, const char *pass, bool is5G );
-	bool ConnectToWiFi( const char *ssid, const char *pass, bool is5G );
+	bool CreateAP( const char *ssid, const char *pass, TInterface iface );
+	bool ConnectToWiFi( const char *ssid, const char *pass, TInterface iface );
 
-	bool EnableWirelessNetwork( bool is5G );
-	bool DisableWirelessNetwork( bool is5G );
+	bool EnableWirelessNetwork( TInterface iface );
+	bool DisableWirelessNetwork( TInterface iface );
 
 	volatile bool isRequestWaiting;
 
