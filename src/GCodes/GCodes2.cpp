@@ -236,7 +236,7 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				break;
 
 			case 1:		// load height map file
-				result = LoadHeightMap(gb, reply);
+				result = LoadHeightMap(gb, reply, false);
 				break;
 
 			case 2:		// clear height map
@@ -2647,7 +2647,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			return false;
 		}
-		result = LoadHeightMap(gb, reply);
+		result = LoadHeightMap(gb, reply, true);
 		break;
 
 	case 376: // Set taper height

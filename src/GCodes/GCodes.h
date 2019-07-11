@@ -392,7 +392,7 @@ private:
 
 	GCodeResult SetOrReportZProbe(GCodeBuffer& gb, const StringRef &reply);		// Handle M558
 	GCodeResult DefineGrid(GCodeBuffer& gb, const StringRef &reply);			// Define the probing grid, returning true if error
-	GCodeResult LoadHeightMap(GCodeBuffer& gb, const StringRef& reply);			// Load the height map from file
+	GCodeResult LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool showMissingFileError);			// Load the height map from file
 	bool TrySaveHeightMap(const char *filename, const StringRef& reply) const;	// Save the height map to the specified file
 	GCodeResult SaveHeightMap(GCodeBuffer& gb, const StringRef& reply) const;	// Save the height map to the file specified by P parameter
 	void ClearBedMapping();														// Stop using bed compensation

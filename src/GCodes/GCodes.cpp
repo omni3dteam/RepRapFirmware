@@ -3648,7 +3648,7 @@ GCodeResult GCodes::ProbeGrid(GCodeBuffer& gb, const StringRef& reply)
 	return GCodeResult::ok;
 }
 
-GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply)
+GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool showMissingFileError)
 {
 	ClearBedMapping();
 
@@ -3663,25 +3663,30 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply)
 	FileStore * const f = platform.OpenSysFile(heightMapFileName.c_str(), OpenMode::read);
 	if (f == nullptr)
 	{
-		reply.printf("Height map file %s not found", heightMapFileName.c_str());
-		return GCodeResult::error;
+		if (showMissingFileError == true)
+		{
+			reply.printf("Height map file %s not found", heightMapFileName.c_str());
+			return GCodeResult::error;
+		}
 	}
-
-	reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
-	const bool err = reprap.GetMove().LoadHeightMapFromFile(f, reply);
-	f->Close();
-	reprap.GetMove().UseMesh(!err);
-
-	if (err)
+	else
 	{
-		return GCodeResult::error;
-	}
+		reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
+		const bool err = reprap.GetMove().LoadHeightMapFromFile(f, reply);
+		f->Close();
+		reprap.GetMove().UseMesh(!err);
 
-	reply.Clear();						// get rid of the error message
-	if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
-	{
-		reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
-		return GCodeResult::warning;
+		if (err)
+		{
+			return GCodeResult::error;
+		}
+
+		reply.Clear();						// get rid of the error message
+		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
+		{
+			reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
+			return GCodeResult::warning;
+		}
 	}
 
 	return GCodeResult::ok;
