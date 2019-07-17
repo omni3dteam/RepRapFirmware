@@ -4303,6 +4303,65 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			break;
 
+	case 731:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi2g, DhcpClient, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP client wifi2 ENABLED\n" );
+				else
+					debugPrintf( "DHCP client wifi2 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 732:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi5g, DhcpClient, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP client wifi5 ENABLED\n" );
+				else
+					debugPrintf( "DHCP client wifi5 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 733:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi2g, DhcpServer, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP server wifi2 ENABLED\n" );
+				else
+					debugPrintf( "DHCP server wifi2 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 734:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi5g, DhcpServer, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP server wifi5 ENABLED\n" );
+				else
+					debugPrintf( "DHCP server wifi5 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
 
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension
