@@ -282,6 +282,9 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     if ( ( iface == ether1 ) && ( dhcpMode == DhcpServer ) )
         return false;
 
+    if ( state == Enabled )
+    	RemoveStaticIP( iface );
+
     char id[10] = {0};
     if ( !getDhcpID( id, iface, dhcpMode ) )
         return false;
@@ -354,6 +357,57 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
 }
 
 
+//! @todo FINISH
+bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip )
+{
+	if ( GetInterfaceIP( iface, ip, true ) )
+		return true;
+
+	return ( GetInterfaceIP( iface, ip, false ) );
+}
+
+
+//! @todo FINISH
+bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
+{
+    // 1. PREPARE REQUEST
+    char cmdIface[20];
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+
+    const char *cmd        = "/ip/address/print";
+    const char *cmdDynamic = "?dynamic=true";
+    const char *cmdStatic  = "?dynamic=false";
+    const char *cmdOpt     = "=.proplist=address";
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd, &mkSentence );
+    add_word_to_sentence( cmdIface, &mkSentence );
+    add_word_to_sentence( isStatic ? cmdStatic : cmdDynamic, &mkSentence );
+    add_word_to_sentence( cmdOpt, &mkSentence );
+
+	// 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;
+
+    // Extract security profile ID from answer
+    bool success = parseAnswer( "address" );
+    if ( success )
+        strcpy( ip, answer );
+
+    return success;
+}
+
+
+bool Mikrotik::RemoveStaticIP( TInterface iface )
+{
+	return false;
+}
+
+
+//! @todo FINISH
 void Mikrotik::ExecuteRequest()
 {
 	isRequestWaiting = true;
@@ -597,6 +651,39 @@ bool Mikrotik::IsRequestSuccessful()
     } while ( pWord );
 
     return false;
+}
+
+
+//! @todo TEST
+bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
+{
+    // 1. PREPARE REQUEST
+    char cmdIface[20];
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+
+    const char *cmd    = "/ip/address/print";
+    const char *cmdDyn = "?dynamic=false";
+    const char *cmdOpt = "=.proplist=.id";
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,      &mkSentence );
+    add_word_to_sentence( cmdIface, &mkSentence );
+    add_word_to_sentence( cmdDyn,   &mkSentence );
+    add_word_to_sentence( cmdOpt,   &mkSentence );
+
+	// 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;
+
+    // Extract security profile ID from answer
+    bool success = parseAnswer( ".id" );
+    if ( success )
+        strcpy( pID, answer );
+
+    return success;
 }
 
 

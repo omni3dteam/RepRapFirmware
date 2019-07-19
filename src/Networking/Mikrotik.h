@@ -71,13 +71,20 @@ public:
 
 //    bool GetNetworkParams( char *ip, char *mask, char *gw );
     bool GetUpTime( char *buffer );
+
     bool ConnectToEthernet();
     bool CreateAP( const char *ssid, const char *pass, TInterface iface );
     bool ConnectToWiFi( const char *ssid, const char *pass, TInterface iface );
+
     bool EnableInterface( TInterface iface );
     bool DisableInterface( TInterface iface );
+
     bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );
     bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
+
+    bool GetInterfaceIP( TInterface iface, char *ip );
+    bool GetInterfaceIP( TInterface iface, char *ip, bool isStatic );
+    bool RemoveStaticIP( TInterface iface );
 
     void ExecuteRequest();
 
@@ -109,6 +116,7 @@ private:
     bool IsRequestSuccessful();
     bool parseAnswer( const char *pReqVal );
 
+    bool getStaticIpId( char *pID, TInterface iface );
     bool getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode );
     bool getSecurityProfileID( char *spID, const char *mode );
     bool changeAccessPointPass( const char *pass );
