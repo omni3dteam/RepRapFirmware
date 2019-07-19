@@ -316,7 +316,6 @@ void RepRap::Init()
 
 	// Enable network (unless it's disabled)
 	network->Activate();			// need to do this here, as the configuration GCodes may set IP address etc.
-	mikrotik->Activate();
 
 #if HAS_HIGH_SPEED_SD
 	hsmci_set_idle_func(hsmciIdle);

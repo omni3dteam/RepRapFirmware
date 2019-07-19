@@ -68,21 +68,23 @@ public:
     Mikrotik();
 
 	void Spin();
-	void Activate();
 
 //    bool GetNetworkParams( char *ip, char *mask, char *gw );
     bool GetUpTime( char *buffer );
+    bool ConnectToEthernet();
     bool CreateAP( const char *ssid, const char *pass, TInterface iface );
     bool ConnectToWiFi( const char *ssid, const char *pass, TInterface iface );
-    bool EnableWirelessNetwork( TInterface iface );
-    bool DisableWirelessNetwork( TInterface iface );
-    bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );  // @todo Refactor swap 2 and 3
+    bool EnableInterface( TInterface iface );
+    bool DisableInterface( TInterface iface );
+    bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );
     bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
 
-    volatile bool isRequestWaiting;
+    void ExecuteRequest();
 
 private:
-    volatile bool isLogged = false;
+    volatile bool isRequestWaiting = false;
+
+    volatile bool isLogged    = false;
     volatile bool isConnected = false;
 
     volatile int iLittleEndian;

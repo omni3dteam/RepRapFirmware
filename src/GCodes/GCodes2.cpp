@@ -4285,7 +4285,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().DisableWirelessNetwork( wifi2g );
+				reprap.GetMikrotikInstance().DisableInterface( wifi2g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4296,7 +4296,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				uint32_t before = millis();
 
-				reprap.GetMikrotikInstance().DisableWirelessNetwork( wifi5g );
+				reprap.GetMikrotikInstance().DisableInterface( wifi5g );
 
 				uint32_t after = millis();
 				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
@@ -4360,6 +4360,20 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			else
 				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 735:
+		{
+			uint32_t before = millis();
+
+			if ( reprap.GetMikrotikInstance().ConnectToEthernet() )
+				debugPrintf( "Connected to ethernet\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
 		}
 		break;
 
