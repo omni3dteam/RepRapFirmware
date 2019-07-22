@@ -4377,6 +4377,47 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+	case 736:
+		{
+			const char *ip = "192.168.1.53/24";
+
+			if ( reprap.GetMikrotikInstance().SetStaticIP( ether1, ip ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+		}
+		break;
+
+	case 737:
+		{
+			uint32_t before = millis();
+
+			const char *ip = "192.168.1.54/24";
+
+			if ( reprap.GetMikrotikInstance().SetStaticIP( ether1, ip ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+		}
+		break;
+
+	case 738:
+		{
+			uint32_t before = millis();
+
+			if ( reprap.GetMikrotikInstance().RemoveStaticIP( ether1 ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+		}
+		break;
+
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension
 		reprap.GetScanner().Enable();

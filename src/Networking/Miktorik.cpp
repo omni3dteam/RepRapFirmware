@@ -9,7 +9,10 @@ static Task<ClientStackWords> clientTask;
 static const char *IFACE_NAME_TABLE[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 
-Mikrotik::Mikrotik()
+#define ExecuteRequest() 	isRequestWaiting = true; \
+							while( isRequestWaiting );
+
+Mikrotik::Mikrotik(): isRequestWaiting(false)
 {
 	memset( answer, 0, 1024 );
 	block = new MKTBlock();
@@ -18,11 +21,11 @@ Mikrotik::Mikrotik()
 
 void Mikrotik::Spin()
 {
-	if( !isRequestWaiting )
-		return;
-
-	ProcessRequest();
-	isRequestWaiting = false;
+	if( isRequestWaiting )
+	{
+		ProcessRequest();
+		isRequestWaiting = false;
+	}
 }
 
 
@@ -401,18 +404,76 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
 }
 
 
+bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
+{
+	if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
+		return false;
+
+	// Find interface static IP identifier
+	char sipID[15] = {0};
+	if ( !getStaticIpId( sipID, iface ) )
+		return false;
+
+	// 1. Prepare request
+	char idCmd[25] = { 0 };
+	SafeSnprintf( idCmd, sizeof( idCmd ), "=.id=%s", sipID );
+
+	const char *cmd      = "/ip/address/set";
+	const char *stateCmd = "=disabled=false";
+
+	char addrCmd[MIKROTIK_MAX_ANSWER] = { 0 };
+	SafeSnprintf( addrCmd, sizeof( addrCmd ), "=address=%s", ip );
+
+	clear_sentence( &mkSentence );
+	add_word_to_sentence( cmd,      &mkSentence );
+	add_word_to_sentence( idCmd,    &mkSentence );
+	add_word_to_sentence( addrCmd,  &mkSentence );
+	add_word_to_sentence( stateCmd, &mkSentence );
+
+	// 2. WAIT FOR EXECUTION
+	ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;
+
+    return true;
+}
+
+
 bool Mikrotik::RemoveStaticIP( TInterface iface )
 {
-	return false;
+	// Find interface static IP identifier
+	char sipID[30] = {0};
+	if ( !getStaticIpId( sipID, iface ) )
+		return false;
+
+	// Prepare request
+	const char *cmd = "/ip/address/disable";
+	char id[50];
+	SafeSnprintf( id, sizeof( id ), "=.id=%s", sipID );
+
+	clear_sentence( &mkSentence );
+	add_word_to_sentence( cmd, &mkSentence );
+	add_word_to_sentence( id,  &mkSentence );
+
+	// 2. WAIT FOR EXECUTION
+	ExecuteRequest();
+
+	// 3. CHECK ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;
+
+    return true;
 }
 
 
 //! @todo FINISH
-void Mikrotik::ExecuteRequest()
-{
-	isRequestWaiting = true;
-	while( isRequestWaiting );
-}
+//void Mikrotik::ExecuteRequest()
+//{
+//	isRequestWaiting = true;
+//	while( isRequestWaiting );
+//}
 
 
 bool Mikrotik::Connect( uint8_t *d_ip, uint16_t d_port )
@@ -642,23 +703,24 @@ bool Mikrotik::parseAnswer( const char *pSearchText )
 bool Mikrotik::IsRequestSuccessful()
 {
     const char* pWord = block->GetFirstWord();
-    do
+
+    while ( pWord )
     {
+    	//debugPrintf( "Answer word: %s\n", pWord );
         if ( strstr( pWord, "!done" ) == pWord )
             return true;
 
         pWord = block->GetNextWord( pWord );
-    } while ( pWord );
+    }
 
     return false;
 }
 
 
-//! @todo TEST
 bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
 {
     // 1. PREPARE REQUEST
-    char cmdIface[20];
+    char cmdIface[50] = { 0 };
     SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
 
     const char *cmd    = "/ip/address/print";
@@ -825,6 +887,18 @@ bool Mikrotik::changeWiFiStationPass( const char *pass )
 void Mikrotik::clear_sentence( TMKSentence *pSentence )
 {
     memset( pSentence, 0, sizeof( TMKSentence ) );
+}
+
+
+void Mikrotik::print_sentence( TMKSentence *pSentence )
+{
+    if ( pSentence->length == 0 )
+        return;
+
+    for ( int i = 0; i < pSentence->length; i++ )
+        debugPrintf( "sentence[%i]: len(%i), %s\n", i, strlen(pSentence->pWord[i]), pSentence->pWord[i] );
+
+    debugPrintf( "\n" );
 }
 
 
