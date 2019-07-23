@@ -2,7 +2,11 @@
 #include <cstdio>
 #include "MKTBlock.h"
 
-#include "RepRapFirmware.h"
+#ifndef __LINUX_DBG
+    #include "RepRapFirmware.h"
+#else
+    #define debugPrintf printf
+#endif
 
 MKTBlock::MKTBlock()
 {
@@ -88,7 +92,7 @@ const char *MKTBlock::GetNextWord( const char *pCurrent )
     const char *pRes = pCurrent + strlen( pCurrent ) + 1;
 
     if ( ( *pRes == 0 ) && ( *(pRes+1) == 0 ) )
-        return NULL;
+        return nullptr;
     else
         return pRes;
 }

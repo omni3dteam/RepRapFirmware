@@ -1,8 +1,11 @@
 #ifndef SRC_NETWORKING_MIKROTIK_H_
 #define SRC_NETWORKING_MIKROTIK_H_
 
-#include "RepRapFirmware.h"
-#include "W5500Ethernet/Wiznet/Ethernet/W5500/w5500.h"
+#ifndef __LINUX_DBG
+    #include "RepRapFirmware.h"
+    #include "W5500Ethernet/Wiznet/Ethernet/W5500/w5500.h"
+    #define MIKROTIK_SOCK_NUM   (uint8_t)6
+#endif
 
 #include <string.h>
 #include <stdio.h>
@@ -11,12 +14,9 @@
 #include "md5/md5.h"
 
 
-//#define __SHOW_DEBUG	debugPrintf( "\n%s() -> %d\n\n", __func__, __LINE__ );
-
 #define IP_V4_TEXT_MAXLEN   17
 #define MAC_TEXT_MAXLEN     18
 #define MIKROTIK_MAX_ANSWER	100
-#define MIKROTIK_SOCK_NUM   (uint8_t)6
 
 // Security profile names
 #define SP_DEFAULT              "default"
@@ -27,6 +27,7 @@
 #define IFACE_ETHERNET  "ether1"
 #define IFACE_WIFI2G    "wlan1"
 #define IFACE_WIFI5G    "wlan2"
+
 
 typedef enum
 {
@@ -67,9 +68,8 @@ class Mikrotik
 public:
     Mikrotik();
 
-	void Spin();
+    void Spin();
 
-//    bool GetNetworkParams( char *ip, char *mask, char *gw );
     bool GetUpTime( char *buffer );
 
     bool ConnectToEthernet();
@@ -87,13 +87,15 @@ public:
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
 
-    //void ExecuteRequest();
-
 private:
     volatile bool isRequestWaiting = false;
 
     volatile bool isLogged    = false;
     volatile bool isConnected = false;
+
+#ifdef __LINUX_DBG
+    int MIKROTIK_SOCK_NUM = 0;
+#endif
 
     volatile int iLittleEndian;
 
@@ -102,7 +104,11 @@ private:
     char answer[MIKROTIK_MAX_ANSWER];
 
     // Connection
+#ifdef __LINUX_DBG
+    bool Connect( const char *d_ip, uint16_t d_port );
+#else
     bool Connect( uint8_t *d_ip, uint16_t d_port );
+#endif
     void Disconnect();
 
     // Authorization

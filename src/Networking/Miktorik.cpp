@@ -1,31 +1,49 @@
 #include "Mikrotik.h"
-#include "Platform.h"
-#include "RepRap.h"
-#include "W5500Ethernet/Wiznet/Ethernet/socketlib.h"
 
-constexpr size_t ClientStackWords = 550;
-static Task<ClientStackWords> clientTask;
+#ifndef __LINUX_DBG
+    #include "Platform.h"
+    #include "RepRap.h"
+    #include "W5500Ethernet/Wiznet/Ethernet/socketlib.h"
+#else
+    #include <stdio.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+    #include <string.h>
+    #include <stdlib.h>
+#endif
 
-static const char *IFACE_NAME_TABLE[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+
+static const char *IFACE_NAME_TABLE[] = {IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+
+#ifndef __LINUX_DBG
+    #define ExecuteRequest()    isRequestWaiting = true; \
+                                while( isRequestWaiting );
+#else
+    #define ExecuteRequest ProcessRequest
+    #define SafeSnprintf snprintf
+    #define debugPrintf printf
+    #define __send write
+    #define __recv( sock, buf, size ) recv( sock, buf, size, 0 )
+#endif
 
 
-#define ExecuteRequest() 	isRequestWaiting = true; \
-							while( isRequestWaiting );
-
-Mikrotik::Mikrotik(): isRequestWaiting(false)
+Mikrotik::Mikrotik() : isRequestWaiting( false )
 {
-	memset( answer, 0, 1024 );
-	block = new MKTBlock();
+    memset( answer, 0, 1024 );
+    block = new MKTBlock();
 }
 
 
 void Mikrotik::Spin()
 {
-	if( isRequestWaiting )
-	{
-		ProcessRequest();
-		isRequestWaiting = false;
-	}
+    if ( isRequestWaiting )
+    {
+        ProcessRequest();
+        isRequestWaiting = false;
+    }
 }
 
 
@@ -38,8 +56,8 @@ bool Mikrotik::GetUpTime( char *buffer )
     add_word_to_sentence( cmd[0], &mkSentence );
     add_word_to_sentence( cmd[1], &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
-	ExecuteRequest();
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
 
     // 3. PROCESS ANSWER
     if ( !IsRequestSuccessful() )
@@ -48,8 +66,8 @@ bool Mikrotik::GetUpTime( char *buffer )
     // Parse answer
     if ( !parseAnswer( "uptime" ) )
     {
-    	SafeSnprintf( buffer, MIKROTIK_MAX_ANSWER, "no answer found" );
-    	return false;
+        SafeSnprintf( buffer, MIKROTIK_MAX_ANSWER, "no answer found" );
+        return false;
     }
 
     strcpy( buffer, answer );
@@ -60,35 +78,35 @@ bool Mikrotik::GetUpTime( char *buffer )
 // Use ehter1 interface with dynamic IP
 bool Mikrotik::ConnectToEthernet()
 {
-	// Disable secondary interfaces
-	if ( !DisableInterface( wifi2g ) )
-		return false;
+    // Disable secondary interfaces
+    if ( !DisableInterface( wifi2g ) )
+        return false;
 
-	if ( !DisableInterface( wifi5g ) )
-		return false;
+    if ( !DisableInterface( wifi5g ) )
+        return false;
 
-	// Prepare DHCP client
-	if ( !SetDhcpState( ether1, DhcpClient, Enabled ) )
-		return false;
+    // Prepare DHCP client
+    if ( !SetDhcpState( ether1, DhcpClient, Enabled ) )
+        return false;
 
-	// Enable interface
-	if ( !EnableInterface( ether1 ) )
-		return false;
+    // Enable interface
+    if ( !EnableInterface( ether1 ) )
+        return false;
 
-	return true;
+    return true;
 }
 
 
 // https://wiki.mikrotik.com/wiki/Manual:Making_a_simple_wireless_AP
 bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 {
-	// 0. PREPARE ROUTER CONFIGURATION
+    // 0. PREPARE ROUTER CONFIGURATION
     // Only WiFi allowed here
     if ( iface == ether1 )
         return false;
 
     if ( !SetDhcpState( ether1, DhcpClient, Disabled ) )
-		return false;
+        return false;
 
     DisableInterface( ether1 );
     DisableInterface( iface == wifi5g ? wifi2g : wifi5g );
@@ -103,7 +121,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     {
         if ( !changeAccessPointPass( pass ) )
         {
-        	SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
+            SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
             debugPrintf( "ERROR: %s\n", answer );
             return false;
         }
@@ -115,9 +133,9 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 
     char band[50];
     if ( iface == wifi2g )
-    	SafeSnprintf( band, sizeof( band ), "%s", "=band=2ghz-b/g/n" );
+        SafeSnprintf( band, sizeof( band ), "%s", "=band=2ghz-b/g/n" );
     else
-    	SafeSnprintf( band, sizeof( band ), "%s", "=band=5ghz-a/n/ac" );
+        SafeSnprintf( band, sizeof( band ), "%s", "=band=5ghz-a/n/ac" );
 
     char apName[MIKROTIK_MAX_ANSWER];
     SafeSnprintf( apName, sizeof( apName ), "=ssid=%s", ssid );
@@ -140,7 +158,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 
     add_word_to_sentence( sp, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -155,13 +173,13 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 // https://wiki.mikrotik.com/wiki/Manual:Wireless_AP_Client#Additional_Station_Configuration
 bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface iface )
 {
-	// 0. PRECONFIG ROUTER
+    // 0. PRECONFIG ROUTER
     // Only WiFi allowed here
     if ( iface == ether1 )
         return false;
 
     if ( !SetDhcpState( ether1, DhcpClient, Disabled ) )
-		return false;
+        return false;
 
     DisableInterface( ether1 );
     DisableInterface( iface == wifi5g ? wifi2g : wifi5g );
@@ -176,7 +194,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
     {
         if ( !changeWiFiStationPass( pass ) )
         {
-        	SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
+            SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
             debugPrintf( "ERROR: %s\n", answer );
             return false;
         }
@@ -206,7 +224,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
 
     add_word_to_sentence( sp, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -233,7 +251,7 @@ bool Mikrotik::EnableInterface( TInterface iface )
     add_word_to_sentence( cmd, &mkSentence );
     add_word_to_sentence( id,  &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -246,19 +264,19 @@ bool Mikrotik::EnableInterface( TInterface iface )
 
 bool Mikrotik::DisableInterface( TInterface iface )
 {
-	// 0. Disable secondary iface services
+    // 0. Disable secondary iface services
     if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
         return false;
 
     if ( iface != ether1 )  // ether1 not supports dhcp-server mode
-		if ( !SetDhcpState( iface, DhcpServer, Disabled ) )
-			return false;
+        if ( !SetDhcpState( iface, DhcpServer, Disabled ) )
+            return false;
 
     // 1. PREPARE REQUEST
-	const char cmdWiFi[] = "/interface/wireless/disable";
-	const char cmdEht[]  = "/interface/ethernet/disable";
+    const char cmdWiFi[] = "/interface/wireless/disable";
+    const char cmdEht[]  = "/interface/ethernet/disable";
 
-	const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
+    const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
 
     char id[15];
     SafeSnprintf( id, sizeof( id ), "=.id=%s", IFACE_NAME_TABLE[iface] );
@@ -267,7 +285,7 @@ bool Mikrotik::DisableInterface( TInterface iface )
     add_word_to_sentence( cmd, &mkSentence );
     add_word_to_sentence( id,  &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -286,7 +304,7 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
         return false;
 
     if ( state == Enabled )
-    	RemoveStaticIP( iface );
+        RemoveStaticIP( iface );
 
     char id[10] = {0};
     if ( !getDhcpID( id, iface, dhcpMode ) )
@@ -307,7 +325,7 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     add_word_to_sentence( cmdWlanId, &mkSentence );
     add_word_to_sentence( cmdState,  &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -339,7 +357,7 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     add_word_to_sentence( cmdWlan, &mkSentence );
     add_word_to_sentence( cmdOpt,  &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -363,10 +381,10 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
 //! @todo FINISH
 bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip )
 {
-	if ( GetInterfaceIP( iface, ip, true ) )
-		return true;
+    if ( GetInterfaceIP( iface, ip, true ) )
+        return true;
 
-	return ( GetInterfaceIP( iface, ip, false ) );
+    return ( GetInterfaceIP( iface, ip, false ) );
 }
 
 
@@ -388,7 +406,7 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
     add_word_to_sentence( isStatic ? cmdStatic : cmdDynamic, &mkSentence );
     add_word_to_sentence( cmdOpt, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -406,32 +424,32 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
 
 bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
 {
-	if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
-		return false;
+    if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
+        return false;
 
-	// Find interface static IP identifier
-	char sipID[15] = {0};
-	if ( !getStaticIpId( sipID, iface ) )
-		return false;
+    // Find interface static IP identifier
+    char sipID[15] = {0};
+    if ( !getStaticIpId( sipID, iface ) )
+        return false;
 
-	// 1. Prepare request
-	char idCmd[25] = { 0 };
-	SafeSnprintf( idCmd, sizeof( idCmd ), "=.id=%s", sipID );
+    // 1. Prepare request
+    char idCmd[25] = { 0 };
+    SafeSnprintf( idCmd, sizeof( idCmd ), "=.id=%s", sipID );
 
-	const char *cmd      = "/ip/address/set";
-	const char *stateCmd = "=disabled=false";
+    const char *cmd      = "/ip/address/set";
+    const char *stateCmd = "=disabled=false";
 
-	char addrCmd[MIKROTIK_MAX_ANSWER] = { 0 };
-	SafeSnprintf( addrCmd, sizeof( addrCmd ), "=address=%s", ip );
+    char addrCmd[MIKROTIK_MAX_ANSWER] = { 0 };
+    SafeSnprintf( addrCmd, sizeof( addrCmd ), "=address=%s", ip );
 
-	clear_sentence( &mkSentence );
-	add_word_to_sentence( cmd,      &mkSentence );
-	add_word_to_sentence( idCmd,    &mkSentence );
-	add_word_to_sentence( addrCmd,  &mkSentence );
-	add_word_to_sentence( stateCmd, &mkSentence );
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,      &mkSentence );
+    add_word_to_sentence( idCmd,    &mkSentence );
+    add_word_to_sentence( addrCmd,  &mkSentence );
+    add_word_to_sentence( stateCmd, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
-	ExecuteRequest();
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
 
     // 3. PROCESS ANSWER
     if ( !IsRequestSuccessful() )
@@ -443,24 +461,24 @@ bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
 
 bool Mikrotik::RemoveStaticIP( TInterface iface )
 {
-	// Find interface static IP identifier
-	char sipID[30] = {0};
-	if ( !getStaticIpId( sipID, iface ) )
-		return false;
+    // Find interface static IP identifier
+    char sipID[30] = {0};
+    if ( !getStaticIpId( sipID, iface ) )
+        return false;
 
-	// Prepare request
-	const char *cmd = "/ip/address/disable";
-	char id[50];
-	SafeSnprintf( id, sizeof( id ), "=.id=%s", sipID );
+    // Prepare request
+    const char *cmd = "/ip/address/disable";
+    char id[50];
+    SafeSnprintf( id, sizeof( id ), "=.id=%s", sipID );
 
-	clear_sentence( &mkSentence );
-	add_word_to_sentence( cmd, &mkSentence );
-	add_word_to_sentence( id,  &mkSentence );
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd, &mkSentence );
+    add_word_to_sentence( id,  &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
-	ExecuteRequest();
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
 
-	// 3. CHECK ANSWER
+    // 3. CHECK ANSWER
     if ( !IsRequestSuccessful() )
         return false;
 
@@ -468,61 +486,101 @@ bool Mikrotik::RemoveStaticIP( TInterface iface )
 }
 
 
-//! @todo FINISH
-//void Mikrotik::ExecuteRequest()
-//{
-//	isRequestWaiting = true;
-//	while( isRequestWaiting );
-//}
-
-
+#ifndef __LINUX_DBG
 bool Mikrotik::Connect( uint8_t *d_ip, uint16_t d_port )
 {
-	if ( isConnected )
-		Disconnect();
+    if ( isConnected )
+        Disconnect();
 
-	const uint16_t s_port  = 1234;
-	const uint8_t protocol = Sn_MR_TCP;
+    const uint16_t s_port  = 1234;
+    const uint8_t protocol = Sn_MR_TCP;
 
-	int se = __socket( MIKROTIK_SOCK_NUM, protocol, s_port, 0 );
+    int se = __socket( MIKROTIK_SOCK_NUM, protocol, s_port, 0 );
 
-	if ( se != MIKROTIK_SOCK_NUM )
-	{
-		debugPrintf( "Socket error %i\n", se );
-		return false;
-	}
+    if ( se != MIKROTIK_SOCK_NUM )
+    {
+        debugPrintf( "Socket error %i\n", se );
+        return false;
+    }
 
-	// Set keep-alive
-	// Should be placed between socket() and connect()
-	setSn_KPALVTR( MIKROTIK_SOCK_NUM, 2 );
+    // Set keep-alive
+    // Should be placed between socket() and connect()
+    setSn_KPALVTR( MIKROTIK_SOCK_NUM, 2 );
 
-	debugPrintf( "Connecting to: %d.%d.%d.%d:%d... ", d_ip[0], d_ip[1], d_ip[2], d_ip[3], d_port );
-	int ce = __connect( MIKROTIK_SOCK_NUM, d_ip, d_port );
+    debugPrintf( "Connecting to: %d.%d.%d.%d:%d... ", d_ip[0], d_ip[1], d_ip[2], d_ip[3], d_port );
+    int ce = __connect( MIKROTIK_SOCK_NUM, d_ip, d_port );
 
-	if ( ce != SOCK_OK )
-	{
-		debugPrintf( "connection error %i\n", ce );
-		__close( MIKROTIK_SOCK_NUM );
-	}
-	else
-	{
-		debugPrintf( "CONNECTED!\n" );
-		isConnected = true;
-	}
+    if ( ce != SOCK_OK )
+    {
+        debugPrintf( "connection error %i\n", ce );
+        __close( MIKROTIK_SOCK_NUM );
+    }
+    else
+    {
+        debugPrintf( "CONNECTED!\n" );
+        isConnected = true;
+    }
+#else
+bool Mikrotik::Connect( const char *d_ip, uint16_t d_port )
+{
+    if ( isConnected )
+        Disconnect();
 
-	return isConnected;
+    int fdSock;
+    struct sockaddr_in address{};
+    int iConnectResult;
+    int iLen;
+
+    fdSock = socket( AF_INET, SOCK_STREAM, 0 );
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = inet_addr( d_ip );
+    address.sin_port = htons( d_port );
+    iLen = sizeof( address );
+
+    printf( "Connecting to %s\n", d_ip );
+
+    iConnectResult = connect( fdSock, (struct sockaddr *) &address, iLen );
+
+    if ( iConnectResult == -1 )
+    {
+        perror( "Connection problem" );
+        exit( 1 );
+    }
+    else
+    {
+        printf( "Successfully connected to %s\n", d_ip );
+    }
+
+    // determine endianness of this machine
+    // iLittleEndian will be set to 1 if we are
+    // on a little endian machine...otherwise
+    // we are assumed to be on a big endian processor
+    iLittleEndian = isLittleEndian();
+
+    MIKROTIK_SOCK_NUM = fdSock;
+    printf( "CONNECTED!\n" );
+
+    isConnected = true;
+#endif
+
+    return isConnected;
 }
 
 
 void Mikrotik::Disconnect()
 {
-	__disconnect( MIKROTIK_SOCK_NUM );
-	__close( MIKROTIK_SOCK_NUM );
+#ifndef __LINUX_DBG
+    __disconnect( MIKROTIK_SOCK_NUM );
+    __close( MIKROTIK_SOCK_NUM );
+#else
+    close( MIKROTIK_SOCK_NUM );
+#endif
 
-	isConnected = false;
-	isLogged    = false;
+    isConnected = false;
+    isLogged    = false;
 
-	debugPrintf( "\n***DISCONNECTED***\n\n" );
+    debugPrintf( "\n***DISCONNECTED***\n\n" );
 }
 
 
@@ -533,7 +591,7 @@ void Mikrotik::generateResponse( char *szMD5PasswordToSend, char *szMD5Challenge
     md5ToBinary( szMD5Challenge, szMD5ChallengeBinary );
 
     md5_state_t state;
-    char cNull[1] = {0};
+    char cNull[1] = { 0 };
     md5_byte_t digest[16] = { 0 };
 
     // get md5 of the password + challenge concatenation
@@ -602,29 +660,32 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
 
 bool Mikrotik::Login()
 {
-	// CONNECTION
-	uint8_t d_ip[] = { 192, 168, 60, 1 };
-	const uint16_t d_port = 8728;
+#ifdef __LINUX_DBG
+    const char d_ip[] = "192.168.60.1";
+#else
+    uint8_t d_ip[] = { 192, 168, 60, 1 };
+#endif
+    const uint16_t d_port = 8728;
 
-	//#warning "ACHTUNG! Default credentials!"
-	char default_username[] = "admin";
-	char default_password[] = "";
+//#warning "ACHTUNG! Default credentials!"
+    char default_username[] = "admin";
+    char default_password[] = "";
 
     const int NUM_OF_LOGIN_TRY = 5;
     for ( int i = 0; i < NUM_OF_LOGIN_TRY; i++ )
     {
-		if ( isConnected )
-			Disconnect();
+        if ( isConnected )
+            Disconnect();
 
-		isLogged = false;
+        isLogged = false;
 
-		if ( !Connect( d_ip, d_port ) )
-			return false;
+        if ( !Connect( d_ip, d_port ) )
+            return false;
 
         debugPrintf( "Login attempt %i of %i... ", i + 1, NUM_OF_LOGIN_TRY );
         if ( try_to_log_in( default_username, default_password ) )
         {
-        	debugPrintf( "success\n" );
+            debugPrintf( "success\n" );
             isLogged = true;
             break;
         }
@@ -643,20 +704,20 @@ bool Mikrotik::Login()
 // @warning Should be called INDIRECTLY from Mikrotik::Spin() <- Network::Spin() <- NetworkLoop() [RTOS TASK]
 bool Mikrotik::ProcessRequest()
 {
-	if ( !isLogged )
-		if ( !Login() )
-		{
-			SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "MIKROTIK: can't log in" );
-			return false;
-		}
+    if ( !isLogged )
+        if ( !Login() )
+        {
+            SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "MIKROTIK: can't log in" );
+            return false;
+        }
 
-	write_sentence( &mkSentence );
-	clear_sentence( &mkSentence );
+    write_sentence( &mkSentence );
+    clear_sentence( &mkSentence );
 
-	read_block();
-	block->Print();
+    read_block();
+    block->Print();
 
-	return true;
+    return true;
 }
 
 
@@ -706,7 +767,6 @@ bool Mikrotik::IsRequestSuccessful()
 
     while ( pWord )
     {
-    	//debugPrintf( "Answer word: %s\n", pWord );
         if ( strstr( pWord, "!done" ) == pWord )
             return true;
 
@@ -733,7 +793,7 @@ bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
     add_word_to_sentence( cmdDyn,   &mkSentence );
     add_word_to_sentence( cmdOpt,   &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -764,7 +824,7 @@ bool Mikrotik::getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode )
     add_word_to_sentence( cmdIface, &mkSentence );
     add_word_to_sentence( cmdOpt,   &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -793,7 +853,7 @@ bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
     add_word_to_sentence( reqSP,  &mkSentence );
     add_word_to_sentence( cmd[1], &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -832,7 +892,7 @@ bool Mikrotik::changeAccessPointPass( const char *pass )
     add_word_to_sentence( newPassWpa2,       &mkSentence );
     add_word_to_sentence( newPassSupplicant, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -873,7 +933,7 @@ bool Mikrotik::changeWiFiStationPass( const char *pass )
     add_word_to_sentence( wpa2Pass,       &mkSentence );
     add_word_to_sentence( supplicantPass, &mkSentence );
 
-	// 2. WAIT FOR EXECUTION
+    // 2. WAIT FOR EXECUTION
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
@@ -896,7 +956,7 @@ void Mikrotik::print_sentence( TMKSentence *pSentence )
         return;
 
     for ( int i = 0; i < pSentence->length; i++ )
-        debugPrintf( "sentence[%i]: len(%i), %s\n", i, strlen(pSentence->pWord[i]), pSentence->pWord[i] );
+        debugPrintf( "sentence[%i]: len(%i), %s\n", i, (int)strlen(pSentence->pWord[i]), pSentence->pWord[i] );
 
     debugPrintf( "\n" );
 }
@@ -947,7 +1007,7 @@ void Mikrotik::write_len( int iLen )
     // write 1 byte
     if ( iLen < 0x80 )
     {
-    	cEncodedLength[0] = (char) iLen;
+        cEncodedLength[0] = (char) iLen;
         __write( MIKROTIK_SOCK_NUM, cEncodedLength, 1 );
     }
     // write 2 bytes
@@ -1114,8 +1174,8 @@ bool Mikrotik::read_word( char *pWord )
 
     if ( iLen > 0 )
     {
-    	pWord[0] = 0;
-    	char tmpBuf[512];
+        pWord[0] = 0;
+        char tmpBuf[512];
 
         int numOfTry = 0;
         while ( iLen > 0 )
@@ -1127,7 +1187,7 @@ bool Mikrotik::read_word( char *pWord )
 
             // read iBytesToRead from the socket
 
-			//debugPrintf( "Ready to receive %i byte(s)... ", iBytesToRead );
+            //debugPrintf( "Ready to receive %i byte(s)... ", iBytesToRead );
             iBytesRead = __read( MIKROTIK_SOCK_NUM, tmpBuf, iBytesToRead );
             //debugPrintf( "Received %i byte(s)\n", iBytesRead );
 
@@ -1144,13 +1204,13 @@ bool Mikrotik::read_word( char *pWord )
             // terminate received data...
             tmpBuf[iBytesRead] = 0;
             // ...and concatenate with main buffer
-			strcat( pWord, tmpBuf );
+            strcat( pWord, tmpBuf );
 
             // subtract the number of bytes we just read from iLen
             iLen -= iBytesRead;
 
             if ( iLen )
-            	debugPrintf( "received %i byte(s)\nlefts - %i byte(s)\n", iBytesRead, iLen );
+                debugPrintf( "received %i byte(s)\nlefts - %i byte(s)\n", iBytesRead, iLen );
 
             numOfTry = 0;
         }
@@ -1158,7 +1218,7 @@ bool Mikrotik::read_word( char *pWord )
         return true;
     }
     else
-		return false;
+        return false;
 }
 
 
@@ -1171,8 +1231,8 @@ bool Mikrotik::read_sentence()
     {
         if ( !block->AddWordToSentence( word ) )
         {
-        	debugPrintf( "\n\nFAILED TO ADD WORD TO SENTENSE!!!\n\n" );
-        	return false;
+            debugPrintf( "\n\nFAILED TO ADD WORD TO SENTENSE!!!\n\n" );
+            return false;
         }
 
         // check to see if we can get a return value from the API
@@ -1183,7 +1243,7 @@ bool Mikrotik::read_sentence()
         else if ( strstr( word, "!fatal" ) != NULL )
             retval = Sentence_Fatal;
         else
-        	retval = Sentence_None;
+            retval = Sentence_None;
     }
 
     // if any errors, get the next sentence
@@ -1193,9 +1253,9 @@ bool Mikrotik::read_sentence()
     block->AddEndOfSentence();
 
     if ( retval == Sentence_None )
-    	return true;
+        return true;
     else
-    	return false;
+        return false;
 }
 
 void Mikrotik::read_block()
@@ -1310,11 +1370,11 @@ char Mikrotik::hexStringToChar( char *cToConvert )
 
 int  Mikrotik::__write( int __fd, const void *__buf, size_t __nbyte )
 {
-	return __send( __fd, (uint8_t *)__buf, (uint16_t)__nbyte );
+    return __send( __fd, (uint8_t *)__buf, (uint16_t)__nbyte );
 }
 
 
 int Mikrotik::__read (int __fd, void *__buf, size_t __nbyte)
 {
-	return __recv( __fd, (uint8_t *)__buf, (uint16_t)__nbyte );
+    return __recv( __fd, (uint8_t *)__buf, (uint16_t)__nbyte );
 }
