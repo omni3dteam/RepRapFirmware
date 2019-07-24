@@ -31,10 +31,18 @@
 
 typedef enum
 {
-    ether1 = 0,
+    none = 0,
+    ether1,
     wifi2g,
     wifi5g
 } TInterface;
+
+typedef enum
+{
+    invalid = 0,
+    AccessPoint,
+    Station
+} TWifiMode;
 
 typedef enum
 {
@@ -78,6 +86,8 @@ public:
 
     bool EnableInterface( TInterface iface );
     bool DisableInterface( TInterface iface );
+    bool GetCurrentInterface( TInterface *iface );
+    bool GetWifiMode( TInterface iface, TWifiMode *pMode );
 
     bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );
     bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
@@ -86,7 +96,6 @@ public:
     bool GetInterfaceIP( TInterface iface, char *ip, bool isStatic );
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
-    bool GetCurrentInterface( TInterface *iface );
 
 private:
     volatile bool isRequestWaiting = false;

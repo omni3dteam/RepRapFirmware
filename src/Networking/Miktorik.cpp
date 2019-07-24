@@ -182,9 +182,6 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
     if ( iface == ether1 )
         return false;
 
-    if ( !SetDhcpState( ether1, DhcpClient, Disabled ) )
-        return false;
-
     DisableInterface( ether1 );
     DisableInterface( iface == wifi5g ? wifi2g : wifi5g );
 
@@ -297,6 +294,65 @@ bool Mikrotik::DisableInterface( TInterface iface )
 }
 
 
+bool Mikrotik::GetCurrentInterface( TInterface *iface )
+{
+    if ( isInterfaceActive( ether1 ) )
+        *iface = ether1;
+    else if ( isInterfaceActive( wifi2g ) )
+        *iface = wifi2g;
+    else if ( isInterfaceActive( wifi5g ) )
+        *iface = wifi5g;
+    else
+        return false;
+
+    return true;
+}
+
+
+bool Mikrotik::GetWifiMode( TInterface iface, TWifiMode *pMode )
+{
+    // ether1 is not wifi iface
+    if ( iface <= ether1 )
+        return false;
+
+    // 1. PREPARE REQUEST
+    char cmdIface[50] = { 0 };
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+
+    const char cmd[]        = "/interface/wireless/print";
+    const char cmdEnabled[] = "?disabled=false";
+    const char cmdOpt[]     = "=.proplist=mode";
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,        &mkSentence );
+    add_word_to_sentence( cmdIface,   &mkSentence );
+    add_word_to_sentence( cmdEnabled, &mkSentence );
+    add_word_to_sentence( cmdOpt,     &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;  // ERROR
+
+    if ( !parseAnswer( "mode" ) )
+        return false;  // ERROR
+
+    const char modeAP[]     = "ap-bridge";
+    const char modeClient[] = "station";
+
+    if ( strstr( answer, modeAP ) != nullptr )
+        *pMode = AccessPoint;
+    else if ( strstr( answer, modeClient ) != nullptr )
+        *pMode = Station;
+    else
+        *pMode = invalid;
+
+    return true;
+}
+
+
 // Router has few preconfigured DHCP-client params for ethernet and wifi ifaces
 bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state )
 {
@@ -307,7 +363,7 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     if ( ( dhcpMode == DhcpClient ) && ( state == Enabled ) )
         RemoveStaticIP( iface );
 
-    char id[10] = {0};
+    char id[10] = { 0 };
     if ( !getDhcpID( id, iface, dhcpMode ) )
         return false;
 
@@ -477,21 +533,6 @@ bool Mikrotik::RemoveStaticIP( TInterface iface )
 
     // 3. CHECK ANSWER
     return IsRequestSuccessful();
-}
-
-
-bool Mikrotik::GetCurrentInterface( TInterface *iface )
-{
-    if ( isInterfaceActive( ether1 ) )
-        *iface = ether1;
-    else if ( isInterfaceActive( wifi2g ) )
-        *iface = wifi2g;
-    else if ( isInterfaceActive( wifi5g ) )
-        *iface = wifi5g;
-    else
-        return false;
-
-    return true;
 }
 
 
@@ -797,8 +838,7 @@ bool Mikrotik::isInterfaceActive( TInterface iface )
     char cmdIface[50] = { 0 };
     SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
 
-    char cmdOpt[30];
-    SafeSnprintf( cmdOpt, sizeof( cmdOpt ), "=.proplist=disabled" );
+    const char cmdOpt[] = "=.proplist=disabled";
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,      &mkSentence );
