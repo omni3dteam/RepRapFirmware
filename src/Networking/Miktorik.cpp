@@ -353,6 +353,39 @@ bool Mikrotik::GetWifiMode( TInterface iface, TWifiMode *pMode )
 }
 
 
+bool Mikrotik::GetSSID( TInterface iface, char *ssid )
+{
+    // ether1 is not wifi iface
+    if ( iface <= ether1 )
+        return false;
+
+    // 1. PREPARE REQUEST
+    char cmdIface[50] = { 0 };
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+
+    const char cmd[]        = "/interface/wireless/print";
+    const char cmdOpt[]     = "=.proplist=ssid";
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,        &mkSentence );
+    add_word_to_sentence( cmdIface,   &mkSentence );
+    add_word_to_sentence( cmdOpt,     &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;  // ERROR
+
+    if ( !parseAnswer( "ssid" ) )
+        return false;  // ERROR
+
+    strcpy( ssid, answer );
+    return true;
+}
+
+
 // Router has few preconfigured DHCP-client params for ethernet and wifi ifaces
 bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state )
 {

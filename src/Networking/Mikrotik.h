@@ -88,6 +88,7 @@ public:
     bool DisableInterface( TInterface iface );
     bool GetCurrentInterface( TInterface *iface );
     bool GetWifiMode( TInterface iface, TWifiMode *pMode );
+    bool GetSSID( TInterface iface, char *ssid );
 
     bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );
     bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
