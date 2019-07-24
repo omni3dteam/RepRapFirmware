@@ -16,7 +16,7 @@
 #endif
 
 
-static const char *IFACE_NAME_TABLE[] = {IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+static const char *IFACE_NAME_TABLE[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 #ifndef __LINUX_DBG
     #define ExecuteRequest()    isRequestWaiting = true; \
@@ -90,10 +90,7 @@ bool Mikrotik::ConnectToEthernet()
         return false;
 
     // Enable interface
-    if ( !EnableInterface( ether1 ) )
-        return false;
-
-    return true;
+    return EnableInterface( ether1 );
 }
 
 
@@ -117,7 +114,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     if ( !SetDhcpState( iface, DhcpServer, Enabled ) )
         return false;
 
-    if ( pass != NULL )
+    if ( pass != nullptr )
     {
         if ( !changeAccessPointPass( pass ) )
         {
@@ -217,7 +214,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
     add_word_to_sentence( cmd[2],      &mkSentence );
 
     char sp[50] = "=security-profile=";
-    if ( pass == NULL )
+    if ( pass == nullptr )
         strcat( sp, SP_DEFAULT );
     else
         strcat( sp, SP_MODE_STATION );
@@ -255,10 +252,7 @@ bool Mikrotik::EnableInterface( TInterface iface )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -289,10 +283,7 @@ bool Mikrotik::DisableInterface( TInterface iface )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -329,10 +320,7 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -398,12 +386,14 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
     const char *cmd        = "/ip/address/print";
     const char *cmdDynamic = "?dynamic=true";
     const char *cmdStatic  = "?dynamic=false";
+    const char *cmdEnabled = "?disabled=false";
     const char *cmdOpt     = "=.proplist=address";
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
     add_word_to_sentence( cmdIface, &mkSentence );
     add_word_to_sentence( isStatic ? cmdStatic : cmdDynamic, &mkSentence );
+    add_word_to_sentence( cmdEnabled, &mkSentence );
     add_word_to_sentence( cmdOpt, &mkSentence );
 
     // 2. WAIT FOR EXECUTION
@@ -452,10 +442,7 @@ bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -479,7 +466,19 @@ bool Mikrotik::RemoveStaticIP( TInterface iface )
     ExecuteRequest();
 
     // 3. CHECK ANSWER
-    if ( !IsRequestSuccessful() )
+    return IsRequestSuccessful();
+}
+
+
+bool Mikrotik::GetCurrentInterface( TInterface *iface )
+{
+    if ( isInterfaceActive( ether1 ) )
+        *iface = ether1;
+    else if ( isInterfaceActive( wifi2g ) )
+        *iface = wifi2g;
+    else if ( isInterfaceActive( wifi5g ) )
+        *iface = wifi5g;
+    else
         return false;
 
     return true;
@@ -538,7 +537,7 @@ bool Mikrotik::Connect( const char *d_ip, uint16_t d_port )
     address.sin_port = htons( d_port );
     iLen = sizeof( address );
 
-    printf( "Connecting to %s\n", d_ip );
+    debugPrintf( "Connecting to %s\n", d_ip );
 
     iConnectResult = connect( fdSock, (struct sockaddr *) &address, iLen );
 
@@ -549,7 +548,7 @@ bool Mikrotik::Connect( const char *d_ip, uint16_t d_port )
     }
     else
     {
-        printf( "Successfully connected to %s\n", d_ip );
+        debugPrintf( "Successfully connected to %s\n", d_ip );
     }
 
     // determine endianness of this machine
@@ -559,7 +558,7 @@ bool Mikrotik::Connect( const char *d_ip, uint16_t d_port )
     iLittleEndian = isLittleEndian();
 
     MIKROTIK_SOCK_NUM = fdSock;
-    printf( "CONNECTED!\n" );
+    debugPrintf( "CONNECTED!\n" );
 
     isConnected = true;
 #endif
@@ -629,9 +628,9 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
 
     // extract md5 string from the challenge sentence
     szMD5Challenge = strtok( tmp,  "=" );
-    szMD5Challenge = strtok( NULL, "=" );
+    szMD5Challenge = strtok( nullptr, "=" );
 
-    printf( "MD5 of challenge = %s\n", szMD5Challenge );
+    //debugPrintf( "MD5 of challenge = %s\n", szMD5Challenge );
 
     char szMD5PasswordToSend[33] = { 0 };
     generateResponse( szMD5PasswordToSend, szMD5Challenge, password );
@@ -654,7 +653,7 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
     read_sentence();
     block->Print();
 
-    return ( strstr( block->GetFirstWord(), "!done" ) != NULL );
+    return ( strstr( block->GetFirstWord(), "!done" ) != nullptr );
 }
 
 
@@ -777,6 +776,44 @@ bool Mikrotik::IsRequestSuccessful()
 }
 
 
+bool Mikrotik::isInterfaceActive( TInterface iface )
+{
+    // 1. PREPARE REQUEST
+    const char cmdWiFi[] = "/interface/wireless/print";
+    const char cmdEht[]  = "/interface/ethernet/print";
+
+    const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
+
+    char cmdIface[50] = { 0 };
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+
+    char cmdOpt[30];
+    SafeSnprintf( cmdOpt, sizeof( cmdOpt ), "=.proplist=disabled" );
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,      &mkSentence );
+    add_word_to_sentence( cmdIface, &mkSentence );
+    add_word_to_sentence( cmdOpt,   &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;  // ERROR
+
+    if ( !parseAnswer( "disabled" ) )
+        return false;  // ERROR
+
+    if ( strstr( answer, "false" ) )
+        return true;
+    else if ( strstr( answer, "true" ) )
+        return false;
+    else
+        return false;  // ERROR
+}
+
+
 bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
 {
     // 1. PREPARE REQUEST
@@ -896,10 +933,7 @@ bool Mikrotik::changeAccessPointPass( const char *pass )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -937,10 +971,7 @@ bool Mikrotik::changeWiFiStationPass( const char *pass )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -982,7 +1013,7 @@ void Mikrotik::write_sentence( TMKSentence *pSentence )
 
 void Mikrotik::write_word( const char *pWord )
 {
-    debugPrintf( "Write: '%s'\n", pWord );
+    //debugPrintf( "Write: '%s'\n", pWord );
     write_len( strlen( pWord ) );
     for ( int i = 0; i < (int)strlen( pWord ); i++ )
     {
@@ -1209,8 +1240,8 @@ bool Mikrotik::read_word( char *pWord )
             // subtract the number of bytes we just read from iLen
             iLen -= iBytesRead;
 
-            if ( iLen )
-                debugPrintf( "received %i byte(s)\nlefts - %i byte(s)\n", iBytesRead, iLen );
+//            if ( iLen )
+//                debugPrintf( "received %i byte(s)\nlefts - %i byte(s)\n", iBytesRead, iLen );
 
             numOfTry = 0;
         }
@@ -1252,11 +1283,9 @@ bool Mikrotik::read_sentence()
 
     block->AddEndOfSentence();
 
-    if ( retval == Sentence_None )
-        return true;
-    else
-        return false;
+    return ( retval == Sentence_None );
 }
+
 
 void Mikrotik::read_block()
 {

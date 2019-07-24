@@ -86,6 +86,7 @@ public:
     bool GetInterfaceIP( TInterface iface, char *ip, bool isStatic );
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
+    bool GetCurrentInterface( TInterface *iface );
 
 private:
     volatile bool isRequestWaiting = false;
@@ -123,6 +124,7 @@ private:
     bool IsRequestSuccessful();
     bool parseAnswer( const char *pReqVal );
 
+    bool isInterfaceActive( TInterface iface );
     bool getStaticIpId( char *pID, TInterface iface );
     bool getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode );
     bool getSecurityProfileID( char *spID, const char *mode );
