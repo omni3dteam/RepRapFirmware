@@ -114,6 +114,13 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     if ( !SetDhcpState( iface, DhcpServer, Enabled ) )
         return false;
 
+    const char ip2g[] = "192.168.24.1/24";
+    const char ip5g[] = "192.168.50.1/24";
+
+    const char *ip = ( iface == wifi2g ) ? ip2g : ip5g;
+    if ( !SetStaticIP( iface, ip ) )
+        return false;
+
     if ( pass != nullptr )
     {
         if ( !changeAccessPointPass( pass ) )
@@ -262,6 +269,9 @@ bool Mikrotik::DisableInterface( TInterface iface )
     if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
         return false;
 
+    if ( !RemoveStaticIP( iface ) )
+        return false;
+
     if ( iface != ether1 )  // ether1 not supports dhcp-server mode
         if ( !SetDhcpState( iface, DhcpServer, Disabled ) )
             return false;
@@ -294,7 +304,7 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     if ( ( iface == ether1 ) && ( dhcpMode == DhcpServer ) )
         return false;
 
-    if ( state == Enabled )
+    if ( ( dhcpMode == DhcpClient ) && ( state == Enabled ) )
         RemoveStaticIP( iface );
 
     char id[10] = {0};
