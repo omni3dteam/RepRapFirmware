@@ -89,6 +89,7 @@ public:
     bool GetCurrentInterface( TInterface *iface );
     bool GetWifiMode( TInterface iface, TWifiMode *pMode );
     bool GetSSID( TInterface iface, char *ssid );
+    bool IsNetworkAvailable( TInterface iface );
 
     bool SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state );
     bool GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState );
@@ -128,7 +129,7 @@ private:
     bool Login();
 
     // Request execution
-    bool ProcessRequest();  // DON'T CALL MANUALY!!!
+    bool ProcessRequest();  // DON'T CALL MANUALY on DUET3D!!!
 
     // Checking response
     bool IsRequestSuccessful();

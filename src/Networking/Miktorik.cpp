@@ -16,7 +16,7 @@
 #endif
 
 
-static const char *IFACE_NAME_TABLE[] = { IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+static const char *IFACE_NAME_TABLE[] = { NULL, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 #ifndef __LINUX_DBG
     #define ExecuteRequest()    isRequestWaiting = true; \
@@ -99,7 +99,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 {
     // 0. PREPARE ROUTER CONFIGURATION
     // Only WiFi allowed here
-    if ( iface == ether1 )
+    if ( iface <= ether1 )
         return false;
 
     if ( !SetDhcpState( ether1, DhcpClient, Disabled ) )
@@ -179,7 +179,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
 {
     // 0. PRECONFIG ROUTER
     // Only WiFi allowed here
-    if ( iface == ether1 )
+    if ( iface <= ether1 )
         return false;
 
     DisableInterface( ether1 );
@@ -239,6 +239,9 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
 
 bool Mikrotik::EnableInterface( TInterface iface )
 {
+    if ( !iface )
+        return false;
+
     // 1. PREPARE REQUEST
     const char cmdWiFi[] = "/interface/wireless/enable";
     const char cmdEht[]  = "/interface/ethernet/enable";
@@ -262,6 +265,9 @@ bool Mikrotik::EnableInterface( TInterface iface )
 
 bool Mikrotik::DisableInterface( TInterface iface )
 {
+    if ( !iface )
+        return false;
+
     // 0. Disable secondary iface services
     if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
         return false;
@@ -386,9 +392,53 @@ bool Mikrotik::GetSSID( TInterface iface, char *ssid )
 }
 
 
-// Router has few preconfigured DHCP-client params for ethernet and wifi ifaces
+/**
+ * Returns "true" when successfully connected to WiFi or ethernet network
+ *
+ * In case of "Access point" mode returns "true" when at least one client connected
+ */
+bool Mikrotik::IsNetworkAvailable( TInterface iface )
+{
+    if ( !iface )
+        return false;
+
+    // 1. PREPARE REQUEST
+    char cmdIface[50] = { 0 };
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+
+    const char cmdWiFi[] = "/interface/wireless/print";
+    const char cmdEht[]  = "/interface/ethernet/print";
+
+    const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
+    const char cmdEnabled[] = "?disabled=false";
+    const char cmdOpt[]     = "=.proplist=running";
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,        &mkSentence );
+    add_word_to_sentence( cmdIface,   &mkSentence );
+    add_word_to_sentence( cmdEnabled, &mkSentence );
+    add_word_to_sentence( cmdOpt,     &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return false;  // ERROR
+
+    if ( !parseAnswer( "running" ) )
+        return false;  // ERROR
+
+    return ( strstr( answer, "true" ) != nullptr );
+}
+
+
+//! Router has few preconfigured DHCP-client params for ethernet and wifi ifaces
 bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState state )
 {
+    if ( !iface )
+        return false;
+
     // ether1 can be client only
     if ( ( iface == ether1 ) && ( dhcpMode == DhcpServer ) )
         return false;
@@ -425,6 +475,9 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
 
 bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState *pState )
 {
+    if ( !iface )
+        return false;
+
     // ether1 can be client only
     if ( ( iface == ether1 ) && ( dhcpMode == DhcpServer ) )
         return false;
@@ -465,9 +518,11 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
 }
 
 
-//! @todo FINISH
 bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip )
 {
+    if ( !iface )
+        return false;
+
     if ( GetInterfaceIP( iface, ip, true ) )
         return true;
 
@@ -475,9 +530,11 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip )
 }
 
 
-//! @todo FINISH
 bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
 {
+    if ( !iface )
+        return false;
+
     // 1. PREPARE REQUEST
     char cmdIface[20];
     SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
@@ -513,6 +570,9 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
 
 bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
 {
+    if ( !iface )
+        return false;
+
     if ( !SetDhcpState( iface, DhcpClient, Disabled ) )
         return false;
 
@@ -547,6 +607,9 @@ bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
 
 bool Mikrotik::RemoveStaticIP( TInterface iface )
 {
+    if ( !iface )
+        return false;
+
     // Find interface static IP identifier
     char sipID[30] = {0};
     if ( !getStaticIpId( sipID, iface ) )
@@ -784,7 +847,8 @@ bool Mikrotik::Login()
 }
 
 
-// @warning Should be called INDIRECTLY from Mikrotik::Spin() <- Network::Spin() <- NetworkLoop() [RTOS TASK]
+// @warning On DUET3D board it should be called INDIRECTLY from
+// Mikrotik::Spin() <- Network::Spin() <- NetworkLoop() [RTOS TASK]
 bool Mikrotik::ProcessRequest()
 {
     if ( !isLogged )
@@ -798,7 +862,7 @@ bool Mikrotik::ProcessRequest()
     clear_sentence( &mkSentence );
 
     read_block();
-    block->Print();
+    //block->Print();
 
     return true;
 }
@@ -856,12 +920,16 @@ bool Mikrotik::IsRequestSuccessful()
         pWord = block->GetNextWord( pWord );
     }
 
+    block->Print();
     return false;
 }
 
 
 bool Mikrotik::isInterfaceActive( TInterface iface )
 {
+    if ( !iface )
+        return false;
+
     // 1. PREPARE REQUEST
     const char cmdWiFi[] = "/interface/wireless/print";
     const char cmdEht[]  = "/interface/ethernet/print";
@@ -899,6 +967,9 @@ bool Mikrotik::isInterfaceActive( TInterface iface )
 
 bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
 {
+    if ( !iface )
+        return false;
+
     // 1. PREPARE REQUEST
     char cmdIface[50] = { 0 };
     SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
@@ -931,6 +1002,9 @@ bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
 
 bool Mikrotik::getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode )
 {
+    if ( !iface )
+        return false;
+
     // 1. PREPARE REQUEST
     char cmdIface[20];
     SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
