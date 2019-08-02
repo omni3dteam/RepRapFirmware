@@ -668,8 +668,14 @@ private:
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif
 
+#if OMNI_SERVO_POSITIONING
+	static constexpr const float MinServoPulseWidth = 900.0, MaxServoPulseWidth = 2100.0;
+	static constexpr const float MinServoPosition = 0.0, MaxServoPosition = 110.2;
+	static constexpr uint16_t ServoRefreshFrequency = 333;
+#else
 	static constexpr const float MinServoPulseWidth = 544.0, MaxServoPulseWidth = 2400.0;
 	static constexpr uint16_t ServoRefreshFrequency = 50;
+#endif
 };
 
 // Flag that a new move is available for consumption by the Move subsystem
