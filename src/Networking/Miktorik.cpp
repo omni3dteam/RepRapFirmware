@@ -482,12 +482,12 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     char cmdWlan[30];
     SafeSnprintf( cmdWlan, sizeof( cmdWlan ), REQ_PARAM( P_INTERFACE ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char *cmdOpt = GREP_OPT( P_DISABLED );
+    const char *cmdGrep = GREP_OPT( P_DISABLED );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( dhcpMode == DhcpServer ? cmdServer : cmdClient, &mkSentence );
     add_word_to_sentence( cmdWlan, &mkSentence );
-    add_word_to_sentence( cmdOpt,  &mkSentence );
+    add_word_to_sentence( cmdGrep, &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -622,6 +622,88 @@ bool Mikrotik::RemoveStaticIP( TInterface iface )
 
     // 3. CHECK ANSWER
     return IsRequestSuccessful();
+}
+
+
+static bool isStrInBuf( const char *pStr, const char *pBuf, uint32_t count )
+{
+    if ( !count )
+        return false;
+
+    const char *pNext = pBuf;
+
+    while ( count-- )
+    {
+        if ( strcmp( pStr, pNext ) == 0 )
+            return true;
+
+        pNext += strlen( pNext ) + 1;
+    }
+
+    return false;
+}
+
+
+uint16_t Mikrotik::ScanWiFiNetworks( TInterface iface, uint8_t duration, char *pBuffer, uint32_t MAX_BUF_SIZE )
+{
+    if ( iface <= ether1 )
+        return 0;
+
+    // 1. PREPARE REQUEST
+    char cmdIface[50] = { 0 };
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), SET_PARAM( P_ID ) "%s", IFACE_NAME_TABLE[iface] );
+
+    char cmdDuration[50] = { 0 };
+    SafeSnprintf( cmdDuration, sizeof( cmdDuration ), SET_PARAM( P_DURATION ) "%u", duration  );
+
+    const char *cmd     = CMD_INTERFACE_WIRELESS_SCAN;
+    const char cmdOpt[] = GREP_OPT( P_SSID );
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,         &mkSentence );
+    add_word_to_sentence( cmdIface,    &mkSentence );
+    add_word_to_sentence( cmdDuration, &mkSentence );
+    add_word_to_sentence( cmdOpt,      &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    if ( !IsRequestSuccessful() )
+        return 0;  // ERROR
+
+    char key[MIKROTIK_MAX_ANSWER];
+    SafeSnprintf( key, sizeof( key ), "=%s=", P_SSID );
+
+    const char* pWord = block->GetFirstWord();
+    char *pNext = pBuffer;
+    uint16_t count  = 0;
+    uint32_t length = 0;
+    do
+    {
+        // Our search '=KEY=' should be located at the begin of word
+        if ( strstr( pWord, key ) == pWord )
+        {
+            const char *pStr = &pWord[strlen(key)];
+            if ( isStrInBuf( pStr, pBuffer, count ) )
+            {
+                pWord = block->GetNextWord( pWord );
+                continue;
+            }
+
+            length += strlen( pStr ) + 1;
+            if ( length >= MAX_BUF_SIZE )
+                break;
+
+            strcpy( pNext, pStr );
+            pNext += strlen( pStr ) + 1;
+            count++;
+        }
+
+        pWord = block->GetNextWord( pWord );
+    } while ( pWord );
+
+    return count;
 }
 
 

@@ -10,7 +10,7 @@
 #include <stdint-gcc.h>
 
 
-#define MKT_BLOCK_SIZE 512
+#define MKT_BLOCK_SIZE 2048
 
 class MKTBlock
 {

@@ -53,6 +53,7 @@
     #define CMD_INTERFACE_WIRELESS              CMD_INTERFACE "/wireless"
 
         #define CMD_INTERFACE_WIRELESS_SET      CMD_INTERFACE_WIRELESS "/set"
+        #define CMD_INTERFACE_WIRELESS_SCAN     CMD_INTERFACE_WIRELESS "/scan"
         #define CMD_INTERFACE_WIRELESS_PRINT    CMD_INTERFACE_WIRELESS "/print"
         #define CMD_INTERFACE_WIRELESS_ENABLE   CMD_INTERFACE_WIRELESS "/enable"
         #define CMD_INTERFACE_WIRELESS_DISABLE  CMD_INTERFACE_WIRELESS "/disable"
@@ -111,6 +112,7 @@
 #define P_RUNNING       "running"
 #define P_ADDRESS       "address"
 #define P_DYNAMIC       "dynamic"
+#define P_DURATION      "duration"
 #define P_DISABLED      "disabled"
 #define P_RESPONSE      "response"
 #define P_FREQUENCY     "frequency"
@@ -196,6 +198,8 @@ public:
     bool GetInterfaceIP( TInterface iface, char *ip, bool isStatic );
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
+
+    uint16_t ScanWiFiNetworks( TInterface iface, uint8_t duration, char *pBuffer, uint32_t MAX_BUF_SIZE );
 
 private:
     volatile bool isRequestWaiting = false;
