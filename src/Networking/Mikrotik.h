@@ -13,10 +13,8 @@
 #include "MKTBlock.h"
 #include "md5/md5.h"
 
-
-#define IP_V4_TEXT_MAXLEN   17
-#define MAC_TEXT_MAXLEN     18
-#define MIKROTIK_MAX_ANSWER	100
+#define MAX_WORDS_IN_SENTENCE   32
+#define MIKROTIK_MAX_ANSWER     100
 
 // Security profile names
 #define SP_DEFAULT              "default"
@@ -27,6 +25,107 @@
 #define IFACE_ETHERNET  "ether1"
 #define IFACE_WIFI2G    "wlan1"
 #define IFACE_WIFI5G    "wlan2"
+
+
+#define MIKROTIK_IP_WIFI_2G "192.168.24.1/24"
+#define MIKROTIK_IP_WIFI_5G "192.168.50.1/24"
+
+#define MIKROTIK_WIFI_2G_DEF_BAND "=band=2ghz-b/g/n"
+#define MIKROTIK_WIFI_5G_DEF_BAND "=band=5ghz-a/n/ac"
+
+#define MIKROTIK_SUCCESS_ANSWER "!done"
+
+
+                            //******************//
+                            // API REQUESTS CMD //
+                            //******************//
+
+#define CMD_LOGIN                               "/login"
+
+#define CMD_INTERFACE                           "/interface"
+
+    #define CMD_INTERFACE_ETHERNET              CMD_INTERFACE "/ethernet"
+
+        #define CMD_INTERFACE_ETHERNET_PRINT    CMD_INTERFACE_ETHERNET "/print"
+        #define CMD_INTERFACE_ETHERNET_ENABLE   CMD_INTERFACE_ETHERNET "/enable"
+        #define CMD_INTERFACE_ETHERNET_DISABLE  CMD_INTERFACE_ETHERNET "/disable"
+
+    #define CMD_INTERFACE_WIRELESS              CMD_INTERFACE "/wireless"
+
+        #define CMD_INTERFACE_WIRELESS_SET      CMD_INTERFACE_WIRELESS "/set"
+        #define CMD_INTERFACE_WIRELESS_PRINT    CMD_INTERFACE_WIRELESS "/print"
+        #define CMD_INTERFACE_WIRELESS_ENABLE   CMD_INTERFACE_WIRELESS "/enable"
+        #define CMD_INTERFACE_WIRELESS_DISABLE  CMD_INTERFACE_WIRELESS "/disable"
+
+        #define CMD_INTERFACE_WIRELESS_SEC_PROF CMD_INTERFACE_WIRELESS "/security-profiles"
+
+            #define CMD_INTERFACE_WIRELESS_SEC_PROF_SET     CMD_INTERFACE_WIRELESS_SEC_PROF "/set"
+            #define CMD_INTERFACE_WIRELESS_SEC_PROF_PRINT   CMD_INTERFACE_WIRELESS_SEC_PROF "/print"
+
+#define CMD_SYSTEM                              "/system"
+
+    #define CMD_SYSTEM_RESOURCE                 CMD_SYSTEM "/resource"
+
+        #define CMD_SYSTEM_RESOURCE_PRINT       CMD_SYSTEM_RESOURCE "/print"
+
+#define CMD_IP                                  "/ip"
+
+    #define CMD_IP_ADDRESS                      CMD_IP  "/address"
+
+        #define CMD_IP_ADDRESS_SET              CMD_IP_ADDRESS  "/set"
+        #define CMD_IP_ADDRESS_PRINT            CMD_IP_ADDRESS  "/print"
+        #define CMD_IP_ADDRESS_DISABLE          CMD_IP_ADDRESS  "/disable"
+
+    #define CMD_IP_DHCP_CLIENT                  CMD_IP "/dhcp-client"
+
+        #define CMD_IP_DHCP_CLIENT_SET          CMD_IP_DHCP_CLIENT "/set"
+        #define CMD_IP_DHCP_CLIENT_PRINT        CMD_IP_DHCP_CLIENT "/print"
+
+    #define CMD_IP_DHCP_SERVER                  CMD_IP "/dhcp-server"
+
+        #define CMD_IP_DHCP_SERVER_SET          CMD_IP_DHCP_SERVER "/set"
+        #define CMD_IP_DHCP_SERVER_PRINT        CMD_IP_DHCP_SERVER "/print"
+
+
+                            //*********************//
+                            // API REQUESTS PARAMS //
+                            //*********************//
+
+#define SET_SIGN    "="
+#define GET_SIGN    "?"
+
+#define SET_PARAM( param )          SET_SIGN param SET_SIGN
+#define SET_PARAM_V( param, value ) SET_SIGN param SET_SIGN value
+
+#define REQ_PARAM( param )          GET_SIGN param SET_SIGN
+#define REQ_PARAM_V( param, value ) GET_SIGN param SET_SIGN value
+
+#define GREP_OPT( param )           SET_PARAM_V( ".proplist", param )
+
+// params
+#define P_ID            ".id"
+#define P_SSID          "ssid"
+#define P_NAME          "name"
+#define P_MODE          "mode"
+#define P_UPTIME        "uptime"
+#define P_RUNNING       "running"
+#define P_ADDRESS       "address"
+#define P_DYNAMIC       "dynamic"
+#define P_DISABLED      "disabled"
+#define P_RESPONSE      "response"
+#define P_FREQUENCY     "frequency"
+#define P_INTERFACE     "interface"
+
+#define P_SECURITY_PROFILE      "security-profile"
+#define P_SUPPLICANT_IDENTITY   "supplicant-identity"
+#define P_WPA2_PRE_SHARED_KEY   "wpa2-pre-shared-key"
+
+// values
+#define V_AUTO      "auto"
+#define V_TRUE      "true"
+#define V_FALSE     "false"
+#define V_STATION   "station"
+#define V_AP_BRIDGE "ap-bridge"
 
 
 typedef enum
@@ -64,7 +163,6 @@ typedef enum
     Sentence_Fatal
 } TSentenceRetVal;
 
-#define MAX_WORDS_IN_SENTENCE   32
 typedef struct {
     const char *pWord[MAX_WORDS_IN_SENTENCE];
     uint16_t length;
@@ -129,7 +227,7 @@ private:
     bool Login();
 
     // Request execution
-    bool ProcessRequest();  // DON'T CALL MANUALY on DUET3D!!!
+    bool ProcessRequest();  // DON'T CALL MANUALLY on DUET3D!!!
 
     // Checking response
     bool IsRequestSuccessful();

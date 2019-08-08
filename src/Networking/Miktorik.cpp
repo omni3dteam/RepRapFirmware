@@ -5,18 +5,17 @@
     #include "RepRap.h"
     #include "W5500Ethernet/Wiznet/Ethernet/socketlib.h"
 #else
-    #include <stdio.h>
-    #include <sys/types.h>
+    #include <cstdio>
     #include <sys/socket.h>
     #include <netinet/in.h>
     #include <arpa/inet.h>
     #include <unistd.h>
-    #include <string.h>
-    #include <stdlib.h>
+    #include <cstring>
+    #include <cstdlib>
 #endif
 
 
-static const char *IFACE_NAME_TABLE[] = { NULL, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+static const char *IFACE_NAME_TABLE[] = { nullptr, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 #ifndef __LINUX_DBG
     #define ExecuteRequest()    isRequestWaiting = true; \
@@ -50,11 +49,12 @@ void Mikrotik::Spin()
 bool Mikrotik::GetUpTime( char *buffer )
 {
     // 1. PREPARE REQUEST
-    const char *cmd[] = { "/system/resource/print", "=.proplist=uptime" };
+    const char *cmd     = CMD_SYSTEM_RESOURCE_PRINT;
+    const char *cmdGrep = GREP_OPT( P_UPTIME );
 
     clear_sentence( &mkSentence );
-    add_word_to_sentence( cmd[0], &mkSentence );
-    add_word_to_sentence( cmd[1], &mkSentence );
+    add_word_to_sentence( cmd,     &mkSentence );
+    add_word_to_sentence( cmdGrep, &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -64,7 +64,7 @@ bool Mikrotik::GetUpTime( char *buffer )
         return false;
 
     // Parse answer
-    if ( !parseAnswer( "uptime" ) )
+    if ( !parseAnswer( P_UPTIME ) )
     {
         SafeSnprintf( buffer, MIKROTIK_MAX_ANSWER, "no answer found" );
         return false;
@@ -114,8 +114,8 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     if ( !SetDhcpState( iface, DhcpServer, Enabled ) )
         return false;
 
-    const char ip2g[] = "192.168.24.1/24";
-    const char ip5g[] = "192.168.50.1/24";
+    const char ip2g[] = MIKROTIK_IP_WIFI_2G;
+    const char ip5g[] = MIKROTIK_IP_WIFI_5G;
 
     const char *ip = ( iface == wifi2g ) ? ip2g : ip5g;
     if ( !SetStaticIP( iface, ip ) )
@@ -133,18 +133,16 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
 
     // 1. PREPARE REQUEST
     char wlanID[20];
-    SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
-
-    char band[50];
-    if ( iface == wifi2g )
-        SafeSnprintf( band, sizeof( band ), "%s", "=band=2ghz-b/g/n" );
-    else
-        SafeSnprintf( band, sizeof( band ), "%s", "=band=5ghz-a/n/ac" );
+    SafeSnprintf( wlanID, sizeof( wlanID ), SET_PARAM( P_ID ) "%s", IFACE_NAME_TABLE[iface] );
 
     char apName[MIKROTIK_MAX_ANSWER];
-    SafeSnprintf( apName, sizeof( apName ), "=ssid=%s", ssid );
+    SafeSnprintf( apName, sizeof( apName ), SET_PARAM( P_SSID ) "%s", ssid );
 
-    const char *cmd[] = { "/interface/wireless/set", "=frequency=auto", "=mode=ap-bridge", "=disabled=false" };
+    const char *cmd[] = { CMD_INTERFACE_WIRELESS_SET,
+                          SET_PARAM_V( P_FREQUENCY, V_AUTO ),
+                          SET_PARAM_V( P_MODE, V_AP_BRIDGE),
+                          SET_PARAM_V( P_DISABLED, V_FALSE )
+                        };
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd[0], &mkSentence );
@@ -154,7 +152,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     add_word_to_sentence( cmd[2], &mkSentence );
     add_word_to_sentence( cmd[3], &mkSentence );
 
-    char sp[50] = "=security-profile=";
+    char sp[50] = SET_PARAM( P_SECURITY_PROFILE );
     if ( pass == nullptr )
         strcat( sp, SP_DEFAULT );
     else
@@ -166,11 +164,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "done" );
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -203,12 +197,15 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
 
     // 1. PREPARE REQUEST
     char wlanID[20];
-    SafeSnprintf( wlanID, sizeof( wlanID ), "=.id=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( wlanID, sizeof( wlanID ), SET_PARAM( P_ID ) "%s", IFACE_NAME_TABLE[iface] );
 
     char networkName[MIKROTIK_MAX_ANSWER];
-    SafeSnprintf( networkName, sizeof( networkName ), "=ssid=%s", ssid );
+    SafeSnprintf( networkName, sizeof( networkName ), SET_PARAM( P_SSID ) "%s", ssid );
 
-    const char *cmd[] = { "/interface/wireless/set", "=mode=station", "=disabled=false" };
+    const char *cmd[] = { CMD_INTERFACE_WIRELESS_SET,
+                          SET_PARAM_V( P_MODE, V_STATION ),
+                          SET_PARAM_V( P_DISABLED, V_FALSE )
+                        };
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd[0],      &mkSentence );
@@ -217,7 +214,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
     add_word_to_sentence( cmd[1],      &mkSentence );
     add_word_to_sentence( cmd[2],      &mkSentence );
 
-    char sp[50] = "=security-profile=";
+    char sp[50] = SET_PARAM( P_SECURITY_PROFILE );
     if ( pass == nullptr )
         strcat( sp, SP_DEFAULT );
     else
@@ -229,11 +226,7 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
     ExecuteRequest();
 
     // 3. PROCESS ANSWER
-    if ( !IsRequestSuccessful() )
-        return false;
-
-    SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "done" );
-    return true;
+    return IsRequestSuccessful();
 }
 
 
@@ -243,13 +236,13 @@ bool Mikrotik::EnableInterface( TInterface iface )
         return false;
 
     // 1. PREPARE REQUEST
-    const char cmdWiFi[] = "/interface/wireless/enable";
-    const char cmdEht[]  = "/interface/ethernet/enable";
+    const char *cmdWiFi = CMD_INTERFACE_WIRELESS_ENABLE;
+    const char *cmdEht  = CMD_INTERFACE_ETHERNET_ENABLE;
 
     const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
 
     char id[15];
-    SafeSnprintf( id, sizeof( id ), "=.id=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( id, sizeof( id ), SET_PARAM( P_ID ) "%s", IFACE_NAME_TABLE[iface] );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
@@ -280,13 +273,13 @@ bool Mikrotik::DisableInterface( TInterface iface )
             return false;
 
     // 1. PREPARE REQUEST
-    const char cmdWiFi[] = "/interface/wireless/disable";
-    const char cmdEht[]  = "/interface/ethernet/disable";
+    const char *cmdWiFi = CMD_INTERFACE_WIRELESS_DISABLE;
+    const char *cmdEht  = CMD_INTERFACE_ETHERNET_DISABLE;
 
     const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
 
     char id[15];
-    SafeSnprintf( id, sizeof( id ), "=.id=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( id, sizeof( id ), SET_PARAM( P_ID ) "%s", IFACE_NAME_TABLE[iface] );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
@@ -323,11 +316,11 @@ bool Mikrotik::GetWifiMode( TInterface iface, TWifiMode *pMode )
 
     // 1. PREPARE REQUEST
     char cmdIface[50] = { 0 };
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_NAME ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char cmd[]        = "/interface/wireless/print";
-    const char cmdEnabled[] = "?disabled=false";
-    const char cmdOpt[]     = "=.proplist=mode";
+    const char *cmd         = CMD_INTERFACE_WIRELESS_PRINT;
+    const char cmdEnabled[] = REQ_PARAM_V( P_DISABLED, V_FALSE );
+    const char cmdOpt[]     = GREP_OPT( P_MODE );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,        &mkSentence );
@@ -342,11 +335,11 @@ bool Mikrotik::GetWifiMode( TInterface iface, TWifiMode *pMode )
     if ( !IsRequestSuccessful() )
         return false;  // ERROR
 
-    if ( !parseAnswer( "mode" ) )
+    if ( !parseAnswer( P_MODE ) )
         return false;  // ERROR
 
-    const char modeAP[]     = "ap-bridge";
-    const char modeClient[] = "station";
+    const char modeAP[]     = V_AP_BRIDGE;
+    const char modeClient[] = V_STATION;
 
     if ( strstr( answer, modeAP ) != nullptr )
         *pMode = AccessPoint;
@@ -367,10 +360,10 @@ bool Mikrotik::GetSSID( TInterface iface, char *ssid )
 
     // 1. PREPARE REQUEST
     char cmdIface[50] = { 0 };
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_NAME ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char cmd[]        = "/interface/wireless/print";
-    const char cmdOpt[]     = "=.proplist=ssid";
+    const char *cmd     = CMD_INTERFACE_WIRELESS_PRINT;
+    const char cmdOpt[] = GREP_OPT( P_SSID );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,        &mkSentence );
@@ -384,7 +377,7 @@ bool Mikrotik::GetSSID( TInterface iface, char *ssid )
     if ( !IsRequestSuccessful() )
         return false;  // ERROR
 
-    if ( !parseAnswer( "ssid" ) )
+    if ( !parseAnswer( P_SSID ) )
         return false;  // ERROR
 
     strcpy( ssid, answer );
@@ -404,14 +397,14 @@ bool Mikrotik::IsNetworkAvailable( TInterface iface )
 
     // 1. PREPARE REQUEST
     char cmdIface[50] = { 0 };
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_NAME ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char cmdWiFi[] = "/interface/wireless/print";
-    const char cmdEht[]  = "/interface/ethernet/print";
+    const char *cmdWiFi = CMD_INTERFACE_WIRELESS_PRINT;
+    const char *cmdEht  = CMD_INTERFACE_ETHERNET_PRINT;
 
     const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
-    const char cmdEnabled[] = "?disabled=false";
-    const char cmdOpt[]     = "=.proplist=running";
+    const char cmdEnabled[] = REQ_PARAM_V( P_DISABLED, V_FALSE );
+    const char cmdOpt[]     = GREP_OPT( P_RUNNING );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,        &mkSentence );
@@ -426,10 +419,10 @@ bool Mikrotik::IsNetworkAvailable( TInterface iface )
     if ( !IsRequestSuccessful() )
         return false;  // ERROR
 
-    if ( !parseAnswer( "running" ) )
+    if ( !parseAnswer( P_RUNNING ) )
         return false;  // ERROR
 
-    return ( strstr( answer, "true" ) != nullptr );
+    return ( strstr( answer, V_TRUE ) != nullptr );
 }
 
 
@@ -451,14 +444,14 @@ bool Mikrotik::SetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
         return false;
 
     // 1. PREPARE REQUEST;
-    const char *cmdServer = "/ip/dhcp-server/set";
-    const char *cmdClient = "/ip/dhcp-client/set";
+    const char *cmdServer = CMD_IP_DHCP_SERVER_SET;
+    const char *cmdClient = CMD_IP_DHCP_CLIENT_SET;
 
     char cmdWlanId[30];
-    SafeSnprintf( cmdWlanId, sizeof( cmdWlanId ), "=.id=%s", id );
+    SafeSnprintf( cmdWlanId, sizeof( cmdWlanId ), SET_PARAM( P_ID ) "%s", id );
 
     char cmdState[30];
-    SafeSnprintf( cmdState, sizeof( cmdState ), "=disabled=%s", state == Enabled ? "false" : "true" );
+    SafeSnprintf( cmdState, sizeof( cmdState ), SET_PARAM( P_DISABLED ) "%s", state == Enabled ? V_FALSE : V_TRUE );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( dhcpMode == DhcpServer ? cmdServer : cmdClient, &mkSentence );
@@ -483,14 +476,13 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
         return false;
 
     // 1. PREPARE REQUEST
-    const char *cmdServer = "/ip/dhcp-server/print";
-    const char *cmdClient = "/ip/dhcp-client/print";
+    const char *cmdServer = CMD_IP_DHCP_SERVER_PRINT;
+    const char *cmdClient = CMD_IP_DHCP_CLIENT_PRINT;
 
     char cmdWlan[30];
-    SafeSnprintf( cmdWlan, sizeof( cmdWlan ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdWlan, sizeof( cmdWlan ), REQ_PARAM( P_INTERFACE ) "%s", IFACE_NAME_TABLE[iface] );
 
-    char cmdOpt[30];
-    SafeSnprintf( cmdOpt, sizeof( cmdOpt ), "=.proplist=disabled" );
+    const char *cmdOpt = GREP_OPT( P_DISABLED );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( dhcpMode == DhcpServer ? cmdServer : cmdClient, &mkSentence );
@@ -504,12 +496,12 @@ bool Mikrotik::GetDhcpState( TInterface iface, TDhcpMode dhcpMode, TEnableState 
     if ( !IsRequestSuccessful() )
         return false;
 
-    if ( !parseAnswer( "disabled" ) )
+    if ( !parseAnswer( P_DISABLED ) )
         return false;
 
-    if ( strstr( answer, "false" ) )
+    if ( strstr( answer, V_FALSE ) )
         *pState = Enabled;
-    else if ( strstr( answer, "true" ) )
+    else if ( strstr( answer, V_TRUE ) )
         *pState = Disabled;
     else
         return false;
@@ -537,20 +529,21 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
 
     // 1. PREPARE REQUEST
     char cmdIface[20];
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_INTERFACE ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char *cmd        = "/ip/address/print";
-    const char *cmdDynamic = "?dynamic=true";
-    const char *cmdStatic  = "?dynamic=false";
-    const char *cmdEnabled = "?disabled=false";
-    const char *cmdOpt     = "=.proplist=address";
+    const char *cmd        = CMD_IP_ADDRESS_PRINT;
+    const char *cmdEnabled = REQ_PARAM_V( P_DISABLED, V_FALSE );
+    const char *cmdGrep    = GREP_OPT( P_ADDRESS );
+
+    const char *cmdDynamic = REQ_PARAM_V( P_DYNAMIC, V_TRUE );
+    const char *cmdStatic  = REQ_PARAM_V( P_DYNAMIC, V_FALSE );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
     add_word_to_sentence( cmdIface, &mkSentence );
     add_word_to_sentence( isStatic ? cmdStatic : cmdDynamic, &mkSentence );
     add_word_to_sentence( cmdEnabled, &mkSentence );
-    add_word_to_sentence( cmdOpt, &mkSentence );
+    add_word_to_sentence( cmdGrep, &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -560,7 +553,7 @@ bool Mikrotik::GetInterfaceIP( TInterface iface, char *ip, bool isStatic )
         return false;
 
     // Extract security profile ID from answer
-    bool success = parseAnswer( "address" );
+    bool success = parseAnswer( P_ADDRESS );
     if ( success )
         strcpy( ip, answer );
 
@@ -577,19 +570,19 @@ bool Mikrotik::SetStaticIP( TInterface iface, const char *ip )
         return false;
 
     // Find interface static IP identifier
-    char sipID[15] = {0};
+    char sipID[15] = { 0 };
     if ( !getStaticIpId( sipID, iface ) )
         return false;
 
     // 1. Prepare request
     char idCmd[25] = { 0 };
-    SafeSnprintf( idCmd, sizeof( idCmd ), "=.id=%s", sipID );
-
-    const char *cmd      = "/ip/address/set";
-    const char *stateCmd = "=disabled=false";
+    SafeSnprintf( idCmd, sizeof( idCmd ), SET_PARAM( P_ID ) "%s", sipID );
 
     char addrCmd[MIKROTIK_MAX_ANSWER] = { 0 };
-    SafeSnprintf( addrCmd, sizeof( addrCmd ), "=address=%s", ip );
+    SafeSnprintf( addrCmd, sizeof( addrCmd ), SET_PARAM( P_ADDRESS ) "%s", ip );
+
+    const char *cmd      = CMD_IP_ADDRESS_SET;
+    const char *stateCmd = SET_PARAM_V( P_DISABLED, V_FALSE );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,      &mkSentence );
@@ -611,14 +604,14 @@ bool Mikrotik::RemoveStaticIP( TInterface iface )
         return false;
 
     // Find interface static IP identifier
-    char sipID[30] = {0};
+    char sipID[30] = { 0 };
     if ( !getStaticIpId( sipID, iface ) )
         return false;
 
     // Prepare request
-    const char *cmd = "/ip/address/disable";
+    const char *cmd = CMD_IP_ADDRESS_DISABLE;
     char id[50];
-    SafeSnprintf( id, sizeof( id ), "=.id=%s", sipID );
+    SafeSnprintf( id, sizeof( id ), SET_PARAM( P_ID ) "%s", sipID );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
@@ -784,14 +777,14 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
 
     TMKSentence sentence;
     clear_sentence( &sentence );
-    add_word_to_sentence( "/login", &sentence );
+    add_word_to_sentence( CMD_LOGIN, &sentence );
 
     char name[100];
-    SafeSnprintf( name, sizeof( name ), "=name=%s", username );
+    SafeSnprintf( name, sizeof( name ), SET_PARAM( P_NAME ) "%s", username );
     add_word_to_sentence( name, &sentence );
 
     char resp[100];
-    SafeSnprintf( resp, sizeof( resp ), "=response=00%s", szMD5PasswordToSend );
+    SafeSnprintf( resp, sizeof( resp ), SET_PARAM( P_RESPONSE ) "00%s", szMD5PasswordToSend );
     add_word_to_sentence( resp, &sentence );
 
     write_sentence( &sentence );
@@ -800,7 +793,7 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
     read_sentence();
     block->Print();
 
-    return ( strstr( block->GetFirstWord(), "!done" ) != nullptr );
+    return ( strstr( block->GetFirstWord(), MIKROTIK_SUCCESS_ANSWER ) != nullptr );
 }
 
 
@@ -914,7 +907,7 @@ bool Mikrotik::IsRequestSuccessful()
 
     while ( pWord )
     {
-        if ( strstr( pWord, "!done" ) == pWord )
+        if ( strstr( pWord, MIKROTIK_SUCCESS_ANSWER ) == pWord )
             return true;
 
         pWord = block->GetNextWord( pWord );
@@ -931,15 +924,15 @@ bool Mikrotik::isInterfaceActive( TInterface iface )
         return false;
 
     // 1. PREPARE REQUEST
-    const char cmdWiFi[] = "/interface/wireless/print";
-    const char cmdEht[]  = "/interface/ethernet/print";
+    const char cmdWiFi[] = CMD_INTERFACE_WIRELESS_PRINT;
+    const char cmdEht[]  = CMD_INTERFACE_ETHERNET_PRINT;
 
     const char *cmd = ( iface == ether1 ) ? cmdEht : cmdWiFi;
 
     char cmdIface[50] = { 0 };
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?name=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_NAME ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char cmdOpt[] = "=.proplist=disabled";
+    const char cmdOpt[] = GREP_OPT( P_DISABLED );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,      &mkSentence );
@@ -953,12 +946,12 @@ bool Mikrotik::isInterfaceActive( TInterface iface )
     if ( !IsRequestSuccessful() )
         return false;  // ERROR
 
-    if ( !parseAnswer( "disabled" ) )
+    if ( !parseAnswer( P_DISABLED ) )
         return false;  // ERROR
 
-    if ( strstr( answer, "false" ) )
+    if ( strstr( answer, V_FALSE ) )
         return true;
-    else if ( strstr( answer, "true" ) )
+    else if ( strstr( answer, V_TRUE ) )
         return false;
     else
         return false;  // ERROR
@@ -972,17 +965,17 @@ bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
 
     // 1. PREPARE REQUEST
     char cmdIface[50] = { 0 };
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_INTERFACE ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char *cmd    = "/ip/address/print";
-    const char *cmdDyn = "?dynamic=false";
-    const char *cmdOpt = "=.proplist=.id";
+    const char *cmd     = CMD_IP_ADDRESS_PRINT;
+    const char *cmdDyn  = REQ_PARAM_V( P_DYNAMIC, V_FALSE );
+    const char *cmdGrep = GREP_OPT( P_ID );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,      &mkSentence );
     add_word_to_sentence( cmdIface, &mkSentence );
     add_word_to_sentence( cmdDyn,   &mkSentence );
-    add_word_to_sentence( cmdOpt,   &mkSentence );
+    add_word_to_sentence( cmdGrep,  &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -992,7 +985,7 @@ bool Mikrotik::getStaticIpId( char *pID, TInterface iface )
         return false;
 
     // Extract security profile ID from answer
-    bool success = parseAnswer( ".id" );
+    bool success = parseAnswer( P_ID );
     if ( success )
         strcpy( pID, answer );
 
@@ -1007,16 +1000,16 @@ bool Mikrotik::getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode )
 
     // 1. PREPARE REQUEST
     char cmdIface[20];
-    SafeSnprintf( cmdIface, sizeof( cmdIface ), "?interface=%s", IFACE_NAME_TABLE[iface] );
+    SafeSnprintf( cmdIface, sizeof( cmdIface ), REQ_PARAM( P_INTERFACE ) "%s", IFACE_NAME_TABLE[iface] );
 
-    const char *cmdServer = "/ip/dhcp-server/print";
-    const char *cmdClient = "/ip/dhcp-client/print";
-    const char *cmdOpt    = "=.proplist=.id";
+    const char *cmdServer = CMD_IP_DHCP_SERVER_PRINT;
+    const char *cmdClient = CMD_IP_DHCP_CLIENT_PRINT;
+    const char *cmdGrep   = GREP_OPT( P_ID );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( dhcpMode == DhcpServer ? cmdServer : cmdClient, &mkSentence );
     add_word_to_sentence( cmdIface, &mkSentence );
-    add_word_to_sentence( cmdOpt,   &mkSentence );
+    add_word_to_sentence( cmdGrep,  &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -1026,7 +1019,7 @@ bool Mikrotik::getDhcpID( char *pID, TInterface iface, TDhcpMode dhcpMode )
         return false;
 
     // Extract security profile ID from answer
-    bool success = parseAnswer( ".id" );
+    bool success = parseAnswer( P_ID );
     if ( success )
         strcpy( pID, answer );
 
@@ -1038,14 +1031,15 @@ bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
 {
     // 1. PREPARE REQUEST
     char reqSP[20];
-    SafeSnprintf( reqSP, sizeof( reqSP ), "?name=%s", mode );
+    SafeSnprintf( reqSP, sizeof( reqSP ), REQ_PARAM( P_NAME ) "%s", mode );
 
-    const char *cmd[] = { "/interface/wireless/security-profiles/print", "=.proplist=.id" };
+    const char *cmd     = CMD_INTERFACE_WIRELESS_SEC_PROF_PRINT ;
+    const char *cmdGrep = GREP_OPT( P_ID );
 
     clear_sentence( &mkSentence );
-    add_word_to_sentence( cmd[0], &mkSentence );
-    add_word_to_sentence( reqSP,  &mkSentence );
-    add_word_to_sentence( cmd[1], &mkSentence );
+    add_word_to_sentence( cmd,     &mkSentence );
+    add_word_to_sentence( reqSP,   &mkSentence );
+    add_word_to_sentence( cmdGrep, &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -1055,7 +1049,7 @@ bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
         return false;
 
     // Extract security profile ID from answer
-    bool success = parseAnswer( ".id" );
+    bool success = parseAnswer( P_ID );
     if ( success )
         strcpy( spID, answer );
 
@@ -1065,20 +1059,20 @@ bool Mikrotik::getSecurityProfileID( char *spID, const char *mode )
 
 bool Mikrotik::changeAccessPointPass( const char *pass )
 {
-    char spID[10] = {0};
+    char spID[10] = { 0 };
     if ( !getSecurityProfileID( spID, SP_MODE_ACCESS_POINT ) )
         return false;
 
-    const char cmd[] = "/interface/wireless/security-profiles/set";
+    const char *cmd = CMD_INTERFACE_WIRELESS_SEC_PROF_SET;
 
     char id[25];
-    SafeSnprintf( id, sizeof( id ), "=.id=%s", spID );
+    SafeSnprintf( id, sizeof( id ), SET_PARAM( P_ID ) "%s", spID );
 
     char newPassWpa2[100];
-    SafeSnprintf( newPassWpa2, sizeof( newPassWpa2 ), "=wpa2-pre-shared-key=%s", pass );
+    SafeSnprintf( newPassWpa2, sizeof( newPassWpa2 ), SET_PARAM( P_WPA2_PRE_SHARED_KEY ) "%s", pass );
 
     char newPassSupplicant[100];
-    SafeSnprintf( newPassSupplicant, sizeof( newPassSupplicant ), "=supplicant-identity=%s", pass );
+    SafeSnprintf( newPassSupplicant, sizeof( newPassSupplicant ), SET_PARAM( P_SUPPLICANT_IDENTITY ) "%s", pass );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,               &mkSentence );
@@ -1096,31 +1090,27 @@ bool Mikrotik::changeAccessPointPass( const char *pass )
 
 bool Mikrotik::changeWiFiStationPass( const char *pass )
 {
-    char spID[10] = {0};
+    char spID[10] = { 0 };
     if ( !getSecurityProfileID( spID, SP_MODE_STATION ) )
         return false;
 
-    const char cmd[] = "/interface/wireless/security-profiles/set";
+    const char *cmd = CMD_INTERFACE_WIRELESS_SEC_PROF_SET;
 
     char id[25];
-    SafeSnprintf( id, sizeof( id ), "=.id=%s", spID );
+    SafeSnprintf( id, sizeof( id ), SET_PARAM( P_ID ) "%s", spID );
 
     // We have no idea about encryption type
     // Thats why we're going to set all pass types in security profile
 
-    char wpaPass[100];
-    SafeSnprintf( wpaPass, sizeof( wpaPass ), "=wpa2-pre-shared-key=%s", pass );
-
     char wpa2Pass[100];
-    SafeSnprintf( wpa2Pass, sizeof( wpa2Pass ), "=wpa2-pre-shared-key=%s", pass );
+    SafeSnprintf( wpa2Pass, sizeof( wpa2Pass ), SET_PARAM( P_WPA2_PRE_SHARED_KEY ) "%s", pass );
 
     char supplicantPass[100];
-    SafeSnprintf( supplicantPass, sizeof( supplicantPass ), "=supplicant-identity=%s", pass );
+    SafeSnprintf( supplicantPass, sizeof( supplicantPass ), SET_PARAM( P_SUPPLICANT_IDENTITY ) "%s", pass );
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,            &mkSentence );
     add_word_to_sentence( id,             &mkSentence );
-    add_word_to_sentence( wpaPass,        &mkSentence );
     add_word_to_sentence( wpa2Pass,       &mkSentence );
     add_word_to_sentence( supplicantPass, &mkSentence );
 
