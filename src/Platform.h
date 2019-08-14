@@ -618,6 +618,10 @@ public:
 	void PrintUniqueId(MessageType mtype);
 #endif
 
+#if OMNI_SERVO_POSITIONING
+	void SetServoTarget(float pwm, Pin pin, uint16_t frequency);
+#endif
+
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
 	//-------------------------------------------------------------------------------------------------------
@@ -936,6 +940,17 @@ private:
 	bool doorState[numberOfDoors];
 	bool isDoorStateChanged[numberOfDoors];
 	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};
+#endif
+#if OMNI_SERVO_POSITIONING
+	bool isTargetServoPositionReached {false};
+	uint32_t lastServoCheckTime;
+	const uint16_t checkServoInterval {50};
+
+	float targetServoPwm {0}, currentServoPwm {0};
+	uint16_t targetServoFrequency {0};
+	Pin targetServoPin;
+	const float servoStep {0.01};
+	float servoDirection {1.0};
 #endif
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message

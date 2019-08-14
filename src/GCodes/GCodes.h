@@ -392,7 +392,7 @@ private:
 
 	GCodeResult SetOrReportZProbe(GCodeBuffer& gb, const StringRef &reply);		// Handle M558
 	GCodeResult DefineGrid(GCodeBuffer& gb, const StringRef &reply);			// Define the probing grid, returning true if error
-	GCodeResult LoadHeightMap(GCodeBuffer& gb, const StringRef& reply);			// Load the height map from file
+	GCodeResult LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool showMissingFileError);			// Load the height map from file
 	bool TrySaveHeightMap(const char *filename, const StringRef& reply) const;	// Save the height map to the specified file
 	GCodeResult SaveHeightMap(GCodeBuffer& gb, const StringRef& reply) const;	// Save the height map to the file specified by P parameter
 	void ClearBedMapping();														// Stop using bed compensation
@@ -668,8 +668,14 @@ private:
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif
 
+#if OMNI_SERVO_POSITIONING
+	static constexpr const float MinServoPulseWidth = 900.0, MaxServoPulseWidth = 2100.0;
+	static constexpr const float MinServoPosition = 0.0, MaxServoPosition = 110.2;
+	static constexpr uint16_t ServoRefreshFrequency = 333;
+#else
 	static constexpr const float MinServoPulseWidth = 544.0, MaxServoPulseWidth = 2400.0;
 	static constexpr uint16_t ServoRefreshFrequency = 50;
+#endif
 };
 
 // Flag that a new move is available for consumption by the Move subsystem

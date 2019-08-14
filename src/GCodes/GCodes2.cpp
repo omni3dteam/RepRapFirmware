@@ -237,7 +237,7 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				break;
 
 			case 1:		// load height map file
-				result = LoadHeightMap(gb, reply);
+				result = LoadHeightMap(gb, reply, false);
 				break;
 
 			case 2:		// clear height map
@@ -2291,7 +2291,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						if (angleOrWidth < MinServoPulseWidth)
 						{
 							// User gave an angle so convert it to a pulse width in microseconds
+#if OMNI_SERVO_POSITIONING
+							angleOrWidth =  ((min<float>(angleOrWidth, MaxServoPosition)) * ((MaxServoPulseWidth - MinServoPulseWidth) / (MaxServoPosition - MinServoPosition))) + MinServoPulseWidth;
+#else
 							angleOrWidth = (min<float>(angleOrWidth, 180.0) * ((MaxServoPulseWidth - MinServoPulseWidth) / 180.0)) + MinServoPulseWidth;
+#endif
 						}
 						else if (angleOrWidth > MaxServoPulseWidth)
 						{
@@ -2302,7 +2306,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						{
 							pwm = 1.0 - pwm;
 						}
+#if OMNI_SERVO_POSITIONING
+						reprap.GetPlatform().SetServoTarget(pwm, servoPin, ServoRefreshFrequency);
+#else
 						IoPort::WriteAnalog(servoPin, pwm, ServoRefreshFrequency);
+#endif
 					}
 				}
 				// We don't currently allow the servo position to be read back
@@ -2648,7 +2656,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			return false;
 		}
-		result = LoadHeightMap(gb, reply);
+		result = LoadHeightMap(gb, reply, true);
 		break;
 
 	case 376: // Set taper height

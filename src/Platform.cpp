@@ -1808,12 +1808,51 @@ void Platform::Spin()
 	}
 #endif
 
+#if OMNI_SERVO_POSITIONING
+	if (isTargetServoPositionReached == false)
+	{
+		if(millis() - lastServoCheckTime > checkServoInterval)
+		{
+			lastServoCheckTime = millis();
+
+			if (currentServoPwm == targetServoPwm)
+			{
+				isTargetServoPositionReached = true;
+				// TODO: TURN OFF power supply off servo inverter
+				return;
+			}
+
+			if (currentServoPwm - targetServoPwm > 0) servoDirection = -1.0;
+			else servoDirection = 1.0;
+
+			if (servoDirection * (targetServoPwm - currentServoPwm) > servoStep)
+			{
+				if (currentServoPwm == 0) currentServoPwm = 0.4;
+				else currentServoPwm = currentServoPwm + (servoStep * servoDirection);
+
+				IoPort::WriteAnalog(targetServoPin, currentServoPwm, targetServoFrequency);
+			}
+			else IoPort::WriteAnalog(targetServoPin, targetServoPwm, targetServoFrequency);
+		}
+	}
+#endif //OMNI_SERVO_POSITIONING
+
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)
 	{
 		logger->Flush(false);
 	}
 }
+
+#if OMNI_SERVO_POSITIONING
+void Platform::SetServoTarget(float pwm, Pin pin, uint16_t frequency)
+{
+	targetServoPwm = pwm;
+	targetServoPin = pin;
+	targetServoFrequency = frequency;
+	isTargetServoPositionReached = false;
+}
+#endif
 
 #if HAS_SMART_DRIVERS
 

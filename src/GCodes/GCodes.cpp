@@ -676,7 +676,11 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		if ((gb.MachineState().toolChangeParam & TFreeBit) != 0)
 		{
 			const Tool * const oldTool = reprap.GetCurrentTool();
+#if OMNI_SERVO_POSITIONING
+			if (oldTool != nullptr)
+#else
 			if (oldTool != nullptr && AllAxesAreHomed())
+#endif
 			{
 				String<ShortScratchStringLength> scratchString;
 				scratchString.printf("tfree%d.g", oldTool->Number());
@@ -695,7 +699,11 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				reprap.StandbyTool(oldTool->Number(), simulationMode != 0);
 			}
 			gb.AdvanceState();
+#if OMNI_SERVO_POSITIONING
+			if (reprap.GetTool(gb.MachineState().newToolNumber) != nullptr && (gb.MachineState().toolChangeParam & TPreBit) != 0)
+#else
 			if (reprap.GetTool(gb.MachineState().newToolNumber) != nullptr && AllAxesAreHomed() && (gb.MachineState().toolChangeParam & TPreBit) != 0)
+#endif
 			{
 				String<ShortScratchStringLength> scratchString;
 				scratchString.printf("tpre%d.g", gb.MachineState().newToolNumber);
@@ -712,7 +720,9 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			UpdateCurrentUserPosition();					// get the actual position of the new tool
 
 			gb.AdvanceState();
+#if !OMNI_SERVO_POSITIONING
 			if (AllAxesAreHomed())
+#endif
 			{
 				if (reprap.GetCurrentTool() != nullptr && (gb.MachineState().toolChangeParam & TPostBit) != 0)
 				{
@@ -3648,7 +3658,7 @@ GCodeResult GCodes::ProbeGrid(GCodeBuffer& gb, const StringRef& reply)
 	return GCodeResult::ok;
 }
 
-GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply)
+GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool showMissingFileError)
 {
 	ClearBedMapping();
 
@@ -3663,25 +3673,30 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply)
 	FileStore * const f = platform.OpenSysFile(heightMapFileName.c_str(), OpenMode::read);
 	if (f == nullptr)
 	{
-		reply.printf("Height map file %s not found", heightMapFileName.c_str());
-		return GCodeResult::error;
+		if (showMissingFileError == true)
+		{
+			reply.printf("Height map file %s not found", heightMapFileName.c_str());
+			return GCodeResult::error;
+		}
 	}
-
-	reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
-	const bool err = reprap.GetMove().LoadHeightMapFromFile(f, reply);
-	f->Close();
-	reprap.GetMove().UseMesh(!err);
-
-	if (err)
+	else
 	{
-		return GCodeResult::error;
-	}
+		reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
+		const bool err = reprap.GetMove().LoadHeightMapFromFile(f, reply);
+		f->Close();
+		reprap.GetMove().UseMesh(!err);
 
-	reply.Clear();						// get rid of the error message
-	if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
-	{
-		reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
-		return GCodeResult::warning;
+		if (err)
+		{
+			return GCodeResult::error;
+		}
+
+		reply.Clear();						// get rid of the error message
+		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
+		{
+			reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
+			return GCodeResult::warning;
+		}
 	}
 
 	return GCodeResult::ok;
