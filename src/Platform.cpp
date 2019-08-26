@@ -1734,8 +1734,15 @@ void Platform::Spin()
 			{
 				if (isRunShutDownMacro == false)
 				{
-					reprap.GetGCodes().RunShutdownMacro();
-					isRunShutDownMacro = true;
+					if(reprap.GetStatusCharacter() != 'B')
+					{
+						reprap.GetGCodes().RunShutdownMacro();
+						isRunShutDownMacro = true;
+					}
+					else
+					{
+						SendAlert(GenericMessage, "The printer is busy", "Use emergency button if needed.", 1, 0.0, 0);
+					}
 				}
 			}
 			else

@@ -91,6 +91,8 @@ public:
 	void FlagTemperatureFault(int8_t dudHeater);
 	void ClearTemperatureFault(int8_t wasDudHeater);
 
+	char GetStatusCharacter() const;
+
 	Platform& GetPlatform() const;
 	Move& GetMove() const;
 	Heat& GetHeat() const;
@@ -147,8 +149,6 @@ protected:
 
 private:
 	static void EncodeString(StringRef& response, const char* src, size_t spaceToLeave, bool allowControlChars = false, char prefix = 0);
-
-	char GetStatusCharacter() const;
 
 	static constexpr uint32_t MaxTicksInSpinState = 20000;	// timeout before we reset the processor
 	static constexpr uint32_t HighTicksInSpinState = 16000;	// how long before we warn that timeout is approaching
