@@ -230,6 +230,8 @@ void Platform::Init()
 	auxDetected = false;
 	auxSeq = 0;
 	SERIAL_AUX_DEVICE.begin(baudRates[1]);		// this can't be done in the constructor because the Arduino port initialisation isn't complete at that point
+
+	lcdUpdater = new LcdUpdater(SERIAL_AUX_DEVICE);
 #endif
 
 #ifdef SERIAL_AUX2_DEVICE
@@ -935,6 +937,16 @@ bool Platform::CheckFirmwareUpdatePrerequisites(const StringRef& reply)
 	}
 
 	return true;
+}
+
+bool Platform::UpdateLcdDisplay()
+{
+	return lcdUpdater->UpdateLcdModule();
+}
+
+bool Platform::OpenLcdFile()
+{
+	return lcdUpdater->OpenLcdFirmware();
 }
 
 // Update the firmware. Prerequisites should be checked before calling this.

@@ -874,6 +874,12 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			{
 				if ((firmwareUpdateModuleMap & (1u << module)) != 0)
 				{
+					debugPrintf("val: %d\n", firmwareUpdateModuleMap);
+					if((firmwareUpdateModuleMap & 16) != 0)
+					{
+						gb.SetState(GCodeState::flashing2);
+						break;
+					}
 					firmwareUpdateModuleMap &= ~(1u << module);
 					FirmwareUpdater::UpdateModule(module);
 					updating = true;
@@ -891,6 +897,22 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case GCodeState::flashing2:
+		if ((firmwareUpdateModuleMap & 16) != 0)
+		{
+			bool isOpenLcdFile = false;
+
+			if(isOpenLcdFile != true)
+			{
+				platform.OpenLcdFile();
+			}
+
+			if(platform.UpdateLcdDisplay() != true)
+			{
+				debugPrintf("stop\n");
+				break;
+			}
+		}
+
 		if ((firmwareUpdateModuleMap & 1) != 0)
 		{
 			// Update main firmware

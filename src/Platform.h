@@ -44,6 +44,7 @@ Licence: GPL
 #include "ZProbeProgrammer.h"
 #include "WorkTime.h"
 #include <General/IPAddress.h>
+#include "LcdUpdater.h"
 
 #if defined(DUET_NG)
 # include "DueXn.h"
@@ -336,6 +337,8 @@ public:
 	bool IsDuetWiFi() const;
 #endif
 
+	LcdUpdater *lcdUpdater;
+
 	const uint8_t *GetDefaultMacAddress() const { return defaultMacAddress; }
 
 	// Timing
@@ -539,6 +542,8 @@ public:
 	// AUX device
 	void Beep(int freq, int ms);
 	void SendAuxMessage(const char* msg);
+	bool UpdateLcdDisplay();
+	bool OpenLcdFile();
 
 	// Hotend configuration
 	float GetFilamentWidth() const;
