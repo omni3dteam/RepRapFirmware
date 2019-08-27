@@ -1276,7 +1276,10 @@ bool Platform::FlushAuxMessages()
 		const size_t bytesToWrite = min<size_t>(SERIAL_AUX_DEVICE.canWrite(), auxOutputBuffer->BytesLeft());
 		if (bytesToWrite > 0)
 		{
-			SERIAL_AUX_DEVICE.write(auxOutputBuffer->Read(bytesToWrite), bytesToWrite);
+			if(!lcdUpdater->isLcdUploader)
+			{
+				SERIAL_AUX_DEVICE.write(auxOutputBuffer->Read(bytesToWrite), bytesToWrite);
+			}
 		}
 
 		if (auxOutputBuffer->BytesLeft() == 0)

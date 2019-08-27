@@ -899,16 +899,16 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 	case GCodeState::flashing2:
 		if ((firmwareUpdateModuleMap & 16) != 0)
 		{
-			bool isOpenLcdFile = false;
+			static bool isOpenLcdFile = false;
 
 			if(isOpenLcdFile != true)
 			{
-				platform.OpenLcdFile();
+				isOpenLcdFile = platform.OpenLcdFile();
 			}
 
 			if(platform.UpdateLcdDisplay() != true)
 			{
-				debugPrintf("stop\n");
+				//debugPrintf("stop\n");
 				break;
 			}
 		}
