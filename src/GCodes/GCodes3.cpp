@@ -1084,7 +1084,8 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 			return GCodeResult::error;
 		}
 
-		if ((firmwareUpdateModuleMap & 8) != 0)
+		// it's 4th module with allow to update LCD display
+		if ((firmwareUpdateModuleMap & 16) != 0 && !platform.CheckLcdUpdatePrerequisites(reply))
 		{
 			firmwareUpdateModuleMap = 0;
 			return GCodeResult::error;
@@ -1093,7 +1094,7 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 
 	// If we get here then we have the module map, and all prerequisites are satisfied
 	isFlashing = true;										// this tells the web interface and PanelDue that we are about to flash firmware
-	if (DoDwellTime(gb, 1000) == GCodeResult::notFinished)	// wait a second so all HTTP clients and PanelDue are notified
+	if (DoDwellTime(gb, 3000) == GCodeResult::notFinished)	// wait 3 seconds so all HTTP clients and PanelDue are notified
 	{
 		return GCodeResult::notFinished;
 	}

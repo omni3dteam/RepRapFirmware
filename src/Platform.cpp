@@ -939,14 +939,25 @@ bool Platform::CheckFirmwareUpdatePrerequisites(const StringRef& reply)
 	return true;
 }
 
+// Check the prerequisites for updating the LCD firmware. Return True if satisfied, else print a message to 'reply' and return false.
+bool Platform::CheckLcdUpdatePrerequisites(const StringRef& reply)
+{
+	bool firmwareFile = FileExists(DEFAULT_SYS_DIR, LCD_FIRMWARE_FILE);
+	if (firmwareFile == false)
+	{
+		reply.printf("LCD Firmware binary \"%s\" not found", LCD_FIRMWARE_FILE);
+		return false;
+	}
+
+	// If the file exist we can send frame to lcd in order to run bootloader
+	MessageF(LcdMessage, "{\"bootloader\":on}\n");
+
+	return true;
+}
+
 bool Platform::UpdateLcdDisplay()
 {
 	return lcdUpdater->UpdateLcdModule();
-}
-
-bool Platform::OpenLcdFile()
-{
-	return lcdUpdater->OpenLcdFirmware();
 }
 
 // Update the firmware. Prerequisites should be checked before calling this.

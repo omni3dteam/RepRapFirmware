@@ -375,6 +375,7 @@ public:
 
 	// File functions
 	MassStorage* GetMassStorage() const;
+	LcdUpdater* GetLcdUpdater() const;
 	WorkTime* GetWorkTime() const;
 	FileStore* OpenFile(const char* folder, const char* fileName, OpenMode mode, uint32_t preAllocSize = 0) const;
 	bool Delete(const char* folder, const char *filename) const;
@@ -538,12 +539,12 @@ public:
 	// Flash operations
 	void UpdateFirmware();
 	bool CheckFirmwareUpdatePrerequisites(const StringRef& reply);
+	bool CheckLcdUpdatePrerequisites(const StringRef& reply);
 
 	// AUX device
 	void Beep(int freq, int ms);
 	void SendAuxMessage(const char* msg);
 	bool UpdateLcdDisplay();
-	bool OpenLcdFile();
 
 	// Hotend configuration
 	float GetFilamentWidth() const;
@@ -1207,6 +1208,11 @@ inline void Platform::SetNozzleDiameter(float diameter)
 inline MassStorage* Platform::GetMassStorage() const
 {
 	return massStorage;
+}
+
+inline LcdUpdater* Platform::GetLcdUpdater() const
+{
+	return lcdUpdater;
 }
 
 inline WorkTime* Platform::GetWorkTime() const
