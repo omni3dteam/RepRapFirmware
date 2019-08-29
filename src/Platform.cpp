@@ -950,7 +950,9 @@ bool Platform::CheckLcdUpdatePrerequisites(const StringRef& reply)
 	}
 
 	// If the file exist we can send frame to lcd in order to run bootloader
-	MessageF(LcdMessage, "{\"bootloader\":on}\n");
+	// That value indicate that LCD has to restart and get into bootloader procedure
+	// in order to start upgrading firmware
+	MessageF(LcdMessage, "{\"bootloader\":57005}\n");  // hex: 0xDEAD
 
 	return true;
 }

@@ -55,15 +55,14 @@ private:
 
 	uint32_t fileOffset {0};
     uint16_t filePayload {96};
-    uint16_t idPackage {0};
-    const uint8_t framePayload {96};
-	const char lcdFrameBegin {0xAA};
 	uint8_t payloadBuffer[96];
 	bool retransmission {false};
+	uint16_t idPackage {0};
 	uint8_t retransmissionTry {0};
+	const uint8_t framePayload {96};
 
+	uint32_t blockWriteInterval {30};
 	static const uint32_t initWriteInterval {7000}; 		// 7s is enough. We need this time to wait for erase lcd flash space.
-	static const uint32_t blockWriteInterval {50};
 
 };
 

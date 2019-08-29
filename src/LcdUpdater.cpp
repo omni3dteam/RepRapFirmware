@@ -5,6 +5,8 @@
 #include "RepRap.h"
 #include "Storage/FileStore.h"
 
+const char lcdFrameBegin = 0xAA;
+
 LcdUpdater::LcdUpdater(UARTClass& port)
 	: uploadPort(port), uploadFile(nullptr), state(UploadState::idle), fileOffset(0)
 {
@@ -59,6 +61,8 @@ bool LcdUpdater::OpenLcdFirmware()
 	state = UploadState::initPacket;
 	fileOffset = idPackage = retransmissionTry = 0;
 	filePayload = framePayload;
+	blockWriteInterval = 25;
+
 	memset(payloadBuffer, 0, framePayload);
 	return true;
 }
@@ -89,8 +93,10 @@ void LcdUpdater::prepareFrameToLcd()
 	if(fileOffset + framePayload > uploadFile->Length())
 	{
 		filePayload = uploadFile->Length() - fileOffset;
+
+		// give more time for last frame because LCD need to compute hash
+		blockWriteInterval = 1000;
 		state = UploadState::done;
-		//debugPrintf("payload: %d\r\n", filePayload);
 	}
 
 	if(!retransmission)
@@ -105,12 +111,10 @@ void LcdUpdater::prepareFrameToLcd()
 
 	if(stat == errorId::noError)
 	{
-		//debugPrintf("send packet: %d (offset: %lu, file lenght: %lu)\n", idPackage, fileOffset, uploadFile->Length());
-		debugPrintf(".");
 		memset(payloadBuffer, 0, framePayload);
 		fileOffset += framePayload;
-		idPackage++;
 		retransmission = false;
+		idPackage++;
 
 		if(state == UploadState::initPacket)
 		{
@@ -127,7 +131,7 @@ void LcdUpdater::prepareFrameToLcd()
 		retransmission = true;
 		if(++retransmissionTry > 3)
 		{
-			MessageF("Internal problem. Can't upload firmware to LCD. Reason: %d", (int)stat);
+			MessageF("Internal problem. Can't upload firmware to LCD. Reason: %d\n\r", (int)stat);
 			state = UploadState::done;
 		}
 	}
@@ -166,7 +170,7 @@ void LcdUpdater::writePacketRaw(uint8_t *data, size_t dataLen)
 	write(crc32[2]);
 	write(crc32[3]);
 
-	debugPrintf("CRC32: 0x%x - ", crc32Value);
+	//debugPrintf("CRC32: 0x%x - ", crc32Value);
 }
 
 void LcdUpdater::flushInput()

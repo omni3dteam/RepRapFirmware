@@ -908,10 +908,10 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		if ((firmwareUpdateModuleMap & 1) != 0)
 		{
 			// Update main firmware
-			firmwareUpdateModuleMap = 0;
 			platform.UpdateFirmware();
 			// The above call does not return unless an error occurred
 		}
+		firmwareUpdateModuleMap = 0;
 		isFlashing = false;
 		gb.SetState(GCodeState::normal);
 		break;
