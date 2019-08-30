@@ -458,7 +458,7 @@ void Platform::Init()
 	delay(200);
 	expansionBoard = DuetExpansion::DueXnInit();
 
-#if HAS_SMART_DRIVERS
+# if HAS_SMART_DRIVERS
 	switch (expansionBoard)
 	{
 	case ExpansionBoardType::DueX2:
@@ -473,7 +473,7 @@ void Platform::Init()
 		numSmartDrivers = 5;									// assume that any additional drivers are dumb enable/step/dir ones
 		break;
 	}
-#endif
+# endif
 
 	if (expansionBoard != ExpansionBoardType::none)
 	{
@@ -642,6 +642,9 @@ void Platform::Init()
 	// Kick everything off
 	InitialiseInterrupts();
 
+#ifdef DUET_NG
+	DuetExpansion::DueXnTaskInit();								// must initialise interrupt priorities before calling this
+#endif
 	active = true;
 }
 
@@ -1731,8 +1734,15 @@ void Platform::Spin()
 			{
 				if (isRunShutDownMacro == false)
 				{
-					reprap.GetGCodes().RunShutdownMacro();
-					isRunShutDownMacro = true;
+					if(reprap.GetStatusCharacter() != 'B')
+					{
+						reprap.GetGCodes().RunShutdownMacro();
+						isRunShutDownMacro = true;
+					}
+					else
+					{
+						SendAlert(GenericMessage, "The printer is busy", "Use emergency button if needed.", 1, 0.0, 0);
+					}
 				}
 			}
 			else

@@ -7,6 +7,7 @@
  *  This file contains the code to see what G, M or T command we have and start processing it.
  */
 
+#include "Mikrotik.h"
 #include "GCodes.h"
 
 #include "GCodeBuffer.h"
@@ -1628,6 +1629,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					String<GCODE_LENGTH> message;
 					gb.GetQuotedString(message.GetRef());
 					platform.Message(type, message.c_str());
+					if (type != HttpMessage)
+					{
+						platform.Message(type, "\n");
+					}
 				}
 			}
 		}
@@ -4221,6 +4226,207 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			result = GCodeResult::error;
 			reply.copy("No tool selected");
+		}
+		break;
+	case 720:
+		if (gb.Seen('C'))
+		{
+			//reprap.GetMikrotikInstance().Run(gb.GetUIValue());
+		}
+		break;
+
+	case 724:
+		{
+			uint32_t before = millis();
+
+			//#warning "How to return an error???"
+			char uptime[MIKROTIK_MAX_ANSWER] = { 0 };
+			reprap.GetMikrotikInstance().GetUpTime( uptime );
+			reply.printf("Uptime: %s", uptime );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+		}
+		break;
+
+	case 725:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d", "Omn!p@ss", wifi2g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 726:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().ConnectToWiFi( "omni3d5", "Omn!p@ss", wifi5g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 727:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest2G", "factory2G123", wifi2g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 728:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().CreateAP( "LiteTest5G", "factory5G456", wifi5g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 729:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().DisableInterface( wifi2g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 730:
+			{
+				uint32_t before = millis();
+
+				reprap.GetMikrotikInstance().DisableInterface( wifi5g );
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
+	case 731:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi2g, DhcpClient, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP client wifi2 ENABLED\n" );
+				else
+					debugPrintf( "DHCP client wifi2 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 732:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi5g, DhcpClient, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP client wifi5 ENABLED\n" );
+				else
+					debugPrintf( "DHCP client wifi5 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 733:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi2g, DhcpServer, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP server wifi2 ENABLED\n" );
+				else
+					debugPrintf( "DHCP server wifi2 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 734:
+		{
+			TEnableState dhcp;
+			if ( reprap.GetMikrotikInstance().GetDhcpState( wifi5g, DhcpServer, &dhcp ) )
+			{
+				if ( dhcp == Enabled )
+					debugPrintf( "DHCP server wifi5 ENABLED\n" );
+				else
+					debugPrintf( "DHCP server wifi5 DISABLED\n" );
+			}
+			else
+				debugPrintf( "Failed to get dhcp state\n" );
+		}
+		break;
+
+	case 735:
+		{
+			uint32_t before = millis();
+
+			if ( reprap.GetMikrotikInstance().ConnectToEthernet() )
+				debugPrintf( "Connected to ethernet\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+		}
+		break;
+
+	case 736:
+		{
+			const char *ip = "192.168.1.53/24";
+
+			if ( reprap.GetMikrotikInstance().SetStaticIP( ether1, ip ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+		}
+		break;
+
+	case 737:
+		{
+			uint32_t before = millis();
+
+			const char *ip = "192.168.1.54/24";
+
+			if ( reprap.GetMikrotikInstance().SetStaticIP( ether1, ip ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+		}
+		break;
+
+	case 738:
+		{
+			uint32_t before = millis();
+
+			if ( reprap.GetMikrotikInstance().RemoveStaticIP( ether1 ) )
+				debugPrintf( "DONE\n" );
+			else
+				debugPrintf( "FAILED!!!\n" );
+
+			uint32_t after = millis();
+			debugPrintf( "Execution time: %ims\n", (int)(after - before) );
 		}
 		break;
 

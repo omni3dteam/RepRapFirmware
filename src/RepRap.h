@@ -25,6 +25,7 @@ Licence: GPL
 #include "ObjectModel/ObjectModel.h"
 #include "MessageType.h"
 #include "RTOSIface/RTOSIface.h"
+#include "Mikrotik.h"
 
 enum class ResponseSource
 {
@@ -90,11 +91,14 @@ public:
 	void FlagTemperatureFault(int8_t dudHeater);
 	void ClearTemperatureFault(int8_t wasDudHeater);
 
+	char GetStatusCharacter() const;
+
 	Platform& GetPlatform() const;
 	Move& GetMove() const;
 	Heat& GetHeat() const;
 	GCodes& GetGCodes() const;
 	Network& GetNetwork() const;
+	Mikrotik& GetMikrotikInstance() const;
 	Roland& GetRoland() const;
 	Scanner& GetScanner() const;
 	PrintMonitor& GetPrintMonitor() const;
@@ -146,13 +150,12 @@ protected:
 private:
 	static void EncodeString(StringRef& response, const char* src, size_t spaceToLeave, bool allowControlChars = false, char prefix = 0);
 
-	char GetStatusCharacter() const;
-
 	static constexpr uint32_t MaxTicksInSpinState = 20000;	// timeout before we reset the processor
 	static constexpr uint32_t HighTicksInSpinState = 16000;	// how long before we warn that timeout is approaching
 
 	Platform* platform;
 	Network* network;
+	Mikrotik* mikrotik;
 	Move* move;
 	Heat* heat;
 	GCodes* gCodes;
@@ -208,6 +211,7 @@ inline Move& RepRap::GetMove() const { return *move; }
 inline Heat& RepRap::GetHeat() const { return *heat; }
 inline GCodes& RepRap::GetGCodes() const { return *gCodes; }
 inline Network& RepRap::GetNetwork() const { return *network; }
+inline Mikrotik& RepRap::GetMikrotikInstance() const { return *mikrotik; }
 inline Roland& RepRap::GetRoland() const { return *roland; }
 inline Scanner& RepRap::GetScanner() const { return *scanner; }
 inline PrintMonitor& RepRap::GetPrintMonitor() const { return *printMonitor; }
