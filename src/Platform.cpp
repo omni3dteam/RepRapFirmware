@@ -1832,7 +1832,11 @@ void Platform::Spin()
 
 				IoPort::WriteAnalog(targetServoPin, currentServoPwm, targetServoFrequency);
 			}
-			else IoPort::WriteAnalog(targetServoPin, targetServoPwm, targetServoFrequency);
+			else
+			{
+				currentServoPwm = targetServoPwm;
+				IoPort::WriteAnalog(targetServoPin, targetServoPwm, targetServoFrequency);
+			}
 		}
 	}
 #endif //OMNI_SERVO_POSITIONING
