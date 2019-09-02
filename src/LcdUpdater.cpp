@@ -76,7 +76,7 @@ LcdUpdater::errorId LcdUpdater::readPacket(uint32_t msTimeout)
 	{
 		if (millis() - startTime > msTimeout)
 		{
-			return errorId::errorTimeout;
+			return errorId::errorTimeoutFw;
 		}
 
 		if (uploadPort.available() < 1)
@@ -127,11 +127,11 @@ void LcdUpdater::prepareFrameToLcd()
 	}
 	else
 	{
-		debugPrintf("Error code: %d \r\n", (int)stat);
+		debugPrintf("Error code: %d \n", (int)stat);
 		retransmission = true;
 		if(++retransmissionTry > 3)
 		{
-			MessageF("Internal problem. Can't upload firmware to LCD. Reason: %d\n\r", (int)stat);
+			MessageF("Internal problem. Can't upload firmware to LCD. Reason: %d\n", (int)stat);
 			state = UploadState::done;
 		}
 	}

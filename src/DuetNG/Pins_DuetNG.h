@@ -7,7 +7,7 @@ constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manua
 # define IAP_FIRMWARE_FILE	"Duet2CombinedFirmware.bin"
 #define IAP_UPDATE_FILE		"iap4e.bin"				// using the same IAP file for both Duet WiFi and Duet Ethernet
 # define WIFI_FIRMWARE_FILE	"DuetWiFiServer.bin"
-#define LCD_FIRMWARE_FILE   "PanelDueOmni.bin"
+#define LCD_FIRMWARE_FILE   "OmniDisplayFirmware.bin"
 
 // Features definition
 #define HAS_LWIP_NETWORKING		0

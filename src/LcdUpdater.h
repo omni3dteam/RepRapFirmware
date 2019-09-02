@@ -28,7 +28,8 @@ private:
 		flashErrorWrite,
 		errorWrongHash,
 		errorReceiveNewFirmwareWithoutValidInitPackage,
-		errorTimeout,
+		errorTimeoutLcd,
+		errorTimeoutFw,
 		frameHashOk = 99
 	};
 
