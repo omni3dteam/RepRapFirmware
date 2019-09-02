@@ -874,6 +874,12 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			{
 				if ((firmwareUpdateModuleMap & (1u << module)) != 0)
 				{
+					// 4th module is for LCD and it uses loop for sending update, so we go to step flashing2
+					if((firmwareUpdateModuleMap & 16) != 0)
+					{
+						platform.GetLcdUpdater()->OpenLcdFirmware() ? gb.SetState(GCodeState::flashing2) : gb.SetState(GCodeState::normal);
+						break;
+					}
 					firmwareUpdateModuleMap &= ~(1u << module);
 					FirmwareUpdater::UpdateModule(module);
 					updating = true;
@@ -891,13 +897,21 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case GCodeState::flashing2:
+		if ((firmwareUpdateModuleMap & 16) != 0)
+		{
+			if(platform.UpdateLcdDisplay() != true)
+			{
+				break;
+			}
+		}
+
 		if ((firmwareUpdateModuleMap & 1) != 0)
 		{
 			// Update main firmware
-			firmwareUpdateModuleMap = 0;
 			platform.UpdateFirmware();
 			// The above call does not return unless an error occurred
 		}
+		firmwareUpdateModuleMap = 0;
 		isFlashing = false;
 		gb.SetState(GCodeState::normal);
 		break;

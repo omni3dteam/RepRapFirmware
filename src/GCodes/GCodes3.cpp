@@ -1044,7 +1044,7 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 		// Find out which modules we have been asked to update
 		if (gb.Seen('S'))
 		{
-			uint32_t modulesToUpdate[3];
+			uint32_t modulesToUpdate[4];
 			size_t numUpdateModules = ARRAY_SIZE(modulesToUpdate);
 			gb.GetUnsignedArray(modulesToUpdate, numUpdateModules, false);
 			for (size_t i = 0; i < numUpdateModules; ++i)
@@ -1083,11 +1083,18 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 			firmwareUpdateModuleMap = 0;
 			return GCodeResult::error;
 		}
+
+		// it's 4th module with allow to update LCD display
+		if ((firmwareUpdateModuleMap & 16) != 0 && !platform.CheckLcdUpdatePrerequisites(reply))
+		{
+			firmwareUpdateModuleMap = 0;
+			return GCodeResult::error;
+		}
 	}
 
 	// If we get here then we have the module map, and all prerequisites are satisfied
 	isFlashing = true;										// this tells the web interface and PanelDue that we are about to flash firmware
-	if (DoDwellTime(gb, 1000) == GCodeResult::notFinished)	// wait a second so all HTTP clients and PanelDue are notified
+	if (DoDwellTime(gb, 3000) == GCodeResult::notFinished)	// wait 3 seconds so all HTTP clients and PanelDue are notified
 	{
 		return GCodeResult::notFinished;
 	}

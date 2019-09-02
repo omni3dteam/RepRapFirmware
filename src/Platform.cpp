@@ -230,6 +230,8 @@ void Platform::Init()
 	auxDetected = false;
 	auxSeq = 0;
 	SERIAL_AUX_DEVICE.begin(baudRates[1]);		// this can't be done in the constructor because the Arduino port initialisation isn't complete at that point
+
+	lcdUpdater = new LcdUpdater(SERIAL_AUX_DEVICE);
 #endif
 
 #ifdef SERIAL_AUX2_DEVICE
@@ -937,6 +939,29 @@ bool Platform::CheckFirmwareUpdatePrerequisites(const StringRef& reply)
 	return true;
 }
 
+// Check the prerequisites for updating the LCD firmware. Return True if satisfied, else print a message to 'reply' and return false.
+bool Platform::CheckLcdUpdatePrerequisites(const StringRef& reply)
+{
+	bool firmwareFile = FileExists(DEFAULT_SYS_DIR, LCD_FIRMWARE_FILE);
+	if (firmwareFile == false)
+	{
+		reply.printf("LCD Firmware binary \"%s\" not found", LCD_FIRMWARE_FILE);
+		return false;
+	}
+
+	// If the file exist we can send frame to lcd in order to run bootloader
+	// That value indicate that LCD has to restart and get into bootloader procedure
+	// in order to start upgrading firmware
+	MessageF(LcdMessage, "{\"bootloader\":57005}\n");  // hex: 0xDEAD
+
+	return true;
+}
+
+bool Platform::UpdateLcdDisplay()
+{
+	return lcdUpdater->UpdateLcdModule();
+}
+
 // Update the firmware. Prerequisites should be checked before calling this.
 void Platform::UpdateFirmware()
 {
@@ -1264,7 +1289,10 @@ bool Platform::FlushAuxMessages()
 		const size_t bytesToWrite = min<size_t>(SERIAL_AUX_DEVICE.canWrite(), auxOutputBuffer->BytesLeft());
 		if (bytesToWrite > 0)
 		{
-			SERIAL_AUX_DEVICE.write(auxOutputBuffer->Read(bytesToWrite), bytesToWrite);
+			if(!lcdUpdater->isLcdUploader)
+			{
+				SERIAL_AUX_DEVICE.write(auxOutputBuffer->Read(bytesToWrite), bytesToWrite);
+			}
 		}
 
 		if (auxOutputBuffer->BytesLeft() == 0)
