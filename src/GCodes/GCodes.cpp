@@ -2877,6 +2877,8 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 	{
 		if (!doingManualBedProbe && CheckEnoughAxesHomed(axesMentioned))
 		{
+			platform.MessageF(ImmediateLcdMessage, "You must home XY axes.\n");
+
 			return "G0/G1: insufficient axes homed";
 		}
 	}
