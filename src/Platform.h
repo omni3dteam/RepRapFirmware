@@ -925,6 +925,7 @@ private:
 #if OMNI_POWER_MONITOR
 	bool isPowerBtnActivated;
 	bool isRunShutDownMacro;
+	bool isShutDownAlertSend;
 	uint32_t lastPowTime;
 	uint32_t powCheckInterval = 1000;
 

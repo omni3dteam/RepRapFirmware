@@ -1741,7 +1741,11 @@ void Platform::Spin()
 					}
 					else
 					{
-						SendAlert(GenericMessage, "The printer is busy", "Use emergency button if needed.", 1, 0.0, 0);
+						if (isShutDownAlertSend == false)
+						{
+							SendAlert(GenericMessage, "The printer is busy", "Use emergency button if needed.", 1, 0.0, 0);
+							isShutDownAlertSend = true;
+						}
 					}
 				}
 			}
@@ -1749,12 +1753,14 @@ void Platform::Spin()
 			{
 				isPowerBtnActivated = true;
 				isRunShutDownMacro = false;
+				isShutDownAlertSend = false;
 			}
 		}
 		else
 		{
 			isPowerBtnActivated = false;
 			isRunShutDownMacro = false;
+			isShutDownAlertSend = false;
 			powCheckInterval = 1000;
 		}
 	}
