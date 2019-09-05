@@ -18,8 +18,9 @@
 static const char *IFACE_NAME_TABLE[] = { nullptr, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 #ifndef __LINUX_DBG
-    #define ExecuteRequest()    isRequestWaiting = true; \
-                                while( isRequestWaiting );
+    #define ExecuteRequest()    isRequestWaiting = true;   \
+                                while( isRequestWaiting ); \
+                                __NOP();
 #else
     #define ExecuteRequest ProcessRequest
     #define SafeSnprintf snprintf
@@ -977,7 +978,7 @@ bool Mikrotik::parseAnswer( const char *pSearchText )
         pWord = block->GetNextWord( pWord );
     } while ( pWord );
 
-    debugPrintf( "FAILED to parse answer!\nCan't find %s\n", key );
+    //debugPrintf( "FAILED to parse answer!\nCan't find %s\n", key );
     return false;
 }
 
