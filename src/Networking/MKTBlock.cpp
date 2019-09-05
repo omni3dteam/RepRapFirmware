@@ -58,12 +58,12 @@ bool MKTBlock::AddWordToSentence( const char *pWord )
 
 void MKTBlock::Print()
 {
-    //debugPrintf( "\n\nReceived:\n" );
+    debugPrintf( "\n\nReceived:\n" );
 
     const char* pWord = GetFirstWord();
     do
     {
-        //debugPrintf( "%s\n", pWord );
+        debugPrintf( "%s\n", pWord );
         pWord = GetNextWord( pWord );
     } while ( pWord );
 }

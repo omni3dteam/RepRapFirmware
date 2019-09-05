@@ -4430,6 +4430,29 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+	case 739:
+			{
+				uint32_t before = millis();
+
+				const uint32_t SIZE = 1024;
+				char list[SIZE];
+				uint16_t count = reprap.GetMikrotikInstance().ScanWiFiNetworks( wifi2g, 5, list, SIZE );
+
+				printf( "Available networks count: %u\n\n", count );
+				char *pNext = list;
+
+				if ( count )
+					while ( count-- )
+					{
+						debugPrintf( "SSID: %s\n", pNext );
+						pNext += strlen( pNext ) + 1;
+					}
+
+				uint32_t after = millis();
+				debugPrintf( "Execution time: %ims\n", (int)(after - before) );
+			}
+			break;
+
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension
 		reprap.GetScanner().Enable();
