@@ -1387,7 +1387,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			// because any slicer that uses M109 doesn't understand that there are separate active and standby temperatures.
 			if (simulationMode == 0)
 			{
-				SetToolHeaters(applicableTool, temperature, true);
+				bool doSetStandby = false;
+				if (gb.Seen('B'))
+				{
+					doSetStandby = gb.GetIValue();
+				}
+				SetToolHeaters(applicableTool, temperature, doSetStandby);
 			}
 
 			Tool * const currentTool = reprap.GetCurrentTool();

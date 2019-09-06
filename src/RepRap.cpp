@@ -1716,17 +1716,26 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 
 	// Send the heater active temperatures
 	response->catf(",\"active\":[%.1f", (double)((bedHeater == -1) ? 0.0 : heat->GetActiveTemperature(bedHeater)));
-	for (size_t heater = DefaultE0Heater; heater < GetToolHeatersInUse(); heater++)
+	MutexLocker lock(toolListMutex);
+	for (const Tool *tool = toolList; tool != nullptr; tool = tool->Next())
 	{
-		response->catf(",%.1f", (double)(heat->GetActiveTemperature(heater)));
+		for (size_t heater = 0; heater < tool->heaterCount; heater++)
+		{
+			response->catf("%c%.1f", ch, (double)tool->activeTemperatures[heater]);
+			ch = ',';
+		}
 	}
 	response->catf(",%.1f]", (double)((chamberHeater == -1) ? 0.0 : heat->GetActiveTemperature(chamberHeater)));
 
 	// Send the heater standby temperatures
 	response->catf(",\"standby\":[%.1f", (double)((bedHeater == -1) ? 0.0 : heat->GetStandbyTemperature(bedHeater)));
-	for (size_t heater = DefaultE0Heater; heater < GetToolHeatersInUse(); heater++)
+	for (const Tool *tool = toolList; tool != nullptr; tool = tool->Next())
 	{
-		response->catf(",%.1f", (double)(heat->GetStandbyTemperature(heater)));
+		for (size_t heater = 0; heater < tool->heaterCount; heater++)
+		{
+			response->catf("%c%.1f", ch, (double)tool->standbyTemperatures[heater]);
+			ch = ',';
+		}
 	}
 	response->catf(",%.1f]", (double)((chamberHeater == -1) ? 0.0 : heat->GetStandbyTemperature(chamberHeater)));
 
