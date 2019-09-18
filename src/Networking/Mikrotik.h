@@ -170,6 +170,13 @@ typedef struct {
     uint16_t length;
 } TMKSentence;
 
+typedef enum
+{
+	Booting = 0,
+	Connected,
+	Disconnected,
+	Connecting
+} TStatus;
 
 class Mikrotik
 {
@@ -198,6 +205,7 @@ public:
     bool GetInterfaceIP( TInterface iface, char *ip, bool isStatic );
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
+    bool IsRouterAvailable();
 
     uint16_t ScanWiFiNetworks( TInterface iface, uint8_t duration, char *pBuffer, uint32_t MAX_BUF_SIZE );
 
@@ -228,10 +236,11 @@ private:
     // Authorization
     void generateResponse( char *szMD5PasswordToSend, char *szMD5Challenge, const char *password );
     bool try_to_log_in( char *username, char *password );
-    bool Login();
+    bool Login(uint8_t numLoginTry);
 
     // Request execution
     bool ProcessRequest();  // DON'T CALL MANUALLY on DUET3D!!!
+    bool LoginRequest();
 
     // Checking response
     bool IsRequestSuccessful();

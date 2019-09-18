@@ -5676,6 +5676,56 @@ bool GCodes::GetLastPrintingHeight(float& height) const
 	return false;
 }
 
+// Push status network to LCD
+void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status, TInterface *iface, TWifiMode *mode)
+{
+	char outputBuffer[256] = { 0 };
+	char sts[16] = { 0 };
+	char md[4] = { 0 };
+	const char *title = "{\"networkStatus\":[";
+
+	if ( *iface == ether1 )
+	{
+		strncpy( md, "E", sizeof( md ) );
+	}
+	else
+	{
+		switch ( *mode )
+		{
+			case AccessPoint:
+				strncpy( md, *iface == wifi2g ? "A2" : "A5", sizeof( md ) );
+				break;
+			case Station:
+				strncpy( md, *iface == wifi2g ? "W2" : "W5", sizeof( md ) );
+				break;
+			default:
+				strncpy( md, "X", sizeof( md ) );
+				break;
+		}
+	}
+
+	switch ( status )
+	{
+	case Booting:
+		strncpy( sts, "Booting", sizeof( sts ) );
+		break;
+	case Disconnected:
+		strncpy( sts, "Disconnected", sizeof( sts ) );
+		break;
+	case Connected:
+		strncpy( sts, "Connected", sizeof( sts ) );
+		break;
+	case Connecting:
+		strncpy( sts, "Connecting", sizeof( sts ) );
+		break;
+	default:
+		break;
+	}
+
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%s\",\"%s\"]}", title, md, sts, ip, ssid);
+	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
+}
+
 // Start timing SD card file writing
 GCodeResult GCodes::StartSDTiming(GCodeBuffer& gb, const StringRef& reply)
 {

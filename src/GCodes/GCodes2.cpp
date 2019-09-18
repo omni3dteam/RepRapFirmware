@@ -4239,6 +4239,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 			int cParam = 0;
 			TInterface interface = wifi2g;
+			TWifiMode mode;
 			String<StringLength40> ssid;
 			String<StringLength40> password;
 
@@ -4249,6 +4250,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				if(cParam == 2)
 				{
 					reprap.GetMikrotikInstance().ConnectToEthernet();
+					SendNetworkStatus("", "", Connecting, &interface, &mode);
 					break;
 				}
 			}
@@ -4285,6 +4287,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					{
 						reprap.GetMikrotikInstance().ConnectToWiFi(ssid.c_str(), password.c_str(), interface);
 					}
+					SendNetworkStatus(ssid.c_str(), "", Connecting, &interface, &mode);
 				}
 				else
 				{
@@ -4301,17 +4304,21 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case 721:
+		{
 		TInterface iface;
+		TWifiMode mode = invalid;
 
 		if(reprap.GetMikrotikInstance().GetCurrentInterface(&iface))
 		{
 			reprap.GetMikrotikInstance().DisableInterface( iface );
+			SendNetworkStatus("", "", Disconnected, &iface, &mode);
 		}
 		else
 		{
 			debugPrintf("Cannot find current interface\n");
 		}
 		break;
+		}
 	case 722:
 		{
 		TDhcpMode mode = DhcpServer;
@@ -4371,100 +4378,67 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-	case 724:
-		reprap.GetMikrotikInstance().ConnectToEthernet();
-		break;
-
 	case 725:
 		{
-		char outBuffer[128] = "{\"networkStatus\":[";
-		char minBuff[32] = { 0 };
-		char ssid[50] = { 0 };
 		bool isNetworkRunning = false;
-		char ip[50] = { 0 };
+		char ssid[64] = { 0 };
+		char ip[32] = { 0 };
 		TInterface iface;
+		TWifiMode mode;
+		TStatus status = Booting;
 
-		if ( !reprap.GetMikrotikInstance().GetCurrentInterface( &iface ) )
+		if ( reprap.GetMikrotikInstance().IsRouterAvailable() )
 		{
-			debugPrintf( "ERROR! Can't get current interface\n" );
-			return false;
-		}
-
-		debugPrintf( "Current interface: %d\n", (uint8_t)iface );
-
-		isNetworkRunning = reprap.GetMikrotikInstance().IsNetworkAvailable( iface );
-		debugPrintf( "Running: %s\n", isNetworkRunning ? "YES" : "NO" );
-
-
-		if(isNetworkRunning)
-		{
-			TEnableState state;
-			if ( !reprap.GetMikrotikInstance().GetDhcpState( iface, DhcpClient, &state ) )
+			if ( !reprap.GetMikrotikInstance().GetCurrentInterface( &iface ) )
 			{
-				debugPrintf( "ERROR! Can't get DHCP client state\n" );
-				return false;
-			}
-
-			bool isIpStatic = state == Enabled ? false : true;
-
-			if ( !reprap.GetMikrotikInstance().GetInterfaceIP( iface, ip, isIpStatic ) )
-			{
-				strncpy( ip, "unavailable/not ready", sizeof( ip ) );
-			}
-
-			debugPrintf( "IP addr: %s\n", ip );
-			debugPrintf( "IP type: %s\n", isIpStatic ? "static" : "dynamic" );
-
-			TWifiMode mode;
-			debugPrintf( "Mode: " );
-			if ( iface == ether1 )
-			{
-				strcat(outBuffer, "\"E\",");
-				debugPrintf( "ethernet client\n" );
+				status = Disconnected;
+				debugPrintf( "ERROR! Can't get current interface\n" );
 			}
 			else
 			{
-				reprap.GetMikrotikInstance().GetWifiMode( iface, &mode );
+				debugPrintf( "Current interface: %d\n", (uint8_t)iface );
 
-				switch ( mode )
+				isNetworkRunning = reprap.GetMikrotikInstance().IsNetworkAvailable( iface );
+				debugPrintf( "Running: %s\n", isNetworkRunning ? "YES" : "NO" );
+
+				if(isNetworkRunning)
 				{
-					case AccessPoint:
-						strcat(outBuffer, "\"A\",");
-						debugPrintf( "access point\n" );
-						break;
-					case Station:
-						if(iface == wifi2g)
-						{
-							strcat(outBuffer, "\"W2\",");
-						}
-						else
-						{
-							strcat(outBuffer, "\"W5\",");
-						}
-						debugPrintf( "WiFi client: %s\n", iface == wifi2g ? "2G" : "5G" );
-						break;
-					default:
-						break;
-						strcat(outBuffer, "\"X\",");
-						debugPrintf( "invalid\n" );
-				}
+					status = Connected;
+					TEnableState state;
+					if ( !reprap.GetMikrotikInstance().GetDhcpState( iface, DhcpClient, &state ) )
+					{
+						debugPrintf( "ERROR! Can't get DHCP client state\n" );
+						return false;
+					}
 
-				if ( !reprap.GetMikrotikInstance().GetSSID( iface, ssid ) )
+					bool isIpStatic = state == Enabled ? false : true;
+
+					if ( !reprap.GetMikrotikInstance().GetInterfaceIP( iface, ip, isIpStatic ) )
+					{
+						strncpy( ip, "unavailable/not ready", sizeof( ip ) );
+					}
+
+					debugPrintf( "IP addr: %s\n", ip );
+					debugPrintf( "IP type: %s\n", isIpStatic ? "static" : "dynamic" );
+
+					debugPrintf( "Mode: " );
+					if ( iface != ether1 )
+					{
+						reprap.GetMikrotikInstance().GetWifiMode( iface, &mode );
+						if ( !reprap.GetMikrotikInstance().GetSSID( iface, ssid ) )
+						{
+							SafeSnprintf( ssid, sizeof( ssid ), "Can't get SSID\n" );
+						}
+					}
+				}
+				else
 				{
-					SafeSnprintf( ssid, sizeof( ssid ), "can't get SSID\n" );
+					strncpy( ip, "unavailable", sizeof( ip ) );
+					status = Disconnected;
 				}
-
-				debugPrintf( "SSID: %s\n", ssid );
 			}
 		}
-		else
-		{
-			strcat(outBuffer, "\"X\",");
-			strncpy( ip, "unavailable", sizeof( ip ) );
-		}
-		SafeSnprintf(minBuff, sizeof(minBuff), "\"%c\",\"%s\",\"%s\"]}", isNetworkRunning ? 'Y' : 'N', ip, ssid);
-		strcat(outBuffer, minBuff);
-		reprap.GetPlatform().MessageF(LcdMessage, outBuffer);
+		SendNetworkStatus((const char *)ssid, (const char *)ip, status, &iface, &mode);
 		}
 		break;
 

@@ -14,7 +14,7 @@
     #include <cstdlib>
 #endif
 
-
+static uint8_t isRouterAvailable;
 static const char *IFACE_NAME_TABLE[] = { nullptr, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
 
 #ifndef __LINUX_DBG
@@ -41,7 +41,14 @@ void Mikrotik::Spin()
 {
     if ( isRequestWaiting )
     {
-        ProcessRequest();
+    	if(isRouterAvailable)
+    	{
+    		LoginRequest();
+    	}
+    	else
+    	{
+    		ProcessRequest();
+    	}
         isRequestWaiting = false;
     }
 }
@@ -880,7 +887,7 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
 }
 
 
-bool Mikrotik::Login()
+bool Mikrotik::Login(uint8_t numLoginTry)
 {
 #ifdef __LINUX_DBG
     const char d_ip[] = "192.168.60.1";
@@ -893,8 +900,7 @@ bool Mikrotik::Login()
     char default_username[] = "admin";
     char default_password[] = "";
 
-    const int NUM_OF_LOGIN_TRY = 5;
-    for ( int i = 0; i < NUM_OF_LOGIN_TRY; i++ )
+    for ( int i = 0; i < numLoginTry; i++ )
     {
         if ( isConnected )
             Disconnect();
@@ -904,7 +910,7 @@ bool Mikrotik::Login()
         if ( !Connect( d_ip, d_port ) )
             return false;
 
-        debugPrintf( "Login attempt %i of %i... ", i + 1, NUM_OF_LOGIN_TRY );
+        debugPrintf( "Login attempt %i of %i... ", i + 1, numLoginTry );
         if ( try_to_log_in( default_username, default_password ) )
         {
             debugPrintf( "success\n" );
@@ -928,7 +934,7 @@ bool Mikrotik::Login()
 bool Mikrotik::ProcessRequest()
 {
     if ( !isLogged )
-        if ( !Login() )
+        if ( !Login(5) )
         {
             SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "MIKROTIK: can't log in" );
             return false;
@@ -941,6 +947,32 @@ bool Mikrotik::ProcessRequest()
     //block->Print();
 
     return true;
+}
+
+// it checks router connection
+bool Mikrotik::LoginRequest()
+{
+    if ( !isLogged )
+        if ( !Login(1) )
+        {
+            return false;
+        }
+
+    return true;
+}
+
+bool Mikrotik::IsRouterAvailable()
+{
+	if ( isLogged )
+		return true;
+
+	isRouterAvailable = true;
+	ExecuteRequest();
+
+	bool ret = LoginRequest();
+	isRouterAvailable = false;
+
+	return ret;
 }
 
 
