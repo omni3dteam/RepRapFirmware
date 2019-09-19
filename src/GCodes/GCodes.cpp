@@ -5680,7 +5680,7 @@ bool GCodes::GetLastPrintingHeight(float& height) const
 void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status, TInterface *iface, TWifiMode *mode)
 {
 	char outputBuffer[256] = { 0 };
-	char sts[16] = { 0 };
+	char stat[16] = { 0 };
 	char md[4] = { 0 };
 	const char *title = "{\"networkStatus\":[";
 
@@ -5704,25 +5704,27 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 		}
 	}
 
+	debugPrintf("Send info: %d, %d - %s\n", (int)*iface, (int)*mode, md);
+
 	switch ( status )
 	{
 	case Booting:
-		strncpy( sts, "Booting", sizeof( sts ) );
+		strncpy( stat, "Booting", sizeof( stat ) );
 		break;
 	case Disconnected:
-		strncpy( sts, "Disconnected", sizeof( sts ) );
+		strncpy( stat, "Disconnected", sizeof( stat ) );
 		break;
 	case Connected:
-		strncpy( sts, "Connected", sizeof( sts ) );
+		strncpy( stat, "Connected", sizeof( stat ) );
 		break;
 	case Connecting:
-		strncpy( sts, "Connecting", sizeof( sts ) );
+		strncpy( stat, "Connecting", sizeof( stat ) );
 		break;
 	default:
 		break;
 	}
 
-	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%s\",\"%s\"]}", title, md, sts, ip, ssid);
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%s\",\"%s\"]}", title, md, stat, ip, ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
 }
 

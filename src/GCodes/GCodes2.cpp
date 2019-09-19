@@ -4238,8 +4238,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			bool seen = false;
 
 			int cParam = 0;
-			TInterface interface = wifi2g;
-			TWifiMode mode;
+			TInterface interface = ether1;
+			TWifiMode mode = invalid;
 			String<StringLength40> ssid;
 			String<StringLength40> password;
 
@@ -4282,10 +4282,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					if (cParam)
 					{
 						reprap.GetMikrotikInstance().CreateAP(ssid.c_str(), password.c_str(), interface);
+						mode = AccessPoint;
 					}
 					else
 					{
 						reprap.GetMikrotikInstance().ConnectToWiFi(ssid.c_str(), password.c_str(), interface);
+						mode = Station;
 					}
 					SendNetworkStatus(ssid.c_str(), "", Connecting, &interface, &mode);
 				}
@@ -4311,12 +4313,14 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		if(reprap.GetMikrotikInstance().GetCurrentInterface(&iface))
 		{
 			reprap.GetMikrotikInstance().DisableInterface( iface );
-			SendNetworkStatus("", "", Disconnected, &iface, &mode);
 		}
 		else
 		{
 			debugPrintf("Cannot find current interface\n");
 		}
+		iface = none;
+		SendNetworkStatus("", "", Disconnected, &iface, &mode);
+
 		break;
 		}
 	case 722:
@@ -4383,8 +4387,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		bool isNetworkRunning = false;
 		char ssid[64] = { 0 };
 		char ip[32] = { 0 };
-		TInterface iface;
-		TWifiMode mode;
+		TInterface iface = none;
+		TWifiMode mode = invalid;
 		TStatus status = Booting;
 
 		if ( reprap.GetMikrotikInstance().IsRouterAvailable() )
@@ -4415,7 +4419,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 					if ( !reprap.GetMikrotikInstance().GetInterfaceIP( iface, ip, isIpStatic ) )
 					{
-						strncpy( ip, "unavailable/not ready", sizeof( ip ) );
+						strncpy( ip, "Obtaining", sizeof( ip ) );
 					}
 
 					debugPrintf( "IP addr: %s\n", ip );
@@ -4433,8 +4437,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 				else
 				{
-					strncpy( ip, "unavailable", sizeof( ip ) );
-					status = Disconnected;
+					strncpy( ip, "Obtaining", sizeof( ip ) );
+					status = Connecting;
 				}
 			}
 		}
