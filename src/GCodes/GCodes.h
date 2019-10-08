@@ -675,7 +675,6 @@ private:
 	static constexpr uint16_t ServoRefreshFrequency = 333;
 #else
 	static constexpr const float MinServoPulseWidth = 544.0, MaxServoPulseWidth = 2400.0;
-	static constexpr uint16_t ServoRefreshFrequency = 50;
 #endif
 };
 
