@@ -22,7 +22,7 @@
 #define OMNI_VERSION    "1.06.4Alpha"
 
 #ifndef DATE
-# define DATE "2019-10-08b1"
+# define DATE "2019-10-08b3"
 #endif
 
 #define AUTHORS "reprappro, dc42, chrishamm, t3p3, dnewman, printm3d"
