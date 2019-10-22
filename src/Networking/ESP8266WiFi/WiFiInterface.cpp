@@ -359,6 +359,11 @@ void WiFiInterface::Exit()
 	Stop();
 }
 
+void WiFiInterface::ReinitializeSockets()
+{
+	debugPrintf("Wifi doesn't support that function.\n");
+}
+
 // Get the network state into the reply buffer, returning true if there is some sort of error
 GCodeResult WiFiInterface::GetNetworkState(const StringRef& reply)
 {

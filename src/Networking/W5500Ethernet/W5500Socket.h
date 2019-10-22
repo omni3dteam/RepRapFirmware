@@ -30,6 +30,7 @@ public:
 	bool CanSend() const override;
 	size_t Send(const uint8_t *data, size_t length) override;
 	void Send() override;
+	void ReinitializeSocket();
 
 private:
 	void ReInit();

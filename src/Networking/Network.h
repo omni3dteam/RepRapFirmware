@@ -53,6 +53,7 @@ public:
 	void Spin(bool full);
 	void Interrupt();
 	void Diagnostics(MessageType mtype);
+	void ReinitSockets();
 	bool InNetworkStack() const;
 	bool IsWiFiInterface(unsigned int interface) const;
 

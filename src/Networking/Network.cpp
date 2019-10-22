@@ -416,6 +416,14 @@ void Network::Spin(bool full)
 	}
 }
 
+void Network::ReinitSockets()
+{
+	for (NetworkInterface *iface : interfaces)
+	{
+		iface->ReinitializeSockets();
+	}
+}
+
 // Process the network timer interrupt
 void Network::Interrupt()
 {

@@ -26,6 +26,7 @@ public:
 	virtual int EnableState() const = 0;
 	virtual bool InNetworkStack() const = 0;
 	virtual bool IsWiFiInterface() const = 0;
+	virtual void ReinitializeSockets();
 
 	virtual GCodeResult EnableProtocol(NetworkProtocol protocol, int port, int secure, const StringRef& reply) = 0;
 	virtual bool IsProtocolEnabled(NetworkProtocol protocol) { return protocolEnabled[protocol]; }

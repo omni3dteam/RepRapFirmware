@@ -46,6 +46,7 @@ public:
 	void Diagnostics(MessageType mtype) override;
 	void Start();
 	void Stop();
+	void ReinitializeSockets() override;
 
 	GCodeResult EnableInterface(int mode, const StringRef& ssid, const StringRef& reply) override;			// enable or disable the network
 	GCodeResult EnableProtocol(NetworkProtocol protocol, int port, int secure, const StringRef& reply) override;

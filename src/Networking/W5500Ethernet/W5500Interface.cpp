@@ -146,6 +146,16 @@ GCodeResult W5500Interface::ReportProtocols(const StringRef& reply) const
 	return GCodeResult::ok;
 }
 
+void W5500Interface::ReinitializeSockets()
+{
+	debugPrintf("Reinit sockets, NetStat: %d\n", (uint8_t)state);
+	for (SocketNumber skt = 0; skt < NumW5500TcpSockets; ++skt)
+	{
+		sockets[skt]->ReinitializeSocket();
+	}
+
+}
+
 void W5500Interface::ReportOneProtocol(NetworkProtocol protocol, const StringRef& reply) const
 {
 	if (protocolEnabled[protocol])

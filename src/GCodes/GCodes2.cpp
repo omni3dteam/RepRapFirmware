@@ -4493,6 +4493,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		}
 		break;
+	case 727:
+		reprap.GetNetwork().ReinitSockets();
+		break;
 
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension

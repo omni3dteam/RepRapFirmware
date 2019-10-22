@@ -79,6 +79,12 @@ void W5500Socket::ReInit()
 	}
 }
 
+void W5500Socket::ReinitializeSocket()
+{
+	// Re-initialise the socket on the W5500
+	socket(socketNum, Sn_MR_TCP, localPort, 0x00);
+}
+
 // Close a connection when the last packet has been sent
 void W5500Socket::Close()
 {

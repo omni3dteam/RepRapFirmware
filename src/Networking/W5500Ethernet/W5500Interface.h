@@ -59,6 +59,7 @@ public:
 
 	void OpenDataPort(Port port) override;
 	void TerminateDataPort() override;
+	void ReinitializeSockets() override;
 
 protected:
 	DECLARE_OBJECT_MODEL
