@@ -664,6 +664,7 @@ private:
 	static constexpr const char* FILAMENT_CHANGE_G = "filament-change.g";
 	static constexpr const char* SHUTDOWN_G = "shutdown.g";
 	static constexpr const char* LCD_PASS_G = "lcd-pass.g";
+	static constexpr const char* DWC_PASS_G = "dwc-pass.g";
 	static constexpr const char* LED_STRIP_G = "led-strip.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";

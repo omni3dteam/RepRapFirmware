@@ -3156,14 +3156,62 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-	case 551: // Set password (no option to report it)
+	case 551: // Set password (no option to report it). If you add S parameter you need to add R parameter which contains saved password. It protects unauthorized changing a password.
 		{
-			String<RepRapPasswordLength> password;
+			String<RepRapPasswordLength> password, oldPassword;
 			bool seen = false;
-			gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
-			if (seen)
+
+			if (gb.Seen('S'))
 			{
-				reprap.SetPassword(password.c_str());
+				gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
+
+				if (seen)
+				{
+					gb.TryGetPossiblyQuotedString('R', oldPassword.GetRef(), seen);
+
+					if (seen)
+					{
+						if(reprap.CheckPassword(oldPassword.c_str()))
+						{
+							reprap.SetPassword(password.c_str());
+							reply.copy("The password has been changed");
+
+							FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
+							if (f == nullptr)
+							{
+								platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
+							}
+							else
+							{
+								String<FormatStringLength> bufferSpace;
+								const StringRef buf = bufferSpace.GetRef();
+
+								buf.printf("M551 P\"%s\"\n", password.c_str());
+								bool ok = f->Write(buf.c_str());
+
+								if (!f->Close())
+								{
+									ok = false;
+								}
+								if (!ok)
+								{
+									platform.DeleteSysFile(DWC_PASS_G);
+									platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
+								}
+							}
+							break;
+						}
+					}
+				}
+				reply.copy("Bad or missing password");
+			}
+			else
+			{
+				gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
+				if (seen)
+				{
+					reprap.SetPassword(password.c_str());
+				}
 			}
 		}
 		break;
