@@ -3174,7 +3174,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						if(reprap.CheckPassword(oldPassword.c_str()))
 						{
 							reprap.SetPassword(password.c_str());
+
 							reply.copy("The password has been changed");
+							result = GCodeResult::ok;
 
 							FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
 							if (f == nullptr)
@@ -3204,6 +3206,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					}
 				}
 				reply.copy("Bad or missing password");
+				result = GCodeResult::error;
 			}
 			else
 			{
@@ -4019,8 +4022,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 611: // Set LCD password - it's similar to M551
 	{
-		String<RepRapPasswordLength> password;
+		String<RepRapPasswordLength> password, oldPassword;
 		bool seen = false;
+
 		gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
 		if (seen)
 		{
@@ -4028,7 +4032,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			pass = SafeStrtol(password.c_str(), NULL, 10);
 			size_t len = strlen(password.c_str());
 
-			if( len == 4)
+			if(len == 4)
 			{
 				for(size_t i = 0; i < len; i++)
 				{
@@ -4038,6 +4042,24 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						break;
 					}
 				}
+
+				if(gb.Seen('S'))
+				{
+					gb.TryGetPossiblyQuotedString('R', oldPassword.GetRef(), seen);
+
+					if(seen)
+					{
+						char passBuf[5];
+						SafeSnprintf(passBuf, sizeof(passBuf), "%04d", passLCD);
+
+						if(strcmp(passBuf, oldPassword.c_str()) != 0)
+						{
+							reply.printf("Old password is incorrect");
+							break;
+						}
+					}
+				}
+
 				passLCD = pass;
 
 				FileStore * const f = platform.OpenSysFile(LCD_PASS_G, OpenMode::write);
@@ -4066,7 +4088,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			else
 			{
-				reply.printf("Parameter is too long or short");
+				reply.printf("Parameter is too long or short (It must have 4 digits)");
 			}
 		}
 		else
