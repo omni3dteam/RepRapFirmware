@@ -4,7 +4,7 @@
 #ifndef __LINUX_DBG
     #include "RepRapFirmware.h"
     #include "W5500Ethernet/Wiznet/Ethernet/W5500/w5500.h"
-    #define MIKROTIK_SOCK_NUM   (uint8_t)6
+    #define MIKROTIK_SOCK_NUM   (uint8_t)5
 #endif
 
 #include <string.h>

@@ -21,7 +21,7 @@ class MdnsResponder;
 class W5500Socket;
 
 // We have 8 sockets available on the W5500.
-const size_t NumW5500TcpSockets = 6;
+const size_t NumW5500TcpSockets = 5;
 
 const SocketNumber MdnsSocketNumber = 6;
 const SocketNumber DhcpSocketNumber = 7;

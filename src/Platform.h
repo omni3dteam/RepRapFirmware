@@ -946,7 +946,7 @@ private:
 	uint32_t lastDoorsCheckTime;
 	bool doorState[numberOfDoors];
 	bool isDoorStateChanged[numberOfDoors];
-	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};
+	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};		// Endstop [5, 6]
 #endif
 #if OMNI_SERVO_POSITIONING
 	bool isTargetServoPositionReached {false};

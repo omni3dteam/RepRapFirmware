@@ -4561,6 +4561,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			reprap.GetPlatform().MessageF(LcdMessage, outBuffer);
 		}
+		// Sometimes W5500 suspend after looking for networks, so we need to reinit sockets
+		// I know, it is hack but it helps
+		reprap.GetNetwork().ReinitSockets();
 		}
 		break;
 	case 727:
