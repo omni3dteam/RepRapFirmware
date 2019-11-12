@@ -452,7 +452,11 @@ bool HttpResponder::GetJsonResponse(const char* request, OutputBuffer *&response
 	{
 		if (!CheckAuthenticated())
 		{
+#if OMNI_VIP_HTTP
+			if (!reprap.CheckPassword(GetKeyValue("password")) && (!IsVIP()))
+#else
 			if (!reprap.CheckPassword(GetKeyValue("password")))
+#endif
 			{
 				// Wrong password
 				response->copy("{\"err\":1}");
@@ -677,6 +681,7 @@ bool HttpResponder::Authenticate()
 bool HttpResponder::CheckAuthenticated()
 {
 	const IPAddress remoteIP = GetRemoteIP();
+
 	for (size_t i = 0; i < numSessions; i++)
 	{
 		if (sessions[i].ip == remoteIP)
@@ -712,6 +717,15 @@ bool HttpResponder::RemoveAuthentication()
 	}
 	return false;
 }
+
+#if	OMNI_VIP_HTTP
+bool HttpResponder::IsVIP()
+{
+	const char vip_addr[] = { "192.168.60.50" };
+
+	return (strcmp(vip_addr, IP4String(GetRemoteIP()).c_str()) == 0);
+}
+#endif
 
 void HttpResponder::SendFile(const char* nameOfFileToSend, bool isWebFile)
 {

@@ -76,6 +76,10 @@ private:
 	bool CheckAuthenticated();
 	bool RemoveAuthentication();
 
+#if OMNI_VIP_HTTP
+	bool IsVIP();
+#endif
+
 	bool CharFromClient(char c);
 	void SendFile(const char* nameOfFileToSend, bool isWebFile);
 	void SendGCodeReply();
