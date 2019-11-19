@@ -1111,6 +1111,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					{
 						IoPort::WriteDigital(pin, val == 1.0);
 					}
+
+					reply.printf("Logical pin %d[%d] is available", logicalPin, pin);
+					result = GCodeResult::ok;
 				}
 				else
 				{
@@ -1871,7 +1874,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					const StringRef buf = bufferSpace.GetRef();
 
 					// first step is deinit H3 as heater, and then set PWM for led strip
-					buf.printf("M307 H%d A-1 C-1 D-1\nM150 Y%d\n", logicalPin, ledBrightness);
+					buf.printf("M307 H%d A-1 C-1 D-1\nM150 Y%d ;%d\n", logicalPin, ledBrightness, pin);
 					bool ok = f->Write(buf.c_str());
 
 					if (!f->Close())

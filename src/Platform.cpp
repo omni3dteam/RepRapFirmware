@@ -1852,6 +1852,50 @@ void Platform::Spin()
 			}
 		}
 	}
+
+	// check printer stat in order to manage the bolts
+
+	static bool startClosingDelay = false;
+	static bool activateHeaterState = false;
+	static uint16_t closingDelay = 1000;
+	static uint32_t statusTime;
+
+	if(reprap.GetStatusCharacter() == 'P')
+	{
+		if(startClosingDelay)
+		{
+			if(millis() - statusTime > closingDelay)
+			{
+				areBoltsActive = true;
+				if(activateHeaterState)
+				{
+					activateHeaterState = false;
+
+					IoPort::WriteDigital((Pin)40, false);
+				}
+			}
+		}
+		else
+		{
+			statusTime = millis();
+			startClosingDelay = true;
+		}
+	}
+	else
+	{
+		if(!activateHeaterState)
+		{
+			activateHeaterState = true;
+			Pin pin;
+			bool invert;
+			if(GetFirmwarePin(5, PinAccess::write, pin, invert))
+			{
+				IoPort::WriteDigital(pin, true);
+			}
+		}
+		startClosingDelay = false;
+		areBoltsActive = false;
+	}
 #endif
 
 #if OMNI_SERVO_POSITIONING
@@ -5073,6 +5117,11 @@ void Platform::Tick()
 	}
 
 	AnalogInStartConversion();
+}
+
+bool Platform::GetBoltStatus()
+{
+	return areBoltsActive;
 }
 
 // Pragma pop_options is not supported on this platform

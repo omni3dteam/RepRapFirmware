@@ -1697,7 +1697,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	{
 		ch = 'S';
 	}
-	response->printf("{\"status\":\"%c\"", ch);
+	response->printf("{\"status\":\"%c\",\"areBoltsActive\":%d", ch, reprap.GetPlatform().GetBoltStatus());
 
 	const int8_t chamberHeater = (NumChamberHeaters > 0) ? heat->GetChamberHeater(0) : -1;
 	if(chamberHeater == -1)
