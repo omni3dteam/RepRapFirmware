@@ -1981,6 +1981,17 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		// If we don't perform procedure, we send "none" string
 		response->EncodeString("none", false, false);
 	}
+
+	// Current filament consumption
+	response->catf(",\"extr\":");			// announce actual extruder positions
+	ch = '[';
+	for (size_t extruder = 0; extruder < GetExtrudersInUse(); extruder++)
+	{
+		response->catf("%c%.1f", ch, HideNan(liveCoordinates[gCodes->GetTotalAxes() + extruder]));
+		ch = ',';
+	}
+	response->catf("]");
+
 #endif
 
 	response->cat('}');
