@@ -38,6 +38,7 @@ public:
 	float travelSpeed;				// the speed at which we travel to the probe point
 	float recoveryTime;				// Z probe recovery time
 	float tolerance;				// maximum difference between probe heights when doing >1 taps
+	float zOffset[2];				// Z offsets for left and right tool
 	int16_t adcValue;				// the target ADC value, after inversion if enabled
 	uint16_t maxTaps : 5,			// maximum probes at each point
 			invertReading : 1,		// true if we need to invert the reading

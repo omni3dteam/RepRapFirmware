@@ -24,6 +24,7 @@ void ZProbe::Init(float h)
 	tolerance = DefaultZProbeTolerance;
 	maxTaps = DefaultZProbeTaps;
 	inputChannel = 0;
+	zOffset[0] = zOffset[1] = 0.0;
 	invertReading = turnHeatersOff = saveToConfigOverride = false;
 }
 

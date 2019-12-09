@@ -1868,6 +1868,23 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		}
 	}
 
+	// Send Z offsets depending on the machine
+	if (GetMachineType())
+	{
+		response->catf(",\"z_offsets\":[%.2f,%.2f]", (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[0]),
+													 (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[1]));
+	}
+	else
+	{
+		response->cat(",\"z_offsets\":[");
+		for (Tool *tool = toolList; tool != nullptr; tool = tool->Next())
+		{
+			response->catf("%.2f", (double)tool->GetOffset(Z_AXIS));
+			// Do we have any more tools?
+			response->cat((tool->Next() != nullptr) ? "," : "]");
+		}
+	}
+
 	if (printMonitor->IsPrinting())
 	{
 		// Send the fraction printed
@@ -1927,6 +1944,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->EncodeString(FIRMWARE_NAME, false);
 		response->cat(",\"firmwareVersion\":");
 		response->EncodeString(VERSION, false);
+		response->catf(",\"machineType\":%" PRIi32"", GetMachineType());
 
 		// send led brightness to panelDue
 		response->catf(",\"leds\":%d", gCodes->ledBrightness);
@@ -2357,6 +2375,18 @@ void RepRap::SetName(const char* nm)
 
 	// Set new DHCP hostname
 	network->SetHostname(myName.c_str());
+}
+
+// 0 - O500Lite
+// 1 - F2.0Net
+void RepRap::SetMachineType(int32_t type)
+{
+	machineType = type;
+}
+
+int32_t RepRap::GetMachineType()
+{
+	return machineType;
 }
 
 // Given that we want to extrude/retract the specified extruder drives, check if they are allowed.

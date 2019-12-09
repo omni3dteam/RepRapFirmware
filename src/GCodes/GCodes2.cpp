@@ -291,6 +291,64 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 		DoFileMacro(gb, BED_EQUATION_G, true);	// Try to execute bed.g
 		break;
 
+	case 33:
+		if (gb.Seen('P'))
+		{
+			int ext = gb.GetIValue();
+			float zOffset = 0.0;
+
+			if (gb.Seen('Z'))
+			{
+				zOffset = gb.GetFValue();
+				reprap.GetPlatform().switchZProbeParameters.zOffset[ext] = zOffset;
+			}
+
+			const char *file = ext ? T1_Z_OFFSET : T0_Z_OFFSET;
+
+			FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
+			if (f == nullptr)
+			{
+				platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
+			}
+			else
+			{
+				String<FormatStringLength> bufferSpace;
+				const StringRef buf = bufferSpace.GetRef();
+
+				if (reprap.GetMachineType())
+				{
+					buf.printf("G31 Z%.3f\n", (double)zOffset);
+				}
+				else
+				{
+					buf.printf("G10 P%d Z%.3f\n", ext, (double)zOffset);
+				}
+
+				bool ok = f->Write(buf.c_str());
+
+				if (!f->Close())
+				{
+					ok = false;
+				}
+				if (!ok)
+				{
+					platform.DeleteSysFile(file);
+					platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
+				}
+			}
+		}
+
+		if (gb.Seen('R'))
+		{
+			int ext = gb.GetIValue();
+
+			if (gb.Seen('Z'))
+			{
+				reprap.GetPlatform().switchZProbeParameters.zOffset[ext] = gb.GetFValue();
+			}
+		}
+		break;
+
 	case 53:	// Temporarily use machine coordinates
 		gb.MachineState().g53Active = true;
 		break;
@@ -3164,6 +3222,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			else
 			{
 				reply.printf("RepRap name: %s", reprap.GetName());
+			}
+			if (gb.Seen('T'))
+			{
+				reprap.SetMachineType(gb.GetIValue());
 			}
 		}
 		break;

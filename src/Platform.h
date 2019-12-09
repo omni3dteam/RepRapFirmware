@@ -617,6 +617,12 @@ public:
 	void SetLaserPwmFrequency(float freq);
 	float GetLaserPwmFrequency() const { return laserPort.GetFrequency(); }
 
+	// Z probes
+	ZProbe switchZProbeParameters;			// Z probe values for the switch Z-probe
+	ZProbe irZProbeParameters;				// Z probe values for the IR sensor
+	ZProbe alternateZProbeParameters;		// Z probe values for the alternate sensor
+	ZProbeType zProbeType;					// the type of Z probe we are currently using
+
 	// Misc
 
 #if SAM4E || SAM4S || SAME70
@@ -712,12 +718,6 @@ private:
 
 	// Logging
 	Logger *logger;
-
-	// Z probes
-	ZProbe switchZProbeParameters;			// Z probe values for the switch Z-probe
-	ZProbe irZProbeParameters;				// Z probe values for the IR sensor
-	ZProbe alternateZProbeParameters;		// Z probe values for the alternate sensor
-	ZProbeType zProbeType;					// the type of Z probe we are currently using
 
 	// Network
 	IPAddress ipAddress;

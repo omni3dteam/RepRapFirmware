@@ -72,6 +72,9 @@ public:
 	bool CheckPassword(const char* pw) const;
 	void SetPassword(const char* pw);
 
+	void SetMachineType(int32_t type);
+	int32_t GetMachineType();
+
 	void AddTool(Tool* t);
 	void DeleteTool(Tool* t);
 	void SelectTool(int toolNumber, bool simulating);
@@ -140,6 +143,8 @@ public:
 	static float SinfCosf(float angle);						// helper function for diagnostic tests
 	static double SinCos(double angle);						// helper function for diagnostic tests
 
+	Tool* toolList;								// the tool list is sorted in order of increasing tool number
+
 #ifdef RTOS
 	void KickHeatTaskWatchdog() { heatTaskIdleTicks = 0; }
 #endif
@@ -172,7 +177,6 @@ private:
 #endif
 
  	Mutex toolListMutex, messageBoxMutex;
-	Tool* toolList;								// the tool list is sorted in order of increasing tool number
 	Tool* currentTool;
 	uint32_t lastWarningMillis;					// When we last sent a warning message for things that can happen very often
 
@@ -194,6 +198,7 @@ private:
 
 	String<RepRapPasswordLength> password;
 	String<MachineNameLength> myName;
+	int32_t machineType;
 
 	unsigned int beepFrequency, beepDuration;
 	String<MaxMessageLength> message;
