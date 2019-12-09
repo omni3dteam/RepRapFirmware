@@ -322,6 +322,18 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				else
 				{
 					buf.printf("G10 P%d Z%.3f\n", ext, (double)zOffset);
+
+					int toolNumber = ext;
+					toolNumber += gb.GetToolNumberAdjust();
+					Tool *tool = reprap.GetTool(toolNumber);
+
+					if (tool == nullptr)
+					{
+						reply.printf("Attempt to set offsets for non-existent tool: %d", toolNumber);
+						break;
+					}
+
+					tool->SetOffset(Z_AXIS, zOffset, gb.MachineState().runningM501);
 				}
 
 				bool ok = f->Write(buf.c_str());
