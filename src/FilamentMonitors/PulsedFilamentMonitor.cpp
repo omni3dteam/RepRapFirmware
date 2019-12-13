@@ -208,6 +208,9 @@ FilamentSensorStatus PulsedFilamentMonitor::CheckFilament(float amountCommanded,
 	FilamentSensorStatus ret = FilamentSensorStatus::ok;
 	const float extrusionMeasured = amountMeasured * mmPerPulse;
 
+	// adding the current extrusion measured value to the total value
+	AddExtrusionMeasured(extrusionMeasured);
+
 	if (!comparisonStarted)
 	{
 		// The first measurement after we start extruding is often a long way out, so discard it

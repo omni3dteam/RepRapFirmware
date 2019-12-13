@@ -255,4 +255,22 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 	}
 }
 
+/*static*/ float FilamentMonitor::GetExtrusionMeasured(unsigned int extruder)
+{
+	if (extruder >= MaxExtruders) return 0;
+	else if (filamentSensors[extruder] != nullptr)
+	{
+		return filamentSensors[extruder]->extrusionMeasured;
+	}
+	else return 0;
+}
+/*static*/ void FilamentMonitor::ResetExtrusionMeasured(unsigned int extruder)
+{
+	if (extruder >= MaxExtruders) return;
+	else if (filamentSensors[extruder] != nullptr)
+	{
+		filamentSensors[extruder]->extrusionMeasured = 0;
+	}
+}
+
 // End
