@@ -2483,6 +2483,14 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
+				for (size_t extruder = 0; extruder < reprap.GetExtrudersInUse(); extruder++)
+				{
+					buf.printf("M781 D%d F%.3f\n", extruder, (double)FilamentMonitor::GetExtrusionMeasured(extruder));
+					ok = f->Write(buf.c_str());
+				}
+			}
+			if (ok)
+			{
 				buf.copy("M290");
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{

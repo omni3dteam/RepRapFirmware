@@ -67,6 +67,7 @@ public:
 	static void Diagnostics(MessageType mtype);
 
 	static float GetExtrusionMeasured(unsigned int extruder);
+	static void SetExtrusionMeasured(unsigned int extruder, float value);
 	static void ResetExtrusionMeasured(unsigned int extruder);
 
 protected:

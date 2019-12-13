@@ -4802,6 +4802,32 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 #endif
 
+	case 780:
+		if (gb.Seen('D'))
+		{
+			const unsigned int extruder = gb.GetUIValue();
+			if (extruder < numExtruders)
+			{
+				FilamentMonitor::ResetExtrusionMeasured(extruder);
+			}
+		}
+		break;
+
+	case 781:
+		if (gb.Seen('D'))
+		{
+			const unsigned int extruder = gb.GetUIValue();
+			if (extruder < numExtruders)
+			{
+				if (gb.Seen('F'))
+				{
+					const float filamentValue = gb.GetFValue();
+					FilamentMonitor::SetExtrusionMeasured(extruder, filamentValue);
+				}
+			}
+		}
+		break;
+
 	case 851: // Set Z probe offset, only for Marlin compatibility
 		{
 			ZProbe params = platform.GetCurrentZProbeParameters();
