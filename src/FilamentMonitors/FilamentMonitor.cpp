@@ -10,6 +10,7 @@
 #include "RotatingMagnetFilamentMonitor.h"
 #include "LaserFilamentMonitor.h"
 #include "PulsedFilamentMonitor.h"
+#include "VirtualFilamentMonitor.h"
 #include "RepRap.h"
 #include "Platform.h"
 #include "GCodes/GCodeBuffer.h"
@@ -148,6 +149,10 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 
 	case 7:		// simple pulse output sensor
 		return new PulsedFilamentMonitor(extruder, type);
+		break;
+
+	case 99:	// virtual sensor
+		return new VirtualFilamentMonitor(extruder, type);
 		break;
 
 	default:	// no sensor, or unknown sensor
