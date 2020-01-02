@@ -65,6 +65,8 @@ void SimpleFilamentMonitor::Poll()
 FilamentSensorStatus SimpleFilamentMonitor::Check(bool isPrinting, bool fromIsr, uint32_t isrMillis, float filamentConsumed)
 {
 	Poll();
+	// adding the current extrusion measured value to the total value
+	AddExtrusionMeasured(filamentConsumed);
 	return (!enabled || filamentPresent) ? FilamentSensorStatus::ok : FilamentSensorStatus::noFilament;
 }
 
