@@ -230,7 +230,8 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 					}
 					else
 					{
-						gCodes.FilamentError(extruder, fstat);
+						if (fstat == FilamentSensorStatus::noFilament
+								|| fstat == FilamentSensorStatus::tooLittleMovement) gCodes.FilamentError(extruder, fstat);
 					}
 				}
 			}
