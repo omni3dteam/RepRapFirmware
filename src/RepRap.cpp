@@ -1960,6 +1960,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		// send pass to LCD
 		response->catf(",\"passLCD\":\"%04d\"", gCodes->passLCD);
 
+		// sent printer work time //platform.GetWorkTime()->GetHours()
+		response->catf(",\"workTime\":\"%d\"", reprap.GetPlatform().GetWorkTime()->GetHours());
+
 		if (printMonitor->IsPrinting())
 		{
 			// If we start printig via WWW, we don't have any information about filename, so we need to inform LCD

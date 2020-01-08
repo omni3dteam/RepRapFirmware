@@ -3242,61 +3242,52 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			String<RepRapPasswordLength> password, oldPassword;
 			bool seen = false;
 
-			if (gb.Seen('S'))
+			gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
+
+			if (seen)
 			{
-				gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
+				gb.TryGetPossiblyQuotedString('R', oldPassword.GetRef(), seen);
 
 				if (seen)
 				{
-					gb.TryGetPossiblyQuotedString('R', oldPassword.GetRef(), seen);
-
-					if (seen)
+					if(reprap.CheckPassword(oldPassword.c_str()))
 					{
-						if(reprap.CheckPassword(oldPassword.c_str()))
+						FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
+						if (f == nullptr)
 						{
-							reprap.SetPassword(password.c_str());
-
-							reply.copy("The password has been changed");
-							result = GCodeResult::ok;
-
-							FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
-							if (f == nullptr)
-							{
-								platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
-							}
-							else
-							{
-								String<FormatStringLength> bufferSpace;
-								const StringRef buf = bufferSpace.GetRef();
-
-								buf.printf("M551 P\"%s\"\n", password.c_str());
-								bool ok = f->Write(buf.c_str());
-
-								if (!f->Close())
-								{
-									ok = false;
-								}
-								if (!ok)
-								{
-									platform.DeleteSysFile(DWC_PASS_G);
-									platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
-								}
-							}
+							platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
 							break;
 						}
+						else
+						{
+							String<FormatStringLength> bufferSpace;
+							const StringRef buf = bufferSpace.GetRef();
+
+							buf.printf("M551 P\"%s\"\n", password.c_str());
+							bool ok = f->Write(buf.c_str());
+
+							if (!f->Close())
+							{
+								ok = false;
+							}
+							if (!ok)
+							{
+								platform.DeleteSysFile(DWC_PASS_G);
+								platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
+							}
+						}
+					}
+					else
+					{
+						break;
 					}
 				}
-				reply.copy("Bad or missing password");
-				result = GCodeResult::error;
+				reprap.SetPassword(password.c_str());
+				reply.copy("The password has been changed");
+				result = GCodeResult::ok;
 			}
-			else
-			{
-				gb.TryGetPossiblyQuotedString('P', password.GetRef(), seen);
-				if (seen)
-				{
-					reprap.SetPassword(password.c_str());
-				}
-			}
+			reply.copy("Bad or missing password");
+			result = GCodeResult::error;
 		}
 		break;
 
