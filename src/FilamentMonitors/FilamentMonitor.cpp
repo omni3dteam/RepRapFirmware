@@ -10,6 +10,7 @@
 #include "RotatingMagnetFilamentMonitor.h"
 #include "LaserFilamentMonitor.h"
 #include "PulsedFilamentMonitor.h"
+#include "VirtualFilamentMonitor.h"
 #include "RepRap.h"
 #include "Platform.h"
 #include "GCodes/GCodeBuffer.h"
@@ -150,6 +151,10 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 		return new PulsedFilamentMonitor(extruder, type);
 		break;
 
+	case 99:	// virtual sensor
+		return new VirtualFilamentMonitor(extruder, type);
+		break;
+
 	default:	// no sensor, or unknown sensor
 		return nullptr;
 	}
@@ -225,7 +230,8 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 					}
 					else
 					{
-						gCodes.FilamentError(extruder, fstat);
+						if (fstat == FilamentSensorStatus::noFilament
+								|| fstat == FilamentSensorStatus::tooLittleMovement) gCodes.FilamentError(extruder, fstat);
 					}
 				}
 			}
@@ -253,6 +259,28 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 			filamentSensors[i]->Diagnostics(mtype, i);
 		}
 	}
+}
+
+/*static*/ float FilamentMonitor::GetExtrusionMeasured(unsigned int extruder)
+{
+	if (extruder >= MaxExtruders) return 0;
+	else if (filamentSensors[extruder] != nullptr)
+	{
+		return filamentSensors[extruder]->extrusionMeasured;
+	}
+	else return 0;
+}
+/*static*/ void FilamentMonitor::SetExtrusionMeasured(unsigned int extruder, float value)
+{
+	if (extruder >= MaxExtruders) return;
+	else if (filamentSensors[extruder] != nullptr)
+	{
+		filamentSensors[extruder]->extrusionMeasured = value;
+	}
+}
+/*static*/ void FilamentMonitor::ResetExtrusionMeasured(unsigned int extruder)
+{
+	FilamentMonitor::SetExtrusionMeasured(extruder, 0);
 }
 
 // End

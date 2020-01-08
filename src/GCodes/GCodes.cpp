@@ -1827,15 +1827,27 @@ void GCodes::CheckFilament()
 	if (   lastFilamentError != FilamentSensorStatus::ok			// check for a filament error
 		&& IsReallyPrinting()
 		&& autoPauseGCode->IsCompletelyIdle()
-		&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
+		//&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
 	   )
 	{
-		String<MediumStringLength> filamentErrorString;
-		filamentErrorString.printf("Extruder %u reports %s", lastFilamentErrorExtruder, FilamentMonitor::GetErrorMessage(lastFilamentError));
-		DoPause(*autoPauseGCode, PauseReason::filament, filamentErrorString.c_str());
+		//String<MediumStringLength> filamentErrorString;
+		//filamentErrorString.printf("Extruder %u reports %s", lastFilamentErrorExtruder, FilamentMonitor::GetErrorMessage(lastFilamentError));
+		//DoPause(*autoPauseGCode, PauseReason::filament, filamentErrorString.c_str());
 		lastFilamentError = FilamentSensorStatus::ok;
-		filamentErrorString.cat('\n');
-		platform.Message(LogMessage, filamentErrorString.c_str());
+		//filamentErrorString.cat('\n');
+		//platform.Message(LogMessage, filamentErrorString.c_str());
+
+		String<StringLength40> filename;
+		if (lastFilamentErrorExtruder == 0)
+		{
+			filename.printf("%s%s", DEFAULT_SYS_DIR, NO_FILAMENT_L_G);
+			DoFileMacro(*daemonGCode, filename.c_str(), true);
+		}
+		else if (lastFilamentErrorExtruder == 1)
+		{
+			filename.printf("%s%s", DEFAULT_SYS_DIR, NO_FILAMENT_R_G);
+			DoFileMacro(*daemonGCode, filename.c_str(), true);
+		}
 	}
 }
 
@@ -2479,6 +2491,14 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 						buf.printf("G33 R%d Z%.3f\n", i, (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[i]));
 						ok = f->Write(buf.c_str());
 					}
+				}
+			}
+			if (ok)
+			{
+				for (size_t extruder = 0; extruder < reprap.GetExtrudersInUse(); extruder++)
+				{
+					buf.printf("M781 D%d F%.3f\n", extruder, (double)FilamentMonitor::GetExtrusionMeasured(extruder));
+					ok = f->Write(buf.c_str());
 				}
 			}
 			if (ok)

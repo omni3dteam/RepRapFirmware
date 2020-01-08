@@ -2016,7 +2016,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	ch = '[';
 	for (size_t extruder = 0; extruder < GetExtrudersInUse(); extruder++)
 	{
-		response->catf("%c%.1f", ch, HideNan(liveCoordinates[gCodes->GetTotalAxes() + extruder]));
+		response->catf("%c%.1f", ch, HideNan(FilamentMonitor::GetExtrusionMeasured(extruder)));
 		ch = ',';
 	}
 	response->catf("]");
