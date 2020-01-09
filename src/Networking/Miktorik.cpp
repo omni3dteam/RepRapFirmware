@@ -844,27 +844,6 @@ void Mikrotik::generateResponse( char *szMD5PasswordToSend, char *szMD5Challenge
  ********************************************************************/
 bool Mikrotik::try_to_log_in( char *username, char *password )
 {
-    char *szMD5Challenge;
-
-    write_word( "/login" );
-    write_word( "" );
-
-    block->ReInit();
-    read_sentence();
-    block->Print();
-
-    char tmp[100] = { 0 };
-    strncpy( tmp, block->GetNextWord( block->GetFirstWord() ), sizeof( tmp ) - 1 );
-
-    // extract md5 string from the challenge sentence
-    szMD5Challenge = strtok( tmp,  "=" );
-    szMD5Challenge = strtok( nullptr, "=" );
-
-    //debugPrintf( "MD5 of challenge = %s\n", szMD5Challenge );
-
-    char szMD5PasswordToSend[33] = { 0 };
-    generateResponse( szMD5PasswordToSend, szMD5Challenge, password );
-
     TMKSentence sentence;
     clear_sentence( &sentence );
     add_word_to_sentence( CMD_LOGIN, &sentence );
@@ -873,9 +852,9 @@ bool Mikrotik::try_to_log_in( char *username, char *password )
     SafeSnprintf( name, sizeof( name ), SET_PARAM( P_NAME ) "%s", username );
     add_word_to_sentence( name, &sentence );
 
-    char resp[100];
-    SafeSnprintf( resp, sizeof( resp ), SET_PARAM( P_RESPONSE ) "00%s", szMD5PasswordToSend );
-    add_word_to_sentence( resp, &sentence );
+    char pass[100];
+    SafeSnprintf( pass, sizeof( pass ), SET_PARAM( P_PASSWORD ) "%s", password );
+    add_word_to_sentence( pass, &sentence );
 
     write_sentence( &sentence );
 

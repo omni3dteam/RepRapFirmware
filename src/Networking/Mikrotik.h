@@ -112,6 +112,7 @@
 #define P_RUNNING       "running"
 #define P_ADDRESS       "address"
 #define P_DYNAMIC       "dynamic"
+#define P_PASSWORD		"password"
 #define P_DURATION      "duration"
 #define P_DISABLED      "disabled"
 #define P_RESPONSE      "response"
