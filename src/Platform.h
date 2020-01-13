@@ -952,6 +952,10 @@ private:
 	bool isDoorStateChanged[numberOfDoors];
 	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};		// Endstop [5, 6]
 	bool areBoltsActive = false;
+	const uint16_t boltsClosingDelay = 1000;
+	bool activateBoltsState = false;
+	bool startClosingBoltsDelay = false;
+	uint32_t startClosingBoltsTime = 0;
 #endif
 #if OMNI_SERVO_POSITIONING
 	bool isTargetServoPositionReached {false};

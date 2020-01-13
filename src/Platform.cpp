@@ -1856,46 +1856,44 @@ void Platform::Spin()
 	}
 
 	// check printer stat in order to manage the bolts
-
-	static bool startClosingDelay = false;
-	static bool activateHeaterState = false;
-	static uint16_t closingDelay = 1000;
-	static uint32_t statusTime;
-
 	if(reprap.GetStatusCharacter() == 'P')
 	{
-		if(startClosingDelay)
+		if(startClosingBoltsDelay)
 		{
-			if(millis() - statusTime > closingDelay)
+			if(millis() - startClosingBoltsTime > boltsClosingDelay)
 			{
 				areBoltsActive = true;
-				if(activateHeaterState)
+				if(activateBoltsState)
 				{
-					activateHeaterState = false;
-
-					IoPort::WriteDigital((Pin)40, false);
+					Pin pin;
+					bool invert;
+					if(GetFirmwarePin(5, PinAccess::write, pin, invert))
+					{
+						IoPort::WriteDigital(pin, false);
+						activateBoltsState = false;
+					}
 				}
 			}
 		}
 		else
 		{
-			statusTime = millis();
-			startClosingDelay = true;
+			startClosingBoltsTime = millis();
+			startClosingBoltsDelay = true;
 		}
 	}
 	else
 	{
-		if(!activateHeaterState)
+		if(!activateBoltsState)
 		{
-			activateHeaterState = true;
 			Pin pin;
 			bool invert;
 			if(GetFirmwarePin(5, PinAccess::write, pin, invert))
 			{
 				IoPort::WriteDigital(pin, true);
+				activateBoltsState = true;
 			}
 		}
-		startClosingDelay = false;
+		startClosingBoltsDelay = false;
 		areBoltsActive = false;
 	}
 #endif
