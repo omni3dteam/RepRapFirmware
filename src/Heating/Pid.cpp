@@ -51,7 +51,11 @@ inline void PID::SetHeater(float power) const
 void PID::Init(float pGain, float pTc, float pTd, bool usePid, bool inverted)
 {
 	maxTempExcursion = DefaultMaxTempExcursion;
-	maxHeatingFaultTime = DefaultMaxHeatingFaultTime;
+	if (reprap.GetHeat().GetChamberHeater(0) == heater)
+	{
+		maxHeatingFaultTime = DefaultMaxHeatingChamberFaultTime;
+	}
+	else maxHeatingFaultTime = DefaultMaxHeatingFaultTime;
 	model.SetParameters(pGain, pTc, pTd, 1.0, GetHighestTemperatureLimit(), 0.0, usePid, inverted, 0);
 	Reset();
 
@@ -418,6 +422,25 @@ void PID::Spin()
 			{
 				DoTuningStep();
 			}
+		}
+
+		// we can only heat alternately with a bed heater or a chamber heater
+		// if the bed heater is on, we need turn the chamber heater off
+		if (reprap.GetHeat().GetBedHeater(0) == heater)
+		{
+			if (lastPwm > 0.0)
+			{
+				if (platform.GetChamberHeatingPermission())
+				{
+					lastPwm = 0.0;	// delay one cycle for turn off chamber in next step
+					platform.SetChamberHeatingPermission(false);
+				}
+			}
+			else platform.SetChamberHeatingPermission(true);
+		}
+		else if (reprap.GetHeat().GetChamberHeater(0) == heater)
+		{
+			if (!platform.GetChamberHeatingPermission()) lastPwm = 0.0;
 		}
 
 		// Set the heater power and update the average PWM

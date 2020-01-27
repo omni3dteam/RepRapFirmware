@@ -638,6 +638,9 @@ public:
 	bool GetBoltStatus();
 #endif
 
+	bool GetChamberHeatingPermission() { return chamberHeatingPermission; }
+	void SetChamberHeatingPermission(bool value) { chamberHeatingPermission = value; }
+
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
 	//-------------------------------------------------------------------------------------------------------
@@ -968,6 +971,9 @@ private:
 	const float servoStep {0.01};
 	float servoDirection {1.0};
 #endif
+
+	// CHAMBER heating permission
+	bool chamberHeatingPermission{true};
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 

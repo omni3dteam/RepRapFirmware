@@ -136,6 +136,7 @@ constexpr float DefaultBedHeaterDeadTime = 10.0;
 
 // Parameters used to detect heating errors
 constexpr float DefaultMaxHeatingFaultTime = 5.0;		// How many seconds we allow a heating fault to persist
+constexpr float DefaultMaxHeatingChamberFaultTime = 120.0;		// How many seconds we allow a heating fault to persist
 constexpr float AllowedTemperatureDerivativeNoise = 0.25;	// How much fluctuation in the averaged temperature derivative we allow
 constexpr float MaxAmbientTemperature = 45.0;			// We expect heaters to cool to this temperature or lower when switched off
 constexpr float NormalAmbientTemperature = 25.0;		// The ambient temperature we assume - allow for the printer heating its surroundings a little
