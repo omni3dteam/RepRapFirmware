@@ -1930,6 +1930,39 @@ void Platform::Spin()
 		}
 	}
 #endif //OMNI_SERVO_POSITIONING
+#if OMNI_CHAMBER_FAN_COOLING
+	if(reprap.GetMachineType() && (millis() - lastChamberFanCheckTime > checkChamberFanIntervalMs))	// only for F2.0Net
+	{
+		lastChamberFanCheckTime = millis();
+
+		if (chamberFanCoolingStatus)
+		{
+			if (!chamberFanCoolingPermission)
+			{
+				Pin pin;
+				bool invert;
+				if(GetFirmwarePin(6, PinAccess::write, pin, invert))
+				{
+					IoPort::WriteDigital(pin, true);	// Turn OFF fan
+					chamberFanCoolingStatus = false;
+				}
+			}
+		}
+		else
+		{
+			if (chamberFanCoolingPermission)
+			{
+				Pin pin;
+				bool invert;
+				if(GetFirmwarePin(6, PinAccess::write, pin, invert))
+				{
+					IoPort::WriteDigital(pin, false);	// Turn ON fan
+					chamberFanCoolingStatus = true;
+				}
+			}
+		}
+	}
+#endif //OMNI_CHAMBER_FAN_COOLING
 
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)

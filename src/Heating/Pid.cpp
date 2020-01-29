@@ -51,11 +51,7 @@ inline void PID::SetHeater(float power) const
 void PID::Init(float pGain, float pTc, float pTd, bool usePid, bool inverted)
 {
 	maxTempExcursion = DefaultMaxTempExcursion;
-	if (reprap.GetHeat().GetChamberHeater(0) == heater)
-	{
-		maxHeatingFaultTime = DefaultMaxHeatingChamberFaultTime;
-	}
-	else maxHeatingFaultTime = DefaultMaxHeatingFaultTime;
+	maxHeatingFaultTime = DefaultMaxHeatingFaultTime;
 	model.SetParameters(pGain, pTc, pTd, 1.0, GetHighestTemperatureLimit(), 0.0, usePid, inverted, 0);
 	Reset();
 
@@ -441,6 +437,8 @@ void PID::Spin()
 		else if (reprap.GetHeat().GetChamberHeater(0) == heater)
 		{
 			if (!platform.GetChamberHeatingPermission()) lastPwm = 0.0;
+			if (lastPwm) platform.SetChamberFanCoolingPermission(true);
+			else platform.SetChamberFanCoolingPermission(false);
 		}
 
 		// Set the heater power and update the average PWM

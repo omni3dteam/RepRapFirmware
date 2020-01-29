@@ -640,6 +640,7 @@ public:
 
 	bool GetChamberHeatingPermission() { return chamberHeatingPermission; }
 	void SetChamberHeatingPermission(bool value) { chamberHeatingPermission = value; }
+	void SetChamberFanCoolingPermission(bool value) { chamberFanCoolingPermission = value; }
 
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
@@ -974,6 +975,12 @@ private:
 
 	// CHAMBER heating permission
 	bool chamberHeatingPermission{true};
+
+	// CHAMBER fan cooling
+	bool chamberFanCoolingPermission{false};
+	bool chamberFanCoolingStatus{false};
+	uint32_t lastChamberFanCheckTime{0};
+	const uint16_t checkChamberFanIntervalMs{5000};
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 
