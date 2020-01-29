@@ -317,23 +317,11 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 
 				if (reprap.GetMachineType())
 				{
-					buf.printf("G31 Z%.3f\n", (double)zOffset);
+					buf.printf("G1 Z%.3f H2\n", (double)zOffset);
 				}
 				else
 				{
-					buf.printf("G10 P%d Z%.3f\n", ext, (double)zOffset);
-
-					int toolNumber = ext;
-					toolNumber += gb.GetToolNumberAdjust();
-					Tool *tool = reprap.GetTool(toolNumber);
-
-					if (tool == nullptr)
-					{
-						reply.printf("Attempt to set offsets for non-existent tool: %d", toolNumber);
-						break;
-					}
-
-					tool->SetOffset(Z_AXIS, zOffset, gb.MachineState().runningM501);
+					buf.printf("G31 Z%.3f\n", (double)zOffset);
 				}
 
 				bool ok = f->Write(buf.c_str());
@@ -4640,6 +4628,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 	case 727:
 		reprap.GetNetwork().ReinitSockets();
+		break;
+
+	case 728:
+		reprap.GetNetwork().Exit();
+		reprap.GetNetwork().Init();
 		break;
 
 #if SUPPORT_SCANNER
