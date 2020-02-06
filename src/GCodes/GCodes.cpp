@@ -2482,16 +2482,16 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
 				{
-					buf.printf("G10 P%d X%.3f Y%.3f Z%.3f\n", tool->Number(), (double)(tool->GetOffset(X_AXIS)), (double)(tool->GetOffset(Y_AXIS)), (double)(tool->GetOffset(Z_AXIS)));
+					buf.catf("G10 P%d X%.3f Y%.3f Z%.3f\n", tool->Number(), (double)(tool->GetOffset(X_AXIS)), (double)(tool->GetOffset(Y_AXIS)), (double)(tool->GetOffset(Z_AXIS)));
 					ok = f->Write(buf.c_str());
 				}
-				if (reprap.GetMachineType())
+			}
+			if (ok)
+			{
+				for (int i = 0; i < 2; i++)
 				{
-					for (int i = 0; i < 2; i++)
-					{
-						buf.printf("G33 R%d Z%.3f\n", i, (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[i]));
-						ok = f->Write(buf.c_str());
-					}
+					buf.catf("G33 R%d Z%.3f\n", i, (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[i]));
+					ok = f->Write(buf.c_str());
 				}
 			}
 			if (ok)

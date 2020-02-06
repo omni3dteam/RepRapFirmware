@@ -946,7 +946,7 @@ private:
 	bool isLostPowerDetected;
 	bool isSaveResumeInfo;
 	uint32_t lastPowDetected;
-	uint32_t detCheckInterval = 1000;
+	uint32_t detCheckInterval = 3000;
 #endif
 #if OMNI_DOORS_CHECK
 	static const size_t numberOfDoors = 2;
@@ -964,7 +964,7 @@ private:
 #if OMNI_SERVO_POSITIONING
 	bool isTargetServoPositionReached {false};
 	uint32_t lastServoCheckTime;
-	const uint16_t checkServoInterval {50};
+	const uint16_t checkServoInterval {25};
 
 	float targetServoPwm {0}, currentServoPwm {0};
 	uint16_t targetServoFrequency {0};

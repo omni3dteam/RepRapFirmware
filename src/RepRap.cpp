@@ -1876,22 +1876,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		}
 	}
 
-	// Send Z offsets depending on the machine
-	if (GetMachineType())
-	{
-		response->catf(",\"z_offsets\":[%.2f,%.2f]", (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[0]),
-													 (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[1]));
-	}
-	else
-	{
-		response->cat(",\"z_offsets\":[");
-		for (Tool *tool = toolList; tool != nullptr; tool = tool->Next())
-		{
-			response->catf("%.2f", (double)tool->GetOffset(Z_AXIS));
-			// Do we have any more tools?
-			response->cat((tool->Next() != nullptr) ? "," : "]");
-		}
-	}
+	// Send Z offsets
+	response->catf(",\"z_offsets\":[%.2f,%.2f]", (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[0]),
+												 (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[1]));
 
 	if (printMonitor->IsPrinting())
 	{

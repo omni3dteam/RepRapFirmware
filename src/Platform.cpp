@@ -1760,6 +1760,7 @@ void Platform::Spin()
 
 		const bool powerBtn = IoPort::ReadPin(endStopPins[4]);
 
+		// If power button is low that means someone wants to power off the machine
 		if(powerBtn == false)
 		{
 			if(isPowerBtnActivated == true)
@@ -1803,12 +1804,25 @@ void Platform::Spin()
 
 		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[3]);
 
-		if(lostPowerBtn == true)
+		// If lost power button is low that means we need to start saving data
+		if(lostPowerBtn == false)
 		{
 			if(isLostPowerDetected == true)
 			{
 				if (isSaveResumeInfo == false)
 				{
+					Pin pin;
+					bool invert;
+					if(GetFirmwarePin(4, PinAccess::write, pin, invert))
+					{
+						IoPort::WriteDigital(pin, true);	// Turn OFF LED strip
+					}
+					if(GetFirmwarePin(7, PinAccess::write, pin, invert))
+					{
+						// Turn OFF LCD
+						// In this case we need to turn on H6 in order to turn off DC/DC converter
+						IoPort::WriteDigital(pin, false);
+					}
 					reprap.GetGCodes().SaveResumeInfo(true);
 					workTime->Write();
 					isSaveResumeInfo = true;
@@ -1824,7 +1838,7 @@ void Platform::Spin()
 		{
 			isLostPowerDetected = false;
 			isSaveResumeInfo = false;
-			detCheckInterval = 20;
+			detCheckInterval = 1;
 		}
 	}
 
@@ -1943,7 +1957,7 @@ void Platform::Spin()
 				bool invert;
 				if(GetFirmwarePin(28, PinAccess::write, pin, invert))
 				{
-					IoPort::WriteDigital(pin, true);	// Turn OFF fan
+					IoPort::WriteDigital(pin, false);	// Turn OFF fan
 					chamberFanCoolingStatus = false;
 				}
 			}
@@ -1956,7 +1970,7 @@ void Platform::Spin()
 				bool invert;
 				if(GetFirmwarePin(28, PinAccess::write, pin, invert))
 				{
-					IoPort::WriteDigital(pin, false);	// Turn ON fan
+					IoPort::WriteDigital(pin, true);	// Turn ON fan
 					chamberFanCoolingStatus = true;
 				}
 			}

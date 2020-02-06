@@ -315,13 +315,24 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				String<FormatStringLength> bufferSpace;
 				const StringRef buf = bufferSpace.GetRef();
 
+				// OMNI3D Factory 2.0 NET
 				if (reprap.GetMachineType())
 				{
-					buf.printf("G1 Z%.3f H2\n", (double)zOffset);
+					buf.printf("G31 Z%.3f\n", (double)zOffset);
 				}
 				else
 				{
-					buf.printf("G31 Z%.3f\n", (double)zOffset);
+					// OMNI3D Omni500 Lite
+					if(ext)
+					{
+						// right G1
+						buf.printf("G1 Z%.3f H2\n", (double)zOffset);
+					}
+					else
+					{
+						// left G31
+						buf.printf("G31 Z%.3f\n", (double)zOffset);
+					}
 				}
 
 				bool ok = f->Write(buf.c_str());
@@ -1164,7 +1175,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						IoPort::WriteDigital(pin, val == 1.0);
 					}
 
-					reply.printf("Logical pin %d[%d] is available", logicalPin, pin);
+					//reply.printf("Logical pin %d[%d] is available", logicalPin, pin);
 					result = GCodeResult::ok;
 				}
 				else
