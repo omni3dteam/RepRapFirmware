@@ -14,14 +14,21 @@ class WorkTime
 {
 private:
 	uint64_t secondsSaved;
+	uint64_t secondsPrint;
+
+    void SetPrintSeconds(uint64_t s)
+    {
+    	secondsPrint = s;
+    }
 public:
 	static constexpr uint32_t startAddress = 0x0047F800;
 	static constexpr uint32_t endAddress   = 0x0047FFFF;
 	static constexpr uint32_t timeAddress  = 0x0047F800;
+	static constexpr uint32_t printTimeAddress  = 0x0047F808;
 
 	void Init();
     void Write();
-    void WriteToFlash(uint64_t);
+    void WriteToFlash(uint64_t t, uint64_t p);
 
     uint64_t GetSeconds()
     {
@@ -41,6 +48,21 @@ public:
     void SetHours(uint16_t h)
     {
     	secondsSaved = h * 3600;
+    }
+
+    uint64_t GetPrintSeconds()
+    {
+    	return secondsPrint;
+    }
+
+    uint16_t GetPrintHours()
+    {
+    	return GetPrintSeconds() / 3600;
+    }
+
+    void IncrementPrintTime()
+    {
+    	secondsPrint++;
     }
 };
 

@@ -982,6 +982,10 @@ private:
 	uint32_t lastChamberFanCheckTime{0};
 	const uint16_t checkChamberFanIntervalMs{5000};
 
+	// Print time
+	uint32_t printTimeUpdateTime{0};
+	const uint16_t printTimeUpdateIntervalMs{1000};
+
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 
 	// RTC

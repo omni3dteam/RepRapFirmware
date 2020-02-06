@@ -1978,6 +1978,16 @@ void Platform::Spin()
 	}
 #endif //OMNI_CHAMBER_FAN_COOLING
 
+	// PrintTime
+	if(millis() - printTimeUpdateTime > printTimeUpdateIntervalMs)
+	{
+		printTimeUpdateTime = millis();
+		if (reprap.GetStatusCharacter() == 'P')
+		{
+			workTime->IncrementPrintTime();
+		}
+	}
+
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)
 	{

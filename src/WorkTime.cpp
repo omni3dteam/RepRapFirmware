@@ -11,19 +11,23 @@ void WorkTime::Init()
 {
 	uint64_t tempVal = *reinterpret_cast<uint64_t *>(timeAddress);
 	SetSeconds(tempVal);
+
+	tempVal = *reinterpret_cast<uint64_t *>(printTimeAddress);
+	SetPrintSeconds(tempVal);
 }
 
-void WorkTime::WriteToFlash(uint64_t val)
+void WorkTime::WriteToFlash(uint64_t t, uint64_t p)
 {
 	cpu_irq_disable();
 	flash_unlock(startAddress, endAddress, 0, 0);
 	flash_erase_page(timeAddress, IFLASH_ERASE_PAGES_8);
-	flash_write(timeAddress, &val, sizeof(val), 0);
+	flash_write(timeAddress, &t, sizeof(t), 0);
+	flash_write(printTimeAddress, &p, sizeof(p), 0);
 	flash_lock(startAddress, endAddress, 0, 0);
 	cpu_irq_enable();
 }
 
 void WorkTime::Write()
 {
-	WriteToFlash(GetSeconds());
+	WriteToFlash(GetSeconds(), GetPrintSeconds());
 }
