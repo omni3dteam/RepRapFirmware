@@ -1880,6 +1880,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	response->catf(",\"z_offsets\":[%.2f,%.2f]", (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[0]),
 												 (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[1]));
 
+	// doors states
+	response->catf(",\"doors\":[%d,%d]", reprap.GetPlatform().GetDoorState(0), reprap.GetPlatform().GetDoorState(1));
+
 	if (printMonitor->IsPrinting())
 	{
 		// Send the fraction printed

@@ -1850,22 +1850,9 @@ void Platform::Spin()
 	{
 		lastDoorsCheckTime = millis();
 
-		for (uint8_t i = 0; i < numberOfDoors; ++i)
+		for (uint8_t i = 0; i < NumberOfDoors; ++i)
 		{
 			doorState[i] = IoPort::ReadPin(doorsDuexPins[i]);
-
-			if(doorState[i] == true)
-			{
-				if(isDoorStateChanged[i] == true)
-				{
-					SendAlert(GenericMessage, doorsDuexPins[i] == doorsDuexPins[0] ? "Upper door" : "Bottom door", "The door has been opened", 1, 0.0, 0);
-					isDoorStateChanged[i] = false;
-				}
-			}
-			else
-			{
-				isDoorStateChanged[i] = true;
-			}
 		}
 	}
 

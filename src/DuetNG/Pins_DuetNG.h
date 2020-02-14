@@ -62,6 +62,8 @@ constexpr size_t MaxDriversPerAxis = 5;				// The maximum number of stepper driv
 constexpr size_t MaxHeatersPerTool = 8;
 constexpr size_t MaxExtrudersPerTool = 8;
 
+constexpr size_t NumberOfDoors = 2;
+
 constexpr size_t NUM_SERIAL_CHANNELS = 2;			// The number of serial IO channels not counting the WiFi serial connection (USB and one auxiliary UART)
 #define SERIAL_MAIN_DEVICE SerialUSB
 #define SERIAL_AUX_DEVICE Serial

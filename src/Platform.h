@@ -642,6 +642,8 @@ public:
 	void SetChamberHeatingPermission(bool value) { chamberHeatingPermission = value; }
 	void SetChamberFanCoolingPermission(bool value) { chamberFanCoolingPermission = value; }
 
+	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
+
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
 	//-------------------------------------------------------------------------------------------------------
@@ -949,12 +951,10 @@ private:
 	uint32_t detCheckInterval = 3000;
 #endif
 #if OMNI_DOORS_CHECK
-	static const size_t numberOfDoors = 2;
 	uint16_t checkDoorsInterval = 500;
 	uint32_t lastDoorsCheckTime;
-	bool doorState[numberOfDoors];
-	bool isDoorStateChanged[numberOfDoors];
-	uint8_t doorsDuexPins[numberOfDoors] = {201, 213};		// Endstop [5, 6]
+	bool doorState[NumberOfDoors];
+	uint8_t doorsDuexPins[NumberOfDoors] = {201, 213};		// Endstop [5, 6]
 	bool areBoltsActive = false;
 	const uint16_t boltsClosingDelay = 1000;
 	bool activateBoltsState = false;
