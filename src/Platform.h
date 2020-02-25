@@ -954,7 +954,7 @@ private:
 	uint16_t checkDoorsInterval = 500;
 	uint32_t lastDoorsCheckTime;
 	bool doorState[NumberOfDoors];
-	uint8_t doorsDuexPins[NumberOfDoors] = {201, 213};		// Endstop [5, 6]
+	uint8_t doorsDuexPins[NumberOfDoors] = {topDoor, frontDoor};
 	bool areBoltsActive = false;
 	const uint16_t boltsClosingDelay = 1000;
 	bool activateBoltsState = false;

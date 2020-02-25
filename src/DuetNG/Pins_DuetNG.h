@@ -196,6 +196,16 @@ constexpr Pin DueX5GpioPinMap[] = { 211, 210, 209, 208 };					// Pins 100-103 ma
 // We also allow pins 120-135 to be used if there is an additional SX1509B expander
 constexpr int HighestLogicalPin = 135;										// highest logical pin number on this electronics
 
+// Omni electronics pin map
+constexpr Pin turnOffPrinter = 4;
+constexpr Pin lostPower = 3;
+constexpr Pin topDoor = 201;  												// Endstop 5
+constexpr Pin frontDoor = 213;												// Endstop 6
+constexpr Pin boltPin = 5;
+constexpr Pin chamberFan = 28;
+constexpr Pin turnOffLed = 4;
+constexpr Pin turnOffLcd = 7;
+
 // SAM4E Flash locations (may be expanded in the future)
 constexpr uint32_t IAP_FLASH_START = 0x00470000;
 constexpr uint32_t IAP_FLASH_END = 0x0047FFFF;		// we allow a full 64K on the SAM4

@@ -1758,7 +1758,7 @@ void Platform::Spin()
 	{
 		lastPowTime = powTime;
 
-		const bool powerBtn = IoPort::ReadPin(endStopPins[4]);
+		const bool powerBtn = IoPort::ReadPin(endStopPins[turnOffPrinter]);
 
 		// If power button is low that means someone wants to power off the machine
 		if(powerBtn == false)
@@ -1802,7 +1802,7 @@ void Platform::Spin()
 	{
 		lastPowDetected = powTime;
 
-		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[3]);
+		const bool lostPowerBtn = IoPort::ReadPin(endStopPins[lostPower]);
 
 		// If lost power button is low that means we need to start saving data
 		if(lostPowerBtn == false)
@@ -1813,14 +1813,14 @@ void Platform::Spin()
 				{
 					Pin pin;
 					bool invert;
-					if(GetFirmwarePin(4, PinAccess::write, pin, invert))
+					if(GetFirmwarePin(turnOffLed, PinAccess::write, pin, invert))
 					{
 						IoPort::WriteDigital(pin, true);	// Turn OFF LED strip
 					}
-					if(GetFirmwarePin(7, PinAccess::write, pin, invert))
+					if(GetFirmwarePin(turnOffLcd, PinAccess::write, pin, invert))
 					{
 						// Turn OFF LCD
-						// In this case we need to turn on H6 in order to turn off DC/DC converter
+						// In this case we need to turn on H6 in order to turn off DC/DC converter (short GND disable the converter)
 						IoPort::WriteDigital(pin, false);
 					}
 					reprap.GetGCodes().SaveResumeInfo(true);
@@ -1868,7 +1868,7 @@ void Platform::Spin()
 				{
 					Pin pin;
 					bool invert;
-					if(GetFirmwarePin(5, PinAccess::write, pin, invert))
+					if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
 					{
 						IoPort::WriteDigital(pin, false);
 						activateBoltsState = false;
@@ -1888,7 +1888,7 @@ void Platform::Spin()
 		{
 			Pin pin;
 			bool invert;
-			if(GetFirmwarePin(5, PinAccess::write, pin, invert))
+			if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
 			{
 				IoPort::WriteDigital(pin, true);
 				activateBoltsState = true;
@@ -1942,7 +1942,7 @@ void Platform::Spin()
 			{
 				Pin pin;
 				bool invert;
-				if(GetFirmwarePin(28, PinAccess::write, pin, invert))
+				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
 				{
 					IoPort::WriteDigital(pin, false);	// Turn OFF fan
 					chamberFanCoolingStatus = false;
@@ -1955,7 +1955,7 @@ void Platform::Spin()
 			{
 				Pin pin;
 				bool invert;
-				if(GetFirmwarePin(28, PinAccess::write, pin, invert))
+				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
 				{
 					IoPort::WriteDigital(pin, true);	// Turn ON fan
 					chamberFanCoolingStatus = true;

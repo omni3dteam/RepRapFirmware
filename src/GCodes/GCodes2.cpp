@@ -303,7 +303,7 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				reprap.GetPlatform().switchZProbeParameters.zOffset[ext] = zOffset;
 			}
 
-			const char *file = ext ? T1_Z_OFFSET : T0_Z_OFFSET;
+			const char *file = ext ? T1_Z_OFFSET_G : T0_Z_OFFSET_G;
 
 			FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
 			if (f == nullptr)
@@ -3285,8 +3285,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				reply.copy("The password has been changed");
 				result = GCodeResult::ok;
 			}
-			reply.copy("Bad or missing password");
-			result = GCodeResult::error;
+			else
+			{
+				reply.copy("Bad or missing password");
+				result = GCodeResult::error;
+			}
 		}
 		break;
 
