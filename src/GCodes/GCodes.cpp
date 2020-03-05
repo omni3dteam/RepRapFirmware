@@ -254,6 +254,8 @@ void GCodes::Reset()
 	lastPrintingMoveHeight = -1.0;
 	moveBuffer.tool = nullptr;
 	moveBuffer.virtualExtruderPosition = 0.0;
+	moveBuffer.retractOccured = 0;
+	moveBuffer.savedFeedrate = 1.0;
 
 #if SUPPORT_LASER || SUPPORT_IOBITS
 	moveBuffer.laserPwmOrIoBits.Clear();
@@ -796,12 +798,12 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 	case GCodeState::filamentChangePause2:
 		if (LockMovementAndWaitForStandstill(gb))
 		{
-			reply.printf((gb.GetState() == GCodeState::filamentChangePause2) ? "Printing paused for filament change at" : "Printing paused at");
+			/*reply.printf((gb.GetState() == GCodeState::filamentChangePause2) ? "Printing paused for filament change at" : "Printing paused at");
 			for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 			{
 				reply.catf(" %c%.1f", axisLetters[axis], (double)pauseRestorePoint.moveCoords[axis]);
 			}
-			platform.MessageF(LogMessage, "%s\n", reply.c_str());
+			platform.MessageF(LogMessage, "%s\n", reply.c_str());*/
 			gb.SetState(GCodeState::normal);
 		}
 		break;
@@ -2516,11 +2518,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				ok = false;
 			}
-			if (ok)
-			{
-				platform.Message(LoggedGenericMessage, "Resume state saved\n");
-			}
-			else
+			if (!ok)
 			{
 				platform.DeleteSysFile(STARTUP_G);
 				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", STARTUP_G);
@@ -2674,6 +2672,38 @@ bool GCodes::LoadExtrusionAndFeedrateFromGCode(GCodeBuffer& gb, bool isPrintingM
 				if (isPrintingMove && moveBuffer.moveType == 0 && !doingToolChange)
 				{
 					rawExtruderTotal += requestedExtrusionAmount;
+				}
+
+				// We want to detect gcode retraction. The first move is always negative like: G0 E-1.000 F3600
+				// The move is without others axis
+				// We have 3 steps.
+				// 1 step is always when we get negative E distance without other axis
+				// 2 step is when we get positive E value without other axis
+				// The last step is usually with other axes. Then we must use normall (saved) feedrate for proper extruder
+				if (moveBuffer.retractOccured == 1)
+				{
+					platform.SetMaxFeedrate(numTotalAxes + tool->Number(), moveBuffer.savedFeedrate);
+					moveBuffer.retractOccured = 0;
+					//platform.Message(ErrorMessage, "Soft retract 3!\n");
+				}
+
+				if (!isPrintingMove)
+				{
+					// Get number of tool
+					const size_t toolNum = numTotalAxes + tool->Number();
+
+					if (requestedExtrusionAmount < 0.0)
+					{
+						moveBuffer.savedFeedrate = platform.MaxFeedrate(toolNum);
+						platform.SetMaxFeedrate(toolNum, 5000.0);
+						moveBuffer.retractOccured = 2;
+						//platform.Message(ErrorMessage, "Soft retract 1!\n");
+					}
+					else if (moveBuffer.retractOccured == 2)
+					{
+						moveBuffer.retractOccured = 1;
+						//platform.Message(ErrorMessage, "Soft retract 2!\n");
+					}
 				}
 
 				float totalMix = 0.0;
@@ -3766,7 +3796,8 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool 
 		reply.Clear();						// get rid of the error message
 		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
 		{
-			reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
+			// This information can be confusing for users, so we don't need to use it
+			// reply.copy("the height map was loaded when the current Z=0 datum was not determined probing. This may result in a height offset.");
 			return GCodeResult::warning;
 		}
 	}

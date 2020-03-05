@@ -1059,7 +1059,18 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 				response->catf("%" PRIu32, platform->GetFanRPM(0));
 			}
 		}
-		response->cat('}');		// end sensors
+
+		// Current filament consumption
+		response->catf(",\"extr\":");			// announce actual extruder positions
+		ch = '[';
+		for (size_t extruder = 0; extruder < GetExtrudersInUse(); extruder++)
+		{
+			response->catf("%c%.1f", ch, HideNan(FilamentMonitor::GetExtrusionMeasured(extruder)));
+			ch = ',';
+		}
+
+		// doors states
+		response->catf("],\"doors\":[%d,%d]}", reprap.GetPlatform().GetDoorState(0), reprap.GetPlatform().GetDoorState(1)); // end sensors
 	}
 
 	/* Temperatures */
@@ -1710,7 +1721,8 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	const int8_t chamberHeater = (NumChamberHeaters > 0) ? heat->GetChamberHeater(0) : -1;
 	if(chamberHeater == -1)
 	{
-		response->catf(",\"extra\":%.1f", (double)heat->GetTemperature(101));
+		TemperatureError err;
+		response->catf(",\"extra\":%.1f", (double)heat->GetTemperature(101, err));
 	}
 
 	response->cat(",\"heaters\":");

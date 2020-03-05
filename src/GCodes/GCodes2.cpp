@@ -743,7 +743,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		{
 			const size_t card = (gb.Seen('P')) ? gb.GetIValue() : 0;
-			result = platform.GetMassStorage()->Mount(card, reply, true);
+			result = platform.GetMassStorage()->Mount(card, reply, false);
 		}
 		break;
 

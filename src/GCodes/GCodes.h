@@ -114,6 +114,7 @@ public:
 	{
 		float coords[MaxTotalDrivers];									// new positions for the axes, amount of movement for the extruders
 		float initialCoords[MaxAxes];									// the initial positions of the axes
+		float savedFeedrate;											// if retraction occured we need to save tool feedrate
 		float feedRate;													// feed rate of this move
 		union
 		{
@@ -136,6 +137,8 @@ public:
 		uint8_t hasExtrusion : 1;										// true if the move includes extrusion - only valid if the move was set up by SetupMove
 		uint8_t isCoordinated : 1;										// true if this is a coordinates move
 		uint8_t usingStandardFeedrate : 1;								// true if this move uses the standard feed rate
+
+		uint8_t retractOccured;											// this indicate step of gcode retraction
 
 		void SetDefaults(size_t firstDriveToZero);						// set up default values
 	};
