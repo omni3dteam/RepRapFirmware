@@ -2674,7 +2674,7 @@ bool GCodes::LoadExtrusionAndFeedrateFromGCode(GCodeBuffer& gb, bool isPrintingM
 					rawExtruderTotal += requestedExtrusionAmount;
 				}
 
-				// We want to detect gcode retraction. The first move is always negative like: G0 E-1.000 F3600
+				// We want to detect soft GCode retraction. The first move is always negative like: G0 E-1.000 F3600
 				// The move is without others axis
 				// We have 3 steps.
 				// 1 step is always when we get negative E distance without other axis
@@ -2684,7 +2684,6 @@ bool GCodes::LoadExtrusionAndFeedrateFromGCode(GCodeBuffer& gb, bool isPrintingM
 				{
 					platform.SetMaxFeedrate(numTotalAxes + tool->Number(), moveBuffer.savedFeedrate);
 					moveBuffer.retractOccured = 0;
-					//platform.Message(ErrorMessage, "Soft retract 3!\n");
 				}
 
 				if (!isPrintingMove)
@@ -2697,12 +2696,10 @@ bool GCodes::LoadExtrusionAndFeedrateFromGCode(GCodeBuffer& gb, bool isPrintingM
 						moveBuffer.savedFeedrate = platform.MaxFeedrate(toolNum);
 						platform.SetMaxFeedrate(toolNum, 5000.0);
 						moveBuffer.retractOccured = 2;
-						//platform.Message(ErrorMessage, "Soft retract 1!\n");
 					}
 					else if (moveBuffer.retractOccured == 2)
 					{
 						moveBuffer.retractOccured = 1;
-						//platform.Message(ErrorMessage, "Soft retract 2!\n");
 					}
 				}
 
@@ -5940,6 +5937,69 @@ void GCodes::SetItemStandbyTemperature(unsigned int itemNumber, float temp)
 }
 
 #endif
+
+// This function copy all files from sourceDir to destinationDir
+// If file doesn't exist in destonationDir it will be created
+// If file exist it will be overwritten
+void GCodes::CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir)
+{
+	FileInfo fileInfo;
+	uint32_t startTime = millis();
+
+	if (platform.GetMassStorage()->FindFirst(sourceDir, fileInfo))
+	{
+		// iterate through all entries and append each file name
+		do
+		{
+			FileStore * const rf = platform.OpenFile(sourceDir, fileInfo.fileName.c_str(), OpenMode::read);
+			if (rf != nullptr)
+			{
+
+				if (IsConfigFile(fileInfo.fileName.c_str()))
+				{
+					size_t idx = rf->Length();
+					FileStore * const sf = platform.OpenFile(destinationDir, fileInfo.fileName.c_str(), OpenMode::write);
+
+					if (sf != nullptr)
+					{
+						char c;
+
+						for(size_t i = 0; i < idx; ++i)
+						{
+							rf->Read(c);
+							sf->Write(c);
+						}
+						sf->Close();
+					}
+					else
+					{
+						reply.printf("Can't open file: %s", fileInfo.fileName.c_str());
+					}
+				}
+				rf->Close();
+			}
+			else
+			{
+				reply.printf("Can't open file: %s", fileInfo.fileName.c_str());
+			}
+		}
+		while (platform.GetMassStorage()->FindNext(fileInfo));
+
+	}
+	else
+	{
+		reply.copy("Restore directory is not available!");
+	}
+
+	reply.printf("Restored default files in %ldms", millis() - startTime);
+}
+
+// Check whether file has .g extension
+// If the file is config file it will return positive number otherwise function will return NULL
+bool GCodes::IsConfigFile(const char* filename)
+{
+	return (bool)strstr(filename, ".g");
+}
 
 #if OMNI_GCODES
 //TODO: func...

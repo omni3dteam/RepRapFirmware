@@ -356,7 +356,10 @@ constexpr size_t FILE_BUFFER_SIZE = 128;
 #define SCANS_DIRECTORY "0:/scans/"					// Directory for uploaded 3D scans
 #define FILAMENTS_DIRECTORY "0:/filaments/"			// Directory for filament configurations
 #define MENU_DIR "0:/menu/"							// Directory for menu files
+#define RESTORE_DIR "0:/restore/"					// Directory for backup purposes
 #define UPLOAD_EXTENSION ".part"					// Extension to a filename for a file being uploaded
+#define PROCEDURES_DIR "procedures/"
+#define USER_PROCEDURES_DIR "user_procedures/"
 
 #define CONFIG_FILE "config.g"
 #define CONFIG_BACKUP_FILE "config.g.bak"

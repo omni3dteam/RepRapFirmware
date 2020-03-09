@@ -238,7 +238,9 @@ public:
 	void HandleReply(GCodeBuffer& gb, GCodeResult rslt, const char *reply);	// Handle G-Code replies
 	void EmergencyStop();												// Cancel everything
 	bool GetLastPrintingHeight(float& height) const;					// Get the height in user coordinates of the last printing move
+	bool IsConfigFile(const char* filename);							// Check whether file has .g extension
 	void SendNetworkStatus(const char *ssid, const char *ip, TStatus status, TInterface *iface, TWifiMode *mode); // push data to LCD
+	void CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir); // Copy files from one directory to another
 
 	GCodeResult StartSDTiming(GCodeBuffer& gb, const StringRef& reply);	// Start timing SD card file writing
 

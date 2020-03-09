@@ -1577,102 +1577,107 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case 116: // Wait for set temperatures
-		if (   !LockMovementAndWaitForStandstill(gb)		// wait until movement has finished
-			|| !IsCodeQueueIdle()							// also wait until deferred command queue has caught up to avoid out-of-order execution
-		   )
 		{
-			return false;
-		}
-
-		if (!cancelWait)
-		{
-			const float tolerance = (gb.Seen('S')) ? max<float>(gb.GetFValue(), 0.1) : TEMPERATURE_CLOSE_ENOUGH;
-			bool seen = false;
-			if (gb.Seen('P'))
+			if (   !LockMovementAndWaitForStandstill(gb)		// wait until movement has finished
+				|| !IsCodeQueueIdle()							// also wait until deferred command queue has caught up to avoid out-of-order execution
+			   )
 			{
-				// Wait for the heaters associated with the specified tool to be ready
-				int toolNumber = gb.GetIValue();
-				toolNumber += gb.GetToolNumberAdjust();
-				if (!ToolHeatersAtSetTemperatures(reprap.GetTool(toolNumber), true, tolerance))
-				{
-					CheckReportDue(gb, reply);				// check whether we need to send a temperature or status report
-					isWaiting = true;
-					return false;
-				}
-				seen = true;
+				return false;
 			}
 
-			if (gb.Seen('H'))
-			{
-				// Wait for specified heaters to be ready
-				uint32_t heaters[NumHeaters];
-				size_t heaterCount = NumHeaters;
-				gb.GetUnsignedArray(heaters, heaterCount, false);
 
-				for (size_t i = 0; i < heaterCount; i++)
+			bool DoWait = gb.Seen('A') ? gb.GetIValue() : false;
+
+			if (!cancelWait && (DoWait || reprap.GetStatusCharacter() == 'P'))
+			{
+				const float tolerance = (gb.Seen('S')) ? max<float>(gb.GetFValue(), 0.1) : TEMPERATURE_CLOSE_ENOUGH;
+				bool seen = false;
+				if (gb.Seen('P'))
 				{
-					if (!reprap.GetHeat().HeaterAtSetTemperature(heaters[i], true, tolerance))
+					// Wait for the heaters associated with the specified tool to be ready
+					int toolNumber = gb.GetIValue();
+					toolNumber += gb.GetToolNumberAdjust();
+					if (!ToolHeatersAtSetTemperatures(reprap.GetTool(toolNumber), true, tolerance))
 					{
-						CheckReportDue(gb, reply);			// check whether we need to send a temperature or status report
+						CheckReportDue(gb, reply);				// check whether we need to send a temperature or status report
 						isWaiting = true;
 						return false;
 					}
+					seen = true;
 				}
-				seen = true;
-			}
 
-			if (gb.Seen('C'))
-			{
-				// Wait for specified chamber(s) to be ready
-				uint32_t chamberIndices[NumChamberHeaters];
-				size_t chamberCount = NumChamberHeaters;
-				gb.GetUnsignedArray(chamberIndices, chamberCount, false);
-
-				if (chamberCount == 0)
+				if (gb.Seen('H'))
 				{
-					// If no values are specified, wait for all chamber heaters
-					for (size_t i = 0; i < NumChamberHeaters; i++)
+					// Wait for specified heaters to be ready
+					uint32_t heaters[NumHeaters];
+					size_t heaterCount = NumHeaters;
+					gb.GetUnsignedArray(heaters, heaterCount, false);
+
+					for (size_t i = 0; i < heaterCount; i++)
 					{
-						const int8_t heater = reprap.GetHeat().GetChamberHeater(i);
-						if (heater >= 0 && !reprap.GetHeat().HeaterAtSetTemperature(heater, true, tolerance))
+						if (!reprap.GetHeat().HeaterAtSetTemperature(heaters[i], true, tolerance))
 						{
-							CheckReportDue(gb, reply);		// check whether we need to send a temperature or status report
+							CheckReportDue(gb, reply);			// check whether we need to send a temperature or status report
 							isWaiting = true;
 							return false;
 						}
 					}
+					seen = true;
 				}
-				else
+
+				if (gb.Seen('C'))
 				{
-					// Otherwise wait only for the specified chamber heaters
-					for (size_t i = 0; i < chamberCount; i++)
+					// Wait for specified chamber(s) to be ready
+					uint32_t chamberIndices[NumChamberHeaters];
+					size_t chamberCount = NumChamberHeaters;
+					gb.GetUnsignedArray(chamberIndices, chamberCount, false);
+
+					if (chamberCount == 0)
 					{
-						if (chamberIndices[i] >= 0 && chamberIndices[i] < NumChamberHeaters)
+						// If no values are specified, wait for all chamber heaters
+						for (size_t i = 0; i < NumChamberHeaters; i++)
 						{
-							const int8_t heater = reprap.GetHeat().GetChamberHeater(chamberIndices[i]);
+							const int8_t heater = reprap.GetHeat().GetChamberHeater(i);
 							if (heater >= 0 && !reprap.GetHeat().HeaterAtSetTemperature(heater, true, tolerance))
 							{
-								CheckReportDue(gb, reply);	// check whether we need to send a temperature or status report
+								CheckReportDue(gb, reply);		// check whether we need to send a temperature or status report
 								isWaiting = true;
 								return false;
 							}
 						}
 					}
+					else
+					{
+						// Otherwise wait only for the specified chamber heaters
+						for (size_t i = 0; i < chamberCount; i++)
+						{
+							if (chamberIndices[i] >= 0 && chamberIndices[i] < NumChamberHeaters)
+							{
+								const int8_t heater = reprap.GetHeat().GetChamberHeater(chamberIndices[i]);
+								if (heater >= 0 && !reprap.GetHeat().HeaterAtSetTemperature(heater, true, tolerance))
+								{
+									CheckReportDue(gb, reply);	// check whether we need to send a temperature or status report
+									isWaiting = true;
+									return false;
+								}
+							}
+						}
+					}
+					seen = true;
 				}
-				seen = true;
+
+				// Wait for all heaters except chamber(s) to be ready
+				if (!seen && !reprap.GetHeat().AllHeatersAtSetTemperatures(true, tolerance))
+				{
+					CheckReportDue(gb, reply);					// check whether we need to send a temperature or status report
+					isWaiting = true;
+					return false;
+				}
 			}
 
-			// Wait for all heaters except chamber(s) to be ready
-			if (!seen && !reprap.GetHeat().AllHeatersAtSetTemperatures(true, tolerance))
-			{
-				CheckReportDue(gb, reply);					// check whether we need to send a temperature or status report
-				isWaiting = true;
-				return false;
-			}
+			// If we get here, there is nothing more to wait for
+			cancelWait = isWaiting = false;
 		}
-
-		// If we get here, there is nothing more to wait for
-		cancelWait = isWaiting = false;
 		break;
 
 	case 117:	// Display message
@@ -3075,6 +3080,19 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				ms->Delete(newVal.c_str());
 			}
 			ms->Rename(oldVal.c_str(), newVal.c_str());
+		}
+		break;
+
+	case 472:
+		{
+		// Copy root directory
+		CopyFilesFromDir(reply, RESTORE_DIR, DEFAULT_SYS_DIR);
+
+		// Copy procedure directory
+		CopyFilesFromDir(reply, RESTORE_DIR PROCEDURES_DIR, DEFAULT_SYS_DIR PROCEDURES_DIR);
+
+		// Copy user procedure directory
+		CopyFilesFromDir(reply, RESTORE_DIR USER_PROCEDURES_DIR, DEFAULT_SYS_DIR USER_PROCEDURES_DIR);
 		}
 		break;
 
