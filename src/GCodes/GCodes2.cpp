@@ -4533,22 +4533,72 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 723:
 		{
-			bool seen = false;
-			String<StringLength20> ip;
+			TInterface interface = ether1;
+			uint8_t maskBits = 24;
+
+			if (gb.Seen('I'))
+			{
+				uint32_t interVal = gb.GetUIValue();
+				interface = interVal == ether1 ? ether1 : interVal == wifi2g ? wifi2g : wifi5g;
+			}
 
 			if (gb.Seen('D'))
 			{
 				if (gb.GetIValue())
 				{
-					reprap.GetMikrotikInstance().RemoveStaticIP(ether1);
+					if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
+					{
+						reprap.GetMikrotikInstance().RemoveStaticIP(interface);
+					}
 				}
 			}
 
-			gb.TryGetPossiblyQuotedString('P', ip.GetRef(), seen);
-
-			if (seen)
+			if (gb.Seen('R'))
 			{
-				reprap.GetMikrotikInstance().SetStaticIP(ether1, ip.c_str());
+				IPAddress mask;
+				if (gb.GetIPAddress(mask))
+				{
+					uint8_t i;
+					uint32_t ipMask = mask.GetV4LittleEndian();
+
+					for(i = 31; i > 0; --i)
+						if(ipMask & (1u << i))
+							break;
+
+					maskBits = i + 1;
+				}
+				else
+				{
+					reply.copy("Can't set net mask");
+					result = GCodeResult::error;
+					break;
+				}
+			}
+
+
+			if (gb.Seen('P'))
+			{
+				IPAddress ip;
+				if (gb.GetIPAddress(ip))
+				{
+					String<StringLength20> ipAddress;
+
+					ipAddress.printf("%d.%d.%d.%d/%d", ip.GetQuad(0), ip.GetQuad(1), ip.GetQuad(2), ip.GetQuad(3), maskBits);
+
+					if (!reprap.GetMikrotikInstance().SetStaticIP(interface, ipAddress.c_str()))
+					{
+						reply.copy("Can't set static IP address");
+						result = GCodeResult::error;
+						break;
+					}
+
+				}
+				else
+				{
+					reply.copy("Can't set IP address");
+					result = GCodeResult::error;
+					break;
+				}
 			}
 		}
 		break;

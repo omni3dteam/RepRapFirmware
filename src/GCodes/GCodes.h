@@ -676,8 +676,8 @@ private:
 	static constexpr const char* LED_STRIP_G = "led-strip.g";
 	static constexpr const char* T0_Z_OFFSET_G = "t0-zoffset.g";
 	static constexpr const char* T1_Z_OFFSET_G = "t1-zoffset.g";
-	static constexpr const char* NO_FILAMENT_L_G = "nofilament-left.g";
-	static constexpr const char* NO_FILAMENT_R_G = "nofilament-right.g";
+	static constexpr const char* NO_FILAMENT_L_G = "t0-nofilament.g";
+	static constexpr const char* NO_FILAMENT_R_G = "t1-nofilament.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif

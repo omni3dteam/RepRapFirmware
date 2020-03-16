@@ -5820,7 +5820,18 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 		break;
 	}
 
-	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%s\",\"%s\"]}", title, md, stat, ip, ssid);
+	char tempIp[32];
+	strcpy(tempIp, ip);
+	char* pos = strstr(tempIp, "/");
+
+	size_t charPtr = pos - tempIp;
+
+	if (charPtr > 0 && charPtr < strlen(tempIp))
+	{
+		tempIp[charPtr] = 0;
+	}
+
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%s\",\"%s\"]}", title, md, stat, tempIp, ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
 }
 
