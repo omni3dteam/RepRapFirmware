@@ -4421,7 +4421,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				if(cParam == 2)
 				{
 					reprap.GetMikrotikInstance().ConnectToEthernet();
-					SendNetworkStatus("", "", Connecting, &interface, &mode);
+					SendNetworkStatus("", "", Connecting, false, &interface, &mode);
 					break;
 				}
 			}
@@ -4460,7 +4460,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						reprap.GetMikrotikInstance().ConnectToWiFi(ssid.c_str(), password.c_str(), interface);
 						mode = Station;
 					}
-					SendNetworkStatus(ssid.c_str(), "", Connecting, &interface, &mode);
+					SendNetworkStatus(ssid.c_str(), "", Connecting, false, &interface, &mode);
 				}
 				else
 				{
@@ -4490,7 +4490,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			debugPrintf("Cannot find current interface\n");
 		}
 		iface = none;
-		SendNetworkStatus("", "", Disconnected, &iface, &mode);
+		SendNetworkStatus("", "", Disconnected, false, &iface, &mode);
 
 		break;
 		}
@@ -4611,6 +4611,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		TInterface iface = none;
 		TWifiMode mode = invalid;
 		TStatus status = Booting;
+		bool isIpStatic = false;
 
 		if ( reprap.GetMikrotikInstance().IsRouterAvailable() )
 		{
@@ -4636,7 +4637,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						return false;
 					}
 
-					bool isIpStatic = state == Enabled ? false : true;
+					isIpStatic = state == Enabled ? false : true;
 
 					if ( !reprap.GetMikrotikInstance().GetInterfaceIP( iface, ip, isIpStatic ) )
 					{
@@ -4663,7 +4664,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 			}
 		}
-		SendNetworkStatus((const char *)ssid, (const char *)ip, status, &iface, &mode);
+		SendNetworkStatus((const char *)ssid, (const char *)ip, status, isIpStatic, &iface, &mode);
 		}
 		break;
 
