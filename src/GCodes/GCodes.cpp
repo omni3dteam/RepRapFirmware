@@ -1830,26 +1830,21 @@ void GCodes::CheckFilament()
 	if (   lastFilamentError != FilamentSensorStatus::ok			// check for a filament error
 		&& IsReallyPrinting()
 		&& autoPauseGCode->IsCompletelyIdle()
-		//&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
 	   )
 	{
-		//String<MediumStringLength> filamentErrorString;
-		//filamentErrorString.printf("Extruder %u reports %s", lastFilamentErrorExtruder, FilamentMonitor::GetErrorMessage(lastFilamentError));
-		//DoPause(*autoPauseGCode, PauseReason::filament, filamentErrorString.c_str());
 		lastFilamentError = FilamentSensorStatus::ok;
-		//filamentErrorString.cat('\n');
-		//platform.Message(LogMessage, filamentErrorString.c_str());
 
-		String<StringLength40> filename;
-		if (lastFilamentErrorExtruder == 0)
+		// We have to wait for finish previous macro
+		if (daemonGCode->MachineState().doingFileMacro == false)
 		{
-			filename.printf("%s%s", DEFAULT_SYS_DIR, NO_FILAMENT_L_G);
-			DoFileMacro(*daemonGCode, filename.c_str(), true);
-		}
-		else if (lastFilamentErrorExtruder == 1)
-		{
-			filename.printf("%s%s", DEFAULT_SYS_DIR, NO_FILAMENT_R_G);
-			DoFileMacro(*daemonGCode, filename.c_str(), true);
+			// Stop only if current tool is printing
+			const Tool * const tool = reprap.GetCurrentTool();
+			if (tool->Number() == lastFilamentErrorExtruder)
+			{
+				String<StringLength40> filename;
+				filename.printf("%st%d-nofilament.g", DEFAULT_SYS_DIR, lastFilamentErrorExtruder);
+				DoFileMacro(*daemonGCode, filename.c_str(), true);
+			}
 		}
 	}
 }
@@ -5825,7 +5820,7 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 
 	char tempIp[32];
 	uint8_t i, mskBit;
-	uint32_t ipMask = 0;
+	uint32_t ipMask = 24;
 
 	strcpy(tempIp, ip);
 	char* pos = strstr(tempIp, "/");
