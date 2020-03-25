@@ -5771,6 +5771,7 @@ bool GCodes::GetLastPrintingHeight(float& height) const
 void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status, bool isStatic, TInterface *iface, TWifiMode *mode)
 {
 	char outputBuffer[256] = { 0 };
+	char outputMask[32] = "-----";
 	char stat[16] = { 0 };
 	char md[4] = { 0 };
 	char typeIp = { 0 };
@@ -5796,7 +5797,7 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 		}
 	}
 
-	debugPrintf("Send info: %d, %d - %s\n", (int)*iface, (int)*mode, md);
+	//debugPrintf("Send info: %d, %d - %s\n", (int)*iface, (int)*mode, md);
 
 	switch ( status )
 	{
@@ -5816,7 +5817,7 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 		break;
 	}
 
-	typeIp = *mode == invalid ? 'Y' : isStatic ? 'S' : 'D';
+	typeIp = *mode == AccessPoint ? 'Y' : isStatic ? 'S' : 'D';
 
 	char tempIp[32];
 	uint8_t i, mskBit;
@@ -5834,13 +5835,14 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 
 		for(i = 0; i < mskBit; ++i)
 			ipMask |= (1u << i);
+
+		SafeSnprintf(outputMask, sizeof(outputMask),"%d.%d.%d.%d", (uint8_t)ipMask, (uint8_t)(ipMask >> 8), (uint8_t)(ipMask >> 16), (uint8_t)(ipMask >> 24));
 	}
 
-	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%c\",\"%s\",\"%d.%d.%d.%d\",\"%s\"]}",
-			title, md, stat, typeIp, tempIp,
-			(uint8_t)ipMask, (uint8_t)(ipMask >> 8),
-			(uint8_t)(ipMask >> 16), (uint8_t)(ipMask >> 24), ssid);
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\"]}",
+			title, md, stat, typeIp, tempIp, outputMask, ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
+	//debugPrintf(outputBuffer);
 }
 
 // Start timing SD card file writing

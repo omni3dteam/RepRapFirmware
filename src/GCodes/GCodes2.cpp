@@ -4421,7 +4421,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				if(cParam == 2)
 				{
 					reprap.GetMikrotikInstance().ConnectToEthernet();
-					SendNetworkStatus("", "", Connecting, false, &interface, &mode);
+					SendNetworkStatus("-----", "-----", Connecting, false, &interface, &mode);
 					break;
 				}
 			}
@@ -4460,7 +4460,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						reprap.GetMikrotikInstance().ConnectToWiFi(ssid.c_str(), password.c_str(), interface);
 						mode = Station;
 					}
-					SendNetworkStatus(ssid.c_str(), "", Connecting, false, &interface, &mode);
+					SendNetworkStatus(ssid.c_str(), "-----", Connecting, false, &interface, &mode);
 				}
 				else
 				{
@@ -4490,7 +4490,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			debugPrintf("Cannot find current interface\n");
 		}
 		iface = none;
-		SendNetworkStatus("", "", Disconnected, false, &iface, &mode);
+		SendNetworkStatus("-----", "-----", Disconnected, false, &iface, &mode);
 
 		break;
 		}
@@ -4591,7 +4591,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						result = GCodeResult::error;
 						break;
 					}
-
+					reprap.GetNetwork().ReinitSockets();
 				}
 				else
 				{
