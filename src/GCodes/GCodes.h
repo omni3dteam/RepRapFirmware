@@ -314,7 +314,7 @@ private:
 
 	void HandleReply(GCodeBuffer& gb, OutputBuffer *reply);
 
-	const char* DoStraightMove(GCodeBuffer& gb, bool isCoordinated) __attribute__((hot));	// Execute a straight move returning any error message
+	bool DoStraightMove(GCodeBuffer& gb, bool isCoordinated) __attribute__((hot));	// Execute a straight move returning any error message
 	const char* DoArcMove(GCodeBuffer& gb, bool clockwise)						// Execute an arc move returning any error message
 		pre(segmentsLeft == 0; resourceOwners[MoveResource] == &gb);
 	void FinaliseMove(GCodeBuffer& gb);											// Adjust the move parameters to account for segmentation and/or part of the move having been done already

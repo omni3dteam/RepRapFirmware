@@ -1830,6 +1830,7 @@ void GCodes::CheckFilament()
 	if (   lastFilamentError != FilamentSensorStatus::ok			// check for a filament error
 		&& IsReallyPrinting()
 		&& autoPauseGCode->IsCompletelyIdle()
+		&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
 	   )
 	{
 		lastFilamentError = FilamentSensorStatus::ok;
@@ -1837,14 +1838,11 @@ void GCodes::CheckFilament()
 		// We have to wait for finish previous macro
 		if (daemonGCode->MachineState().doingFileMacro == false)
 		{
-			// Stop only if current tool is printing
-			const Tool * const tool = reprap.GetCurrentTool();
-			if (tool->Number() == lastFilamentErrorExtruder)
-			{
 				String<StringLength40> filename;
 				filename.printf("%st%d-nofilament.g", DEFAULT_SYS_DIR, lastFilamentErrorExtruder);
+
+				DoPause(*autoPauseGCode, PauseReason::filament, nullptr);
 				DoFileMacro(*daemonGCode, filename.c_str(), true);
-			}
 		}
 	}
 }
@@ -2782,7 +2780,7 @@ bool GCodes::CheckEnoughAxesHomed(AxesBitmap axesMoved)
 
 // Execute a straight move returning true if an error was written to 'reply'
 // We have already acquired the movement lock and waited for the previous move to be taken.
-const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
+bool GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 {
 	if (moveFractionToSkip > 0.0)
 	{
@@ -2826,7 +2824,8 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 		}
 		else
 		{
-			return "G0/G1: bad restore point number";
+			reprap.GetPlatform().Message(GenericMessage, "G0/G1: bad restore point number");
+			return true;
 		}
 	}
 
@@ -2896,7 +2895,8 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 			// If it is a special move on a delta, movement must be relative.
 			if (moveBuffer.moveType != 0 && !gb.MachineState().axesRelative && reprap.GetMove().GetKinematics().GetKinematicsType() == KinematicsType::linearDelta)
 			{
-				return "G0/G1: attempt to move individual motors of a delta machine to absolute positions";
+				reprap.GetPlatform().Message(GenericMessage, "G0/G1: attempt to move individual motors of a delta machine to absolute positions");
+				return true;
 			}
 
 			SetBit(axesMentioned, axis);
@@ -2944,9 +2944,21 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 	{
 		if (!doingManualBedProbe && CheckEnoughAxesHomed(axesMentioned))
 		{
-			platform.MessageF(ImmediateLcdMessage, "You must home XY axes.\n");
+			uint8_t i, idx = 0;
+			char notHomedLetter[MaxAxes + 1] = {0};
 
-			return "G0/G1: insufficient axes homed";
+			for (i = 0; i < numVisibleAxes; ++i)
+			{
+				if (((axesMentioned >> i) & 1u) && !((axesHomed >> i) & 1u))
+				{
+					notHomedLetter[idx++] = axisLetters[i];
+				}
+			}
+			String<StringLength40> warningAxis;
+			warningAxis.printf("You must home %s %s.", notHomedLetter, idx > 1 ? "axes" : "axis");
+
+			reprap.GetPlatform().Message(GenericMessage, warningAxis.c_str());
+			return true;
 		}
 	}
 	else if (moveBuffer.moveType == 1 || moveBuffer.moveType == 3)
@@ -3000,7 +3012,8 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 			case LimitPositionResult::adjustedAndIntermediateUnreachable:
 				if (machineType != MachineType::fff)
 				{
-					return "G0/G1: target position outside machine limits";		// it's a laser or CNC so this is a definite error
+					reprap.GetPlatform().Message(GenericMessage, "G0/G1: target position outside machine limits");
+					return true;				// it's a laser or CNC so this is a definite error
 				}
 				ToolOffsetInverseTransform(moveBuffer.coords, currentUserPosition);	// make sure the limits are reflected in the user position
 				if (lp == LimitPositionResult::adjusted)
@@ -3026,7 +3039,8 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 						break;
 					}
 				}
-				return "G0/G1: target position not reachable from current position";		// we can't bring the move within limits, so this is a definite error
+				reprap.GetPlatform().Message(GenericMessage, "G0/G1: target position not reachable from current position");
+				return true;			// we can't bring the move within limits, so this is a definite error
 
 			case LimitPositionResult::ok:
 			default:
@@ -3074,7 +3088,7 @@ const char* GCodes::DoStraightMove(GCodeBuffer& gb, bool isCoordinated)
 	doingArcMove = false;
 	FinaliseMove(gb);
 	UnlockAll(gb);			// allow pause
-	return nullptr;
+	return false;
 }
 
 // Execute an arc move, returning true if it was badly-formed

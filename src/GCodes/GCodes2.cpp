@@ -115,11 +115,11 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 			return false;
 		}
 		{
-			const char* err = DoStraightMove(gb, code == 1);
-			if (err != nullptr)
+			bool err = DoStraightMove(gb, code == 1);
+			if (err)
 			{
 				AbortPrint(gb);
-				gb.SetState(GCodeState::waitingForSpecialMoveToComplete, err);	// force the user position to be restored
+				gb.SetState(GCodeState::waitingForSpecialMoveToComplete);	// force the user position to be restored
 			}
 		}
 		break;
