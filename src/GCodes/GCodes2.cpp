@@ -3263,50 +3263,52 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 			if (seen)
 			{
+				seen = false;
 				gb.TryGetPossiblyQuotedString('R', oldPassword.GetRef(), seen);
 
 				if (seen)
 				{
-					if(reprap.CheckPassword(oldPassword.c_str()))
+					if (!reprap.CheckPassword(oldPassword.c_str()))
 					{
-						FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
-						if (f == nullptr)
-						{
-							platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
-							break;
-						}
-						else
-						{
-							String<FormatStringLength> bufferSpace;
-							const StringRef buf = bufferSpace.GetRef();
-
-							buf.printf("M551 P\"%s\"\n", password.c_str());
-							bool ok = f->Write(buf.c_str());
-
-							if (!f->Close())
-							{
-								ok = false;
-							}
-							if (!ok)
-							{
-								platform.DeleteSysFile(DWC_PASS_G);
-								platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
-							}
-						}
-					}
-					else
-					{
+						reply.copy("Bad old password");
 						break;
 					}
 				}
-				reprap.SetPassword(password.c_str());
+
+				FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
+				if (f == nullptr)
+				{
+					platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
+					break;
+				}
+				else
+				{
+					String<FormatStringLength> bufferSpace;
+					const StringRef buf = bufferSpace.GetRef();
+
+					buf.printf("M551 P\"%s\"\n", password.c_str());
+					bool ok = f->Write(buf.c_str());
+
+					if (!f->Close())
+					{
+						ok = false;
+					}
+					if (!ok)
+					{
+						platform.DeleteSysFile(DWC_PASS_G);
+						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
+					}
+					else
+					{
+						reprap.SetPassword(password.c_str());
+					}
+				}
 				reply.copy("The password has been changed");
 				result = GCodeResult::ok;
 			}
 			else
 			{
 				reply.copy("Bad or missing password");
-				result = GCodeResult::error;
 			}
 		}
 		break;
