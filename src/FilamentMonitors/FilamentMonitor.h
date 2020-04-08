@@ -28,6 +28,9 @@ public:
 	// Configure this sensor, returning true if error and setting 'seen' if we processed any configuration parameters
 	virtual bool Configure(GCodeBuffer& gb, const StringRef& reply, bool& seen) = 0;
 
+	// Configure this sensor, returning true if error and setting 'seen' if we processed any configuration parameters
+	virtual void GetConfiguration(const StringRef& reply) = 0;
+
 	// Call the following at intervals to check the status. This is only called when extrusion is in progress or imminent.
 	// 'filamentConsumed' is the net amount of extrusion since the last call to this function.
 	virtual FilamentSensorStatus Check(bool isPrinting, bool fromIsr, uint32_t isrMillis, float filamentConsumed) = 0;
@@ -62,6 +65,9 @@ public:
 	// Handle M591
 	static GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply, unsigned int extruder)
 	pre(extruder < MaxExtruders);
+
+	// Get filament settings for save
+	static bool GetFilamentSettings(const StringRef& reply, unsigned int extruder);
 
 	// Send diagnostics info
 	static void Diagnostics(MessageType mtype);

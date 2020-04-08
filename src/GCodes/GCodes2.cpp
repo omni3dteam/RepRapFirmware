@@ -3303,7 +3303,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						reprap.SetPassword(password.c_str());
 					}
 				}
-				reply.copy("The password has been changed");
+				if (seen)
+				{
+					// we only need this info when we set up new pass
+					reply.copy("The password has been changed");
+				}
 				result = GCodeResult::ok;
 			}
 			else

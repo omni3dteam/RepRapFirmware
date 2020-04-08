@@ -177,6 +177,7 @@ Platform::Platform()
 {
 	massStorage = new MassStorage(this);
 	workTime = new WorkTime();
+	towerLed = new TowerLed();
 }
 
 //*******************************************************************************************************************
@@ -256,6 +257,7 @@ void Platform::Init()
 
 	massStorage->Init();
 	workTime->Init();
+	towerLed->Init();
 
 	ipAddress = DefaultIpAddress;
 	netMask = DefaultNetMask;
@@ -1402,6 +1404,7 @@ void Platform::Spin()
 #endif
 
 	massStorage->Spin();
+	towerLed->Spin();
 
 	// Try to flush messages to serial ports
 	(void)FlushMessages();

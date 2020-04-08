@@ -142,6 +142,11 @@ bool RotatingMagnetFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& 
 	return false;
 }
 
+void RotatingMagnetFilamentMonitor::GetConfiguration(const StringRef& reply)
+{
+	// not implemented yet
+}
+
 // Return the current wheel angle
 float RotatingMagnetFilamentMonitor::GetCurrentPosition() const
 {

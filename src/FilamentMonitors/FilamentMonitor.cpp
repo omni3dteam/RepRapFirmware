@@ -129,6 +129,22 @@ bool FilamentMonitor::ConfigurePin(GCodeBuffer& gb, const StringRef& reply, Inte
 	return GCodeResult::ok;
 }
 
+bool FilamentMonitor::GetFilamentSettings(const StringRef& reply, unsigned int extruder)
+{
+	MutexLocker lock(filamentSensorsMutex);
+	FilamentMonitor*& sensor = filamentSensors[extruder];
+
+	if (sensor == nullptr)
+	{
+		return false;
+	}
+
+	sensor->GetConfiguration(reply);
+
+	return true;
+
+}
+
 // Factory function
 /*static*/ FilamentMonitor *FilamentMonitor::Create(unsigned int extruder, int type)
 {

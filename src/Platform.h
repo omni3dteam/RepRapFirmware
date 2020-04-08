@@ -43,6 +43,7 @@ Licence: GPL
 #include "ZProbe.h"
 #include "ZProbeProgrammer.h"
 #include "WorkTime.h"
+#include "TowerLed.h"
 #include <General/IPAddress.h>
 #include "LcdUpdater.h"
 
@@ -377,6 +378,7 @@ public:
 	MassStorage* GetMassStorage() const;
 	LcdUpdater* GetLcdUpdater() const;
 	WorkTime* GetWorkTime() const;
+	TowerLed* GetTowerLed() const;
 	FileStore* OpenFile(const char* folder, const char* fileName, OpenMode mode, uint32_t preAllocSize = 0) const;
 	bool Delete(const char* folder, const char *filename) const;
 	bool FileExists(const char* folder, const char *filename) const;
@@ -874,6 +876,8 @@ private:
 	// Files
 	MassStorage* massStorage;
 	WorkTime* workTime;
+	TowerLed* towerLed;
+
 	const char *sysDir;
   
 	// Data used by the tick interrupt handler
@@ -1245,6 +1249,11 @@ inline LcdUpdater* Platform::GetLcdUpdater() const
 inline WorkTime* Platform::GetWorkTime() const
 {
 	return workTime;
+}
+
+inline TowerLed* Platform::GetTowerLed() const
+{
+	return towerLed;
 }
 
 inline OutputBuffer *Platform::GetAuxGCodeReply()

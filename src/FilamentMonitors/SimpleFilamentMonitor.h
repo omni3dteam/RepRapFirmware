@@ -16,6 +16,7 @@ public:
 	SimpleFilamentMonitor(unsigned int extruder, int type);
 
 	bool Configure(GCodeBuffer& gb, const StringRef& reply, bool& seen) override;
+	void GetConfiguration(const StringRef& reply) override;
 	FilamentSensorStatus Check(bool isPrinting, bool fromIsr, uint32_t isrMillis, float filamentConsumed) override;
 	FilamentSensorStatus Clear() override;
 	void Diagnostics(MessageType mtype, unsigned int extruder) override;

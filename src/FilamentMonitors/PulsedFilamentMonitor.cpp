@@ -114,6 +114,13 @@ bool PulsedFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, b
 	return false;
 }
 
+void PulsedFilamentMonitor::GetConfiguration(const StringRef& reply)
+{
+	reply.printf("P7 C%d S%d R%d:%d L%.4f E%.4f",
+			GetEndstopNumber(), comparisonEnabled, (int)(minMovementAllowed * 100),
+			(int)(maxMovementAllowed * 100), (double)mmPerPulse, (double)minimumExtrusionCheckLength);
+}
+
 // ISR for when the pin state changes. It should return true if the ISR wants the commanded extrusion to be fetched.
 bool PulsedFilamentMonitor::Interrupt()
 {

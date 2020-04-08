@@ -27,6 +27,11 @@ bool VirtualFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, 
 	return false;
 }
 
+void VirtualFilamentMonitor::GetConfiguration(const StringRef& reply)
+{
+	// not implemented yet
+}
+
 // ISR for when the pin state changes. It should return true if the ISR wants the commanded extrusion to be fetched.
 bool VirtualFilamentMonitor::Interrupt()
 {

@@ -141,6 +141,11 @@ bool LaserFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, bo
 	return false;
 }
 
+void LaserFilamentMonitor::GetConfiguration(const StringRef& reply)
+{
+	// not implemented yet
+}
+
 // Return the current position
 float LaserFilamentMonitor::GetCurrentPosition() const
 {

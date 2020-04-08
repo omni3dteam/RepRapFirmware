@@ -45,6 +45,11 @@ bool SimpleFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, b
 	return false;
 }
 
+void SimpleFilamentMonitor::GetConfiguration(const StringRef& reply)
+{
+	reply.printf("P1 C%d S%d", GetEndstopNumber(), enabled);
+}
+
 // ISR for when the pin state changes
 bool SimpleFilamentMonitor::Interrupt()
 {

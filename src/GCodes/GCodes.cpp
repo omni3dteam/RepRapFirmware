@@ -35,6 +35,7 @@
 #include "PrintMonitor.h"
 #include "RepRap.h"
 #include "Tools/Tool.h"
+#include "FilamentMonitors/FilamentMonitor.h"
 
 #if HAS_WIFI_NETWORKING
 # include "FirmwareUpdater.h"
@@ -2224,7 +2225,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 		}
 		else
 		{
-			String<FormatStringLength> buf;
+			String<StringLength500> buf;
 
 			// Write the header comment
 			buf.printf("; File \"%s\" resume print after %s", printingFilename, (wasPowerFailure) ? "power failure" : "print paused");
@@ -2415,6 +2416,19 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				buf.cat("\n");
 				ok = f->Write(buf.c_str());									// restore feed rate and output bits or laser power
 			}
+			if (ok)
+			{
+				for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
+				{
+					String<StringLength40> filamentStr;
+
+					if (FilamentMonitor::GetFilamentSettings(filamentStr.GetRef(), tool->Number()))
+					{
+						buf.printf("M591 D%d %s\n", tool->Number(), filamentStr.c_str());
+						ok = f->Write(buf.c_str());
+					}
+				}
+			}
 
 			if (ok)
 			{
@@ -2445,8 +2459,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 		}
 		else
 		{
-			String<200> bufferSpace;
-			const StringRef buf = bufferSpace.GetRef();
+			String<StringLength500> buf;
 
 			// Write the header comment
 			buf.printf("; File startup");
@@ -2454,10 +2467,9 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				time_t timeNow = platform.GetDateTime();
 				const struct tm * const timeInfo = gmtime(&timeNow);
-				buf.catf(" at %04u-%02u-%02u %02u:%02u",
+				buf.catf(" at %04u-%02u-%02u %02u:%02u\n",
 										timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
-			buf.cat('\n');
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
@@ -2467,17 +2479,16 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+						buf.catf(" %c%.3f\n", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
 					}
 				}
-				buf.cat('\n');
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
 			{
 				for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
 				{
-					buf.catf("G10 P%d X%.3f Y%.3f Z%.3f\n", tool->Number(), (double)(tool->GetOffset(X_AXIS)), (double)(tool->GetOffset(Y_AXIS)), (double)(tool->GetOffset(Z_AXIS)));
+					buf.printf("G10 P%d X%.3f Y%.3f Z%.3f\n", tool->Number(), (double)(tool->GetOffset(X_AXIS)), (double)(tool->GetOffset(Y_AXIS)), (double)(tool->GetOffset(Z_AXIS)));
 					ok = f->Write(buf.c_str());
 				}
 			}
@@ -2485,7 +2496,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			{
 				for (int i = 0; i < 2; i++)
 				{
-					buf.catf("G33 R%d Z%.3f\n", i, (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[i]));
+					buf.printf("G33 R%d Z%.3f\n", i, (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[i]));
 					ok = f->Write(buf.c_str());
 				}
 			}
