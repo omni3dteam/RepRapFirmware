@@ -2780,6 +2780,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	case 391: // Set procedure step
 	{
 		isProcedure = true;
+		procedureTemperatures = -1;
 
 		if (gb.Seen('R'))
 		{
@@ -2803,7 +2804,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		if (gb.Seen('D'))
 		{
-			procedureEnum = gb.GetIValue();
+			procedureTemperatures = gb.GetIValue();
 		}
 		if (gb.Seen('B'))
 		{

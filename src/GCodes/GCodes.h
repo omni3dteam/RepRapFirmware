@@ -257,7 +257,7 @@ public:
 	size_t procedureCurrentStep;
 	size_t procedureMaxSteps;
 	size_t procedureButtons;
-	size_t procedureEnum;
+	int8_t procedureTemperatures;
 
 	bool isProcedure = false;
 

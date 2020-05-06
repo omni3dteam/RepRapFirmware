@@ -1537,6 +1537,9 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 
 			// Indicate necessary buttons
 			response->catf(",\"buttons\":%d", gCodes->procedureButtons);
+
+			// Indicate necessary temperatures
+			response->catf(",\"temps\":%d", gCodes->procedureTemperatures);
 			{
 				// Send procedure steps
 				response->cat(",\"step\":{");
@@ -2004,6 +2007,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 
 		// Indicate necessary buttons
 		response->catf(",\"procedure.buttons\":%d", gCodes->procedureButtons);
+
+		// Indicate necessary temperatures
+		response->catf(",\"procedure.temps\":%d", gCodes->procedureTemperatures);
 
 		// Get current step
 		response->catf(",\"procedure.currentStep\":%d", gCodes->procedureCurrentStep);
