@@ -198,10 +198,10 @@ constexpr Pin DueX5GpioPinMap[] = { 211, 210, 209, 208 };					// Pins 100-103 ma
 constexpr int HighestLogicalPin = 135;										// highest logical pin number on this electronics
 
 // Omni electronics pin map
-constexpr Pin turnOffPrinter = 4;
-constexpr Pin lostPower = 3;
 constexpr Pin topDoor = 201;  												// Endstop 5
 constexpr Pin frontDoor = 213;												// Endstop 6
+constexpr Pin turnOffPrinter = 7;
+constexpr Pin lostPower = 4;
 constexpr Pin boltPin = 5;
 constexpr Pin chamberFan = 28;
 constexpr Pin turnOffLed = 4;

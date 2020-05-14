@@ -2254,13 +2254,13 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				// ask user about print
-				buf.printf("M291 P\"Power fault. Do you want to resume printing? Restoring parameters may take a few minutes.\" S3\n");
+				// ask user about print - yes, no
+				buf.printf("M391 R\"Restore printing\" P\"Power fault has been detected. Do you want to resume printing? Restoring parameters may take a few minutes.\" S1 H2 B4\n");
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
 			{
-				buf.printf("M291 P\"Printer is restoring parameters. Heating up platform. It can take a few minutes.\" S0 T600\n");
+				buf.printf("M391 P\"Printer is restoring parameters. Heating up platform and extruders. It can take a few minutes.\" S2 B0 D6\n");
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
@@ -2290,7 +2290,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				buf.copy("M116\nM290");										// wait for temperatures and start writing baby stepping offsets
+				buf.copy("M116 A1\nM290");									// wait for temperatures and start writing baby stepping offsets
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
 					buf.catf(" %c%.3f", axisLetters[axis], (double)GetTotalBabyStepOffset(axis));
@@ -2360,12 +2360,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				buf.printf("M291 P\"Printer is heating up extruders.\" S0 T600\n");
-				ok = f->Write(buf.c_str());
-			}
-			if (ok)
-			{
-				buf.printf("M116\nG92 E%.5f\n%s\n", (double)virtualExtruderPosition, (fileGCode->OriginalMachineState().drivesRelative) ? "M83" : "M82");
+				buf.printf("M116 A1\nG92 E%.5f\n%s\n", (double)virtualExtruderPosition, (fileGCode->OriginalMachineState().drivesRelative) ? "M83" : "M82");
 				ok = f->Write(buf.c_str());									// write virtual extruder position and absolute/relative extrusion flag
 			}
 			if (ok)
@@ -2435,6 +2430,11 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				buf.printf("%s\nM24\n", (fileGCode->OriginalMachineState().usingInches) ? "G20" : "G21");
 				ok = f->Write(buf.c_str());									// restore inches/mm and resume printing
 			}
+			if (ok)
+			{
+				buf.printf("M393\n");
+				ok = f->Write(buf.c_str());
+			}
 			if (!f->Close())
 			{
 				ok = false;
@@ -2474,7 +2474,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			if (ok)
 			{
 				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
-				buf.copy("G92");
+				buf.copy("\nG92");
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
 					if(axis == Z_AXIS)
