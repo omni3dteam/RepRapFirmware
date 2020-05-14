@@ -87,6 +87,7 @@ protected:
 	bool HaveIsrStepsCommanded() const { return haveIsrStepsCommanded; }
 
 	void AddExtrusionMeasured(float value) { extrusionMeasured += value; }
+	float GetExtrusionMeasured() { return extrusionMeasured; }
 
 private:
 	// Create a filament sensor returning null if not a valid sensor type

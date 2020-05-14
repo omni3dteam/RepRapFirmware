@@ -7,6 +7,7 @@
 
 #include "FilamentMonitor.h"
 #include "SimpleFilamentMonitor.h"
+#include "SimpleFilteredFilamentMonitor.h"
 #include "RotatingMagnetFilamentMonitor.h"
 #include "LaserFilamentMonitor.h"
 #include "PulsedFilamentMonitor.h"
@@ -165,6 +166,11 @@ bool FilamentMonitor::GetFilamentSettings(const StringRef& reply, unsigned int e
 
 	case 7:		// simple pulse output sensor
 		return new PulsedFilamentMonitor(extruder, type);
+		break;
+
+	case 11:	// active high switch
+	case 12:	// active low switch
+		return new SimpleFilteredFilamentMonitor(extruder, type);
 		break;
 
 	case 99:	// virtual sensor

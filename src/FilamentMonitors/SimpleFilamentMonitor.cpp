@@ -35,7 +35,7 @@ bool SimpleFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, b
 	}
 	else
 	{
-		reply.printf("Simple filament sensor on endstop %d, %s, output %s when no filament, filament present: %s",
+		reply.printf("Simple filtered filament sensor on endstop %d, %s, output %s when no filament, filament present: %s",
 						GetEndstopNumber(),
 						(enabled) ? "enabled" : "disabled",
 						(highWhenNoFilament) ? "high" : "low",
@@ -47,7 +47,7 @@ bool SimpleFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, b
 
 void SimpleFilamentMonitor::GetConfiguration(const StringRef& reply)
 {
-	reply.printf("P1 C%d S%d", GetEndstopNumber(), enabled);
+	reply.printf("P%s C%d S%d", highWhenNoFilament ? "2" : "1", GetEndstopNumber(), enabled);
 }
 
 // ISR for when the pin state changes
