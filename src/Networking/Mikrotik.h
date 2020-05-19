@@ -3,6 +3,7 @@
 
 #ifndef __LINUX_DBG
     #include "RepRapFirmware.h"
+	#include "GCodes/GCodeResult.h"
     #include "W5500Ethernet/Wiznet/Ethernet/W5500/w5500.h"
     #define MIKROTIK_SOCK_NUM   (uint8_t)5
 #endif
@@ -207,8 +208,27 @@ public:
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
     bool IsRouterAvailable();
+    void SendNetworkStatus();
+    void DisableInterface();
+    void Check();
+    GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult StaticIP(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult DHCPState(GCodeBuffer& gb, const StringRef& reply);
 
     uint16_t ScanWiFiNetworks( TInterface iface, uint8_t duration, char *pBuffer, uint32_t MAX_BUF_SIZE );
+
+    char ip[20];
+    char mask[20];
+    char gateway[20];
+    char ssid[40];
+    char password[40];
+    uint8_t maskBit;
+    bool isStatic;
+
+    TInterface interface;
+    TWifiMode mode;
+    TStatus status;
 
 private:
     volatile bool isRequestWaiting = false;

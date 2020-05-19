@@ -3,6 +3,7 @@
 #ifndef __LINUX_DBG
     #include "Platform.h"
     #include "RepRap.h"
+	#include "GCodes/GCodeBuffer.h"
     #include "W5500Ethernet/Wiznet/Ethernet/socketlib.h"
 #else
     #include <cstdio>
@@ -16,6 +17,7 @@
 
 static uint8_t isRouterAvailable;
 static const char *IFACE_NAME_TABLE[] = { nullptr, IFACE_ETHERNET, IFACE_WIFI2G, IFACE_WIFI5G };
+const char statusStr[][16] = { "Booting", "Connected", "Disconnected", "Connecting" };
 
 #ifndef __LINUX_DBG
     #define ExecuteRequest()    isRequestWaiting = true;   \
@@ -34,6 +36,10 @@ Mikrotik::Mikrotik() : isRequestWaiting( false )
 {
     memset( answer, 0, 1024 );
     block = new MKTBlock();
+
+    interface = none;
+    mode = invalid;
+    status = Booting;
 }
 
 
@@ -1647,4 +1653,350 @@ int  Mikrotik::__write( int __fd, const void *__buf, size_t __nbyte )
 int Mikrotik::__read (int __fd, void *__buf, size_t __nbyte)
 {
     return __recv( __fd, (uint8_t *)__buf, (uint16_t)__nbyte );
+}
+
+GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
+{
+	bool seen = false;
+	int cParam;
+
+	String<StringLength40> tSsid, tPass;
+
+	if (gb.Seen('C'))
+	{
+		cParam = gb.GetIValue();
+
+		if(cParam == 2)
+		{
+			ConnectToEthernet();
+			return GCodeResult::ok;
+		}
+	}
+	else
+	{
+		reply.copy("C parameter is needed");
+		return GCodeResult::error;
+	}
+
+	if (gb.Seen('I'))
+	{
+		interface = gb.GetIValue() == 2 ? wifi2g : wifi5g;
+	}
+	else
+	{
+		reply.copy("I parameter is needed");
+		return GCodeResult::error;
+	}
+
+	seen = false;
+	gb.TryGetPossiblyQuotedString('S', tSsid.GetRef(), seen);
+
+	if (seen)
+	{
+		seen = false;
+		gb.TryGetPossiblyQuotedString('P', tPass.GetRef(), seen);
+
+		if (seen)
+		{
+			if (cParam)
+			{
+				reprap.GetMikrotikInstance().CreateAP(tSsid.c_str(), tPass.c_str(), interface);
+				mode = AccessPoint;
+			}
+			else
+			{
+				reprap.GetMikrotikInstance().ConnectToWiFi(tSsid.c_str(), tPass.c_str(), interface);
+				mode = Station;
+			}
+			strncpy(ssid, tSsid.c_str(), sizeof(ssid));
+			strncpy(password, tPass.c_str(), sizeof(password));
+		}
+		else
+		{
+			reply.copy("P parameter is needed");
+			return GCodeResult::error;
+		}
+	}
+	else
+	{
+		reply.copy("S parameter is needed");
+		return GCodeResult::error;
+	}
+
+	return GCodeResult::ok;
+}
+
+// Push status network to LCD
+void Mikrotik::SendNetworkStatus()
+{
+	char outputBuffer[256] = { 0 };
+	char md[4] = { 0 };
+	char typeIp = { 0 };
+
+	if (interface == ether1)
+	{
+		strncpy(md, "E", sizeof(md));
+	}
+	else
+	{
+		switch (mode)
+		{
+			case AccessPoint:
+				strncpy(md, interface == wifi2g ? "A2" : "A5", sizeof( md ));
+				break;
+			case Station:
+				strncpy(md, interface == wifi2g ? "W2" : "W5", sizeof( md ));
+				break;
+			default:
+				strncpy(md, "X", sizeof( md ));
+				break;
+		}
+	}
+
+	//debugPrintf("Send info: %d, %d - %s\n", (int)*iface, (int)*mode, md);
+	typeIp = mode == AccessPoint ? 'Y' : isStatic ? 'S' : 'D';
+
+	char tempIp[32];
+
+	strcpy(tempIp, ip);
+	char* pos = strstr(tempIp, "/");
+
+	size_t charPtr = pos - tempIp;
+
+	if (charPtr > 0 && charPtr < strlen(tempIp))
+	{
+		tempIp[charPtr] = 0;
+	}
+
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"{\"networkStatus\":[\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\",\"%s\"]}",
+				md, statusStr[status], typeIp, tempIp, mask, gateway, ssid);
+	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
+	//debugPrintf(outputBuffer);
+}
+
+void Mikrotik::Check()
+{
+	bool isNetworkRunning = false;
+	bool isIpStatic = false;
+
+	if (IsRouterAvailable())
+	{
+		if (!GetCurrentInterface(&interface))
+		{
+			status = Disconnected;
+			debugPrintf("ERROR! Can't get current interface\n");
+		}
+		else
+		{
+			debugPrintf("Current interface: %d\n", (uint8_t)interface);
+
+			isNetworkRunning = IsNetworkAvailable(interface);
+			debugPrintf("Running: %s\n", isNetworkRunning ? "YES" : "NO");
+
+			if(isNetworkRunning)
+			{
+				status = Connected;
+				TEnableState state;
+				if (!GetDhcpState(interface, DhcpClient, &state))
+				{
+					debugPrintf("ERROR! Can't get DHCP client state\n");
+					return;
+				}
+
+				isIpStatic = state == Enabled ? false : true;
+
+				if (!GetInterfaceIP(interface, ip, isIpStatic))
+				{
+					strncpy(ip, "Obtaining", sizeof(ip));
+				}
+
+				debugPrintf("IP addr: %s\n", ip);
+				debugPrintf("IP type: %s\n", isIpStatic ? "static" : "dynamic");
+
+				debugPrintf("Mode: ");
+				if (interface != ether1)
+				{
+					GetWifiMode(interface, &mode);
+					if (!GetSSID(interface, ssid))
+					{
+						SafeSnprintf(ssid, sizeof( ssid ), "Can't get SSID\n");
+					}
+				}
+			}
+			else
+			{
+				strncpy(ip, "Obtaining", sizeof( ip ));
+				status = Connecting;
+			}
+		}
+	}
+}
+
+void Mikrotik::DisableInterface()
+{
+	if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
+	{
+		reprap.GetMikrotikInstance().DisableInterface(interface);
+	}
+	else
+	{
+		debugPrintf("Cannot find current interface\n");
+	}
+	interface = none;
+
+	SendNetworkStatus();
+}
+
+GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply)
+{
+	const uint32_t SIZE = 1024;
+	uint8_t searchTime = 5;
+	char list[SIZE];
+	char outBuffer[SIZE] = "{\"ssidList\":[";
+	char minBuffer[64] = { 0 };
+
+	TInterface interface = wifi2g;
+
+	if (gb.Seen('I'))
+	{
+		interface = gb.GetIValue() == 2 ? wifi2g : wifi5g;
+	}
+	if (gb.Seen('T'))
+	{
+		searchTime = gb.GetUIValue();
+	}
+
+	uint16_t count = ScanWiFiNetworks( interface, searchTime, list, SIZE );
+
+	debugPrintf( "Available networks count: %u\n\n", count );
+	char *pNext = list;
+
+	if ( count )
+	{
+		while ( count-- )
+		{
+			SafeSnprintf(minBuffer, sizeof(minBuffer), "\"%s\"%s", pNext, count ? "," : "]}");
+			strcat(outBuffer, minBuffer);
+			memset(minBuffer, 0, sizeof(minBuffer));
+			debugPrintf( "SSID: %s\n", pNext );
+			pNext += strlen( pNext ) + 1;
+		}
+		reprap.GetPlatform().MessageF(LcdMessage, outBuffer);
+	}
+
+	return GCodeResult::ok;
+}
+
+GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
+{
+	TInterface interface = ether1;
+	uint8_t maskBits = 24;
+
+	if (gb.Seen('I'))
+	{
+		uint32_t interVal = gb.GetUIValue();
+		interface = interVal == ether1 ? ether1 : interVal == wifi2g ? wifi2g : wifi5g;
+	}
+
+	if (gb.Seen('D'))
+	{
+		if (gb.GetIValue())
+		{
+			if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
+			{
+				reprap.GetMikrotikInstance().RemoveStaticIP(interface);
+			}
+		}
+	}
+
+	if (gb.Seen('R'))
+	{
+		IPAddress maskIP;
+		if (gb.GetIPAddress(maskIP))
+		{
+			String<StringLength20> maskStr;
+			maskStr.printf("%d.%d.%d.%d", maskIP.GetQuad(0), maskIP.GetQuad(1), maskIP.GetQuad(2), maskIP.GetQuad(3));
+			strncpy(mask, maskStr.c_str(), sizeof(mask));
+
+			uint8_t i;
+			uint32_t ipMask = maskIP.GetV4LittleEndian();
+
+			for(i = 31; i > 0; --i)
+				if(ipMask & (1u << i))
+					break;
+
+			maskBits = i + 1;
+			maskBit = maskBits;
+		}
+		else
+		{
+			reply.copy("Can't set net mask");
+			return GCodeResult::error;
+		}
+	}
+
+
+	if (gb.Seen('P'))
+	{
+		IPAddress ipC;
+		if (gb.GetIPAddress(ipC))
+		{
+			String<StringLength20> ipAddress;
+
+			ipAddress.printf("%d.%d.%d.%d/%d", ipC.GetQuad(0), ipC.GetQuad(1), ipC.GetQuad(2), ipC.GetQuad(3), maskBits);
+
+			if (!reprap.GetMikrotikInstance().SetStaticIP(interface, ipAddress.c_str()))
+			{
+				reply.copy("Can't set static IP address");
+				return GCodeResult::error;
+			}
+			strncpy(ip, ipAddress.c_str(), sizeof(ip));
+			//reprap.GetNetwork().ReinitSockets();
+		}
+		else
+		{
+			reply.copy("Can't set IP address");
+			return GCodeResult::error;
+		}
+	}
+
+	return GCodeResult::ok;
+}
+
+GCodeResult Mikrotik::DHCPState(GCodeBuffer& gb, const StringRef& reply)
+{
+	TDhcpMode dhcpMode = DhcpServer;
+	TEnableState dhcp = Disabled;
+	TInterface tInterface = wifi2g;
+
+	if (gb.Seen('P'))
+	{
+		dhcpMode = gb.GetIValue() ? DhcpClient : DhcpServer;
+	}
+	else
+	{
+		reply.copy("P parameter is needed");
+		return GCodeResult::error;
+	}
+
+	if (gb.Seen('I'))
+	{
+		tInterface = gb.GetIValue() == 2 ? wifi2g : wifi5g;
+	}
+	else
+	{
+		reply.copy("I parameter is needed");
+		return GCodeResult::error;
+	}
+
+	if (reprap.GetMikrotikInstance().GetDhcpState(tInterface, dhcpMode, &dhcp))
+	{
+		reply.printf("DHCP %s %s %s\n", mode ? "client" : "server", interface == 2 ? "wifi2g" : "wifi5g", dhcp ? "enabled" : "disabled");
+	}
+	else
+	{
+		reply.cat("Failed to get dhcp state\n");
+	}
+
+	return GCodeResult::ok;
 }
