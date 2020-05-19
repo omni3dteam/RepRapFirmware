@@ -5801,6 +5801,7 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 	char md[4] = { 0 };
 	char typeIp = { 0 };
 	const char *title = "{\"networkStatus\":[";
+	const char *gateway = "192.168.1.1";
 
 	if ( *iface == ether1 )
 	{
@@ -5864,8 +5865,8 @@ void GCodes::SendNetworkStatus(const char *ssid, const char *ip, TStatus status,
 		SafeSnprintf(outputMask, sizeof(outputMask),"%d.%d.%d.%d", (uint8_t)ipMask, (uint8_t)(ipMask >> 8), (uint8_t)(ipMask >> 16), (uint8_t)(ipMask >> 24));
 	}
 
-	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\"]}",
-			title, md, stat, typeIp, tempIp, outputMask, ssid);
+	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"%s\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\",\"%s\"]}",
+			title, md, stat, typeIp, tempIp, outputMask, gateway, ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
 	//debugPrintf(outputBuffer);
 }

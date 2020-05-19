@@ -31,6 +31,10 @@ bool SimpleFilteredFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& 
 	{
 		filterDistance = tempfilterDistance > 0 ? tempfilterDistance : 2.0;
 	}
+	else
+	{
+		filterDistance = 2.0;
+	}
 
 	if (gb.Seen('S'))
 	{
