@@ -32,7 +32,7 @@ const char statusStr[][16] = { "Booting", "Connected", "Disconnected", "Connecti
 #endif
 
 
-Mikrotik::Mikrotik() : isRequestWaiting( false )
+Mikrotik::Mikrotik() : isRequestWaiting(false)
 {
     memset( answer, 0, 1024 );
     block = new MKTBlock();
@@ -40,6 +40,8 @@ Mikrotik::Mikrotik() : isRequestWaiting( false )
     interface = none;
     mode = invalid;
     status = Booting;
+    gateway[0] = 0;
+    mask[0] = 0;
 }
 
 
@@ -1708,8 +1710,8 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 				reprap.GetMikrotikInstance().ConnectToWiFi(tSsid.c_str(), tPass.c_str(), interface);
 				mode = Station;
 			}
-			strncpy(ssid, tSsid.c_str(), sizeof(ssid));
-			strncpy(password, tPass.c_str(), sizeof(password));
+			strcpy(ssid, tSsid.c_str());
+			strcpy(password, tPass.c_str());
 		}
 		else
 		{
@@ -1752,8 +1754,6 @@ void Mikrotik::SendNetworkStatus()
 				break;
 		}
 	}
-
-	//debugPrintf("Send info: %d, %d - %s\n", (int)*iface, (int)*mode, md);
 	typeIp = mode == AccessPoint ? 'Y' : isStatic ? 'S' : 'D';
 
 	char tempIp[32];
@@ -1769,15 +1769,16 @@ void Mikrotik::SendNetworkStatus()
 	}
 
 	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"{\"networkStatus\":[\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\",\"%s\"]}",
-				md, statusStr[status], typeIp, tempIp, mask, gateway, ssid);
+				md, statusStr[status], typeIp, tempIp, mask, gateway,
+				interface == ether1 ? "" : ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
-	//debugPrintf(outputBuffer);
+	debugPrintf(outputBuffer);
 }
 
 void Mikrotik::Check()
 {
 	bool isNetworkRunning = false;
-	bool isIpStatic = false;
+	status = Booting;
 
 	if (IsRouterAvailable())
 	{
@@ -1803,15 +1804,15 @@ void Mikrotik::Check()
 					return;
 				}
 
-				isIpStatic = state == Enabled ? false : true;
+				isStatic = state == Enabled ? false : true;
 
-				if (!GetInterfaceIP(interface, ip, isIpStatic))
+				if (!GetInterfaceIP(interface, ip, isStatic))
 				{
 					strncpy(ip, "Obtaining", sizeof(ip));
 				}
 
 				debugPrintf("IP addr: %s\n", ip);
-				debugPrintf("IP type: %s\n", isIpStatic ? "static" : "dynamic");
+				debugPrintf("IP type: %s\n", isStatic ? "static" : "dynamic");
 
 				debugPrintf("Mode: ");
 				if (interface != ether1)
@@ -1889,7 +1890,7 @@ GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply
 
 GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 {
-	TInterface interface = ether1;
+	//TInterface interface = ether1;
 	uint8_t maskBits = 24;
 
 	if (gb.Seen('I'))
@@ -1905,6 +1906,7 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 			if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
 			{
 				reprap.GetMikrotikInstance().RemoveStaticIP(interface);
+				isStatic = false;
 			}
 		}
 	}
@@ -1916,7 +1918,7 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 		{
 			String<StringLength20> maskStr;
 			maskStr.printf("%d.%d.%d.%d", maskIP.GetQuad(0), maskIP.GetQuad(1), maskIP.GetQuad(2), maskIP.GetQuad(3));
-			strncpy(mask, maskStr.c_str(), sizeof(mask));
+			strcpy(mask, maskStr.c_str());
 
 			uint8_t i;
 			uint32_t ipMask = maskIP.GetV4LittleEndian();
@@ -1950,7 +1952,8 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 				reply.copy("Can't set static IP address");
 				return GCodeResult::error;
 			}
-			strncpy(ip, ipAddress.c_str(), sizeof(ip));
+			strcpy(ip, ipAddress.c_str());
+			isStatic = true;
 			//reprap.GetNetwork().ReinitSockets();
 		}
 		else

@@ -119,6 +119,8 @@
 #define P_RESPONSE      "response"
 #define P_FREQUENCY     "frequency"
 #define P_INTERFACE     "interface"
+#define P_GATEWAY		"gateway"
+// /ip route add dst-address=0.0.0.0/0 gateway=yyy.zzz.xxx.yyy
 
 #define P_SECURITY_PROFILE      "security-profile"
 #define P_SUPPLICANT_IDENTITY   "supplicant-identity"
