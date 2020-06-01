@@ -3196,13 +3196,17 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 520:
 	{
-		if(gb.Seen('S'))
+		if (gb.Seen('S'))
 		{
 			 platform.GetWorkTime()->Write();
 		}
-		else if(gb.Seen('H'))
+		else if (gb.Seen('H'))
 		{
 			platform.GetWorkTime()->SetHours(gb.GetIValue());
+		}
+		else if (gb.Seen('P'))
+		{
+			platform.GetWorkTime()->SetPrintHours(gb.GetIValue());
 		}
 		else
 		{

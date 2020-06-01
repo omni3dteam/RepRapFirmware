@@ -50,6 +50,12 @@ public:
     	secondsSaved = h * 3600;
     }
 
+    void SetPrintHours(uint16_t h)
+	{
+    	secondsPrint = h * 3600;
+	}
+
+
     uint64_t GetPrintSeconds()
     {
     	return secondsPrint;
