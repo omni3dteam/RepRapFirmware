@@ -5,6 +5,7 @@
     #include "RepRap.h"
 	#include "GCodes/GCodeBuffer.h"
     #include "W5500Ethernet/Wiznet/Ethernet/socketlib.h"
+	#include "Network.h"
 #else
     #include <cstdio>
     #include <sys/socket.h>
@@ -38,10 +39,9 @@ Mikrotik::Mikrotik() : isRequestWaiting(false)
     block = new MKTBlock();
 
     interface = none;
-    mode = invalid;
     status = Booting;
-    gateway[0] = 0;
-    mask[0] = 0;
+    mode = invalid;
+    gateway[0] = mask[0] = ip[0] = 0;
 }
 
 
@@ -263,6 +263,72 @@ bool Mikrotik::EnableInterface( TInterface iface )
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd, &mkSentence );
     add_word_to_sentence( id,  &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+    return IsRequestSuccessful();
+}
+
+bool Mikrotik::SetGateway( const char *gateway )
+{
+	// 1. PREPARE REQUEST
+	const char *cmd = CMD_IP_ROUTE_ADD;
+
+	char addr1[28], addr2[28];
+	SafeSnprintf( addr1, sizeof( addr1 ), SET_PARAM( P_DST_ADDRESS ) "%s", MIKROTIK_DST_ADDRESS );
+	SafeSnprintf( addr2, sizeof( addr2 ), SET_PARAM( P_GATEWAY ) "%s", gateway );
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,  &mkSentence );
+    add_word_to_sentence( addr1,  &mkSentence );
+    add_word_to_sentence( addr2,  &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    notResponse = true;
+    ExecuteRequest();
+    notResponse = false;
+
+    // 3. PROCESS ANSWER
+    return IsRequestSuccessful();
+}
+
+bool Mikrotik::RefreshGateway()
+{
+	// 1. PREPARE REQUEST
+	const char *cmd = CMD_IP_ROUTE_PRINT;
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,  &mkSentence );
+
+    // 2. WAIT FOR EXECUTION
+    ExecuteRequest();
+
+    // 3. PROCESS ANSWER
+	if ( !IsRequestSuccessful() )
+		return false;
+
+	// Extract security profile ID from answer
+	bool success = parseAnswer( P_ID );
+	if ( success )
+		strcpy( gatewayId, answer );
+
+	return success;
+}
+
+bool Mikrotik::RemoveGateway()
+{
+	// 1. PREPARE REQUEST
+	const char *cmd = CMD_IP_ROUTE_REMOVE;
+
+	char addr[28];
+	SafeSnprintf( addr, sizeof( addr ), SET_PARAM( P_ID ) "%s", gatewayId );
+	debugPrintf("Frame: %s\n", gatewayId);
+
+    clear_sentence( &mkSentence );
+    add_word_to_sentence( cmd,  &mkSentence );
+    add_word_to_sentence( addr,  &mkSentence );
 
     // 2. WAIT FOR EXECUTION
     ExecuteRequest();
@@ -930,8 +996,11 @@ bool Mikrotik::ProcessRequest()
     write_sentence( &mkSentence );
     clear_sentence( &mkSentence );
 
-    read_block();
-    //block->Print();
+
+    if (!notResponse)
+    {
+    	read_block();
+    }
 
     return true;
 }
@@ -1789,10 +1858,10 @@ void Mikrotik::Check()
 		}
 		else
 		{
-			debugPrintf("Current interface: %d\n", (uint8_t)interface);
+			//debugPrintf("Current interface: %d\n", (uint8_t)interface);
 
 			isNetworkRunning = IsNetworkAvailable(interface);
-			debugPrintf("Running: %s\n", isNetworkRunning ? "YES" : "NO");
+			//debugPrintf("Running: %s\n", isNetworkRunning ? "YES" : "NO");
 
 			if(isNetworkRunning)
 			{
@@ -1811,10 +1880,10 @@ void Mikrotik::Check()
 					strncpy(ip, "Obtaining", sizeof(ip));
 				}
 
-				debugPrintf("IP addr: %s\n", ip);
-				debugPrintf("IP type: %s\n", isStatic ? "static" : "dynamic");
+				//debugPrintf("IP addr: %s\n", ip);
+				//debugPrintf("IP type: %s\n", isStatic ? "static" : "dynamic");
 
-				debugPrintf("Mode: ");
+				//debugPrintf("Mode: ");
 				if (interface != ether1)
 				{
 					GetWifiMode(interface, &mode);
@@ -1890,7 +1959,6 @@ GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply
 
 GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 {
-	//TInterface interface = ether1;
 	uint8_t maskBits = 24;
 
 	if (gb.Seen('I'))
@@ -1903,9 +1971,9 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 	{
 		if (gb.GetIValue())
 		{
-			if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
+			if(GetCurrentInterface(&interface))
 			{
-				reprap.GetMikrotikInstance().RemoveStaticIP(interface);
+				RemoveStaticIP(interface);
 				isStatic = false;
 			}
 		}
@@ -1947,20 +2015,45 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 
 			ipAddress.printf("%d.%d.%d.%d/%d", ipC.GetQuad(0), ipC.GetQuad(1), ipC.GetQuad(2), ipC.GetQuad(3), maskBits);
 
-			if (!reprap.GetMikrotikInstance().SetStaticIP(interface, ipAddress.c_str()))
+			if (!SetStaticIP(interface, ipAddress.c_str()))
 			{
 				reply.copy("Can't set static IP address");
 				return GCodeResult::error;
 			}
 			strcpy(ip, ipAddress.c_str());
 			isStatic = true;
-			//reprap.GetNetwork().ReinitSockets();
+			reprap.GetNetwork().ReinitSockets();
 		}
 		else
 		{
 			reply.copy("Can't set IP address");
 			return GCodeResult::error;
 		}
+	}
+
+	if (gb.Seen('A'))
+	{
+		IPAddress gatewayAddress;
+		if (gb.GetIPAddress(gatewayAddress))
+		{
+			String<StringLength20> ipGateway;
+
+			ipGateway.printf("%d.%d.%d.%d", gatewayAddress.GetQuad(0), gatewayAddress.GetQuad(1), gatewayAddress.GetQuad(2), gatewayAddress.GetQuad(3));
+
+			if (RefreshGateway())
+			{
+				RemoveGateway();
+
+				SetGateway(ipGateway.c_str());
+				strcpy(gateway, ipGateway.c_str());
+			}
+		}
+		else
+		{
+			reply.copy("Can't set IP address");
+			return GCodeResult::error;
+		}
+		//reprap.GetNetwork().ReinitSockets();
 	}
 
 	return GCodeResult::ok;
