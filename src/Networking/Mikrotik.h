@@ -3,6 +3,7 @@
 
 #ifndef __LINUX_DBG
     #include "RepRapFirmware.h"
+	#include "GCodes/GCodeResult.h"
     #include "W5500Ethernet/Wiznet/Ethernet/W5500/w5500.h"
     #define MIKROTIK_SOCK_NUM   (uint8_t)5
 #endif
@@ -29,6 +30,7 @@
 
 #define MIKROTIK_IP_WIFI_2G "192.168.24.1/24"
 #define MIKROTIK_IP_WIFI_5G "192.168.50.1/24"
+#define MIKROTIK_DST_ADDRESS "0.0.0.0/0"
 
 #define MIKROTIK_WIFI_2G_DEF_BAND "=band=2ghz-b/g/n"
 #define MIKROTIK_WIFI_5G_DEF_BAND "=band=5ghz-a/n/ac"
@@ -87,6 +89,14 @@
         #define CMD_IP_DHCP_SERVER_SET          CMD_IP_DHCP_SERVER "/set"
         #define CMD_IP_DHCP_SERVER_PRINT        CMD_IP_DHCP_SERVER "/print"
 
+	#define CMD_IP_ROUTE						CMD_IP "/route"
+
+		#define CMD_IP_ROUTE_ADD				CMD_IP_ROUTE "/add"
+		#define CMD_IP_ROUTE_PRINT				CMD_IP_ROUTE "/print"
+		#define CMD_IP_ROUTE_REMOVE				CMD_IP_ROUTE "/remove"
+		#define CMD_IP_ROUTE_GATEWAY			"/gateway"
+		#define CMD_IP_ROUTE_DST				"/dst-address"
+
 
                             //*********************//
                             // API REQUESTS PARAMS //
@@ -118,6 +128,9 @@
 #define P_RESPONSE      "response"
 #define P_FREQUENCY     "frequency"
 #define P_INTERFACE     "interface"
+#define P_GATEWAY		"gateway"
+#define P_DST_ADDRESS	"dst-address"
+// /ip route add dst-address=0.0.0.0/0 gateway=yyy.zzz.xxx.yyy
 
 #define P_SECURITY_PROFILE      "security-profile"
 #define P_SUPPLICANT_IDENTITY   "supplicant-identity"
@@ -193,6 +206,9 @@ public:
     bool ConnectToWiFi( const char *ssid, const char *pass, TInterface iface );
 
     bool EnableInterface( TInterface iface );
+    bool SetGateway( const char *gateway );
+    bool RefreshGateway();
+    bool RemoveGateway();
     bool DisableInterface( TInterface iface );
     bool GetCurrentInterface( TInterface *iface );
     bool GetWifiMode( TInterface iface, TWifiMode *pMode );
@@ -207,14 +223,34 @@ public:
     bool SetStaticIP( TInterface iface, const char *ip );
     bool RemoveStaticIP( TInterface iface );
     bool IsRouterAvailable();
+    void SendNetworkStatus();
+    void DisableInterface();
+    void Check();
+    GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult StaticIP(GCodeBuffer& gb, const StringRef& reply);
+    GCodeResult DHCPState(GCodeBuffer& gb, const StringRef& reply);
 
     uint16_t ScanWiFiNetworks( TInterface iface, uint8_t duration, char *pBuffer, uint32_t MAX_BUF_SIZE );
+
+    char ip[20];
+    char mask[20];
+    char gateway[20];
+    char ssid[40];
+    char password[40];
+    uint8_t maskBit;
+    bool isStatic;
+
+    TInterface interface;
+    TWifiMode mode;
+    TStatus status;
 
 private:
     volatile bool isRequestWaiting = false;
 
     volatile bool isLogged    = false;
     volatile bool isConnected = false;
+    volatile bool notResponse  = false;
 
 #ifdef __LINUX_DBG
     int MIKROTIK_SOCK_NUM = 0;
@@ -225,6 +261,7 @@ private:
     MKTBlock *block;
 
     char answer[MIKROTIK_MAX_ANSWER];
+    char gatewayId[MAX_WORDS_IN_SENTENCE];
 
     // Connection
 #ifdef __LINUX_DBG
