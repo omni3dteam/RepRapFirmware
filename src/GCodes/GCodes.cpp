@@ -3800,7 +3800,15 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool 
 	}
 	else
 	{
-		reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
+		if (!seen)
+		{
+			reply.printf("Mesh compensation data not available");
+		}
+		else
+		{
+			reply.printf("Failed to load height map from file %s: ", heightMapFileName.c_str());	// set up error message to append to
+		}
+
 		const bool err = reprap.GetMove().LoadHeightMapFromFile(f, reply);
 		f->Close();
 		reprap.GetMove().UseMesh(!err);
@@ -3811,6 +3819,12 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool 
 		}
 
 		reply.Clear();						// get rid of the error message
+
+		if (!seen)
+		{
+			reply.printf("Mesh compensation data available");
+		}
+
 		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
 		{
 			// This information can be confusing for users, so we don't need to use it
