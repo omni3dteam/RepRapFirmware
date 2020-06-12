@@ -4417,42 +4417,65 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 	case 720:
 		{
-			reprap.GetMikrotikInstance().Configure(gb, reply);
-			reprap.GetMikrotikInstance().SendNetworkStatus();
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().Configure(gb, reply);
+				reprap.GetMikrotikInstance().SendNetworkStatus();
+			}
+			else
+			{
+				result = GCodeResult::error;
+				reply.copy("Can't edit network properties while printing.");
+			}
 		}
 		break;
 
 	case 721:
 		{
-			reprap.GetMikrotikInstance().DisableInterface();
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().DisableInterface();
+			}
 		}
 		break;
 	case 722:
 		{
-			reprap.GetMikrotikInstance().DHCPState(gb, reply);
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().DHCPState(gb, reply);
+			}
 		}
 		break;
 
 	case 723:
 		{
-			reprap.GetMikrotikInstance().StaticIP(gb, reply);
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().StaticIP(gb, reply);
+			}
 		}
 		break;
 
 	case 725:
 		{
-			reprap.GetMikrotikInstance().Check();
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().Check();
+			}
 			reprap.GetMikrotikInstance().SendNetworkStatus();
 		}
 		break;
 
 	case 726:
 		{
-			reprap.GetMikrotikInstance().SearchWiFiNetworks(gb, reply);
+			if (!reprap.GetPrintMonitor().IsPrinting())
+			{
+				reprap.GetMikrotikInstance().SearchWiFiNetworks(gb, reply);
 
-			// Sometimes W5500 suspend after looking for networks, so we need to reinit sockets
-			// I know, it is hack but it helps
-			reprap.GetNetwork().ReinitSockets();
+				// Sometimes W5500 suspend after looking for networks, so we need to reinit sockets
+				// I know, it is hack but it helps
+				reprap.GetNetwork().ReinitSockets();
+			}
 		}
 		break;
 	case 727:

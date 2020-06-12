@@ -41,7 +41,7 @@ Mikrotik::Mikrotik() : isRequestWaiting(false)
     interface = none;
     status = Booting;
     mode = invalid;
-    gateway[0] = mask[0] = ip[0] = 0;
+    gateway[0] = ssid[0] = mask[0] = ip[0] = 0;
 }
 
 
