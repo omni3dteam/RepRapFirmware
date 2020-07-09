@@ -1406,6 +1406,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		// - Set Tnnn's active and standby temperatures to Snnn
 		// M104 does the same but doesn't ever select a tool
 		{
+
+			const uint8_t chamberVirtualTool = 4;
 			// Get the temperature to set
 			float temperature;
 			if (gb.Seen('R'))
@@ -1450,12 +1452,15 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 			}
 
-			// Check that we have a tool
-			if (applicableTool == nullptr)
+			if (toolNumber != chamberVirtualTool)
 			{
-				reply.copy("Invalid tool number");
-				result = GCodeResult::error;
-				break;
+				// Check that we have a tool
+				if (applicableTool == nullptr)
+				{
+					reply.copy("Invalid tool number");
+					result = GCodeResult::error;
+					break;
+				}
 			}
 
 			// Set the heater temperatures for that tool. We set the standby temperatures as well as the active ones,
@@ -1467,7 +1472,41 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				{
 					doSetStandby = gb.GetIValue();
 				}
-				SetToolHeaters(applicableTool, temperature, doSetStandby);
+				if (toolNumber != chamberVirtualTool)
+				{
+					SetToolHeaters(applicableTool, temperature, doSetStandby);
+				}
+				else
+				{
+					// This is dedicated for Simplify3D.
+					// Simplify3D can add tool for a chamber. In our case it is T4, so we need to respect it below
+					Heat& heat = reprap.GetHeat();
+
+					const int8_t chamberIndex = 0;
+					const int8_t currentHeater = heat.GetChamberHeater(chamberIndex);
+					const char* const heaterName = "chamber";
+
+					if (currentHeater < 0)
+					{
+						if (temperature > 0.0)		// turning off a non-existent bed or chamber heater is not an error
+						{
+							reply.printf("No %s heater has been configured for slot %d", heaterName, chamberIndex);
+							result = GCodeResult::error;
+						}
+					}
+					else
+					{
+						if (temperature < NEARLY_ABS_ZERO)
+						{
+							heat.SwitchOff(currentHeater);
+						}
+						else
+						{
+							heat.SetActiveTemperature(currentHeater, temperature);
+							heat.Activate(currentHeater);
+						}
+					}
+				}
 			}
 
 			Tool * const currentTool = reprap.GetCurrentTool();
@@ -1493,8 +1532,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 				else
 				{
-					// If we already have an active tool and we are setting temperatures for a different tool, set that tool's heaters to standby in case it is off
-					reprap.StandbyTool(applicableTool->Number(), simulationMode != 0);
+
+					// Make sure that we don't want to standby virtual tool as known as chamber
+					if (toolNumber != chamberVirtualTool)
+					{
+						// If we already have an active tool and we are setting temperatures for a different tool, set that tool's heaters to standby in case it is off
+						reprap.StandbyTool(applicableTool->Number(), simulationMode != 0);
+					}
 				}
 
 				if (code == 109 && simulationMode == 0)
@@ -1755,7 +1799,16 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			const int val = (gb.Seen('P')) ? gb.GetIValue() : 0;
 			if (val == 0)
 			{
-				reprap.Diagnostics(gb.GetResponseMessageType());
+				const int save = (gb.Seen('S')) ? gb.GetIValue() : 0;
+				if (save)
+				{
+					// write all diagnostic data to log file. It will be downloaded later via DWC
+					reprap.Diagnostics(LogMessage);
+				}
+				else
+				{
+					reprap.Diagnostics(gb.GetResponseMessageType());
+				}
 			}
 			else
 			{
