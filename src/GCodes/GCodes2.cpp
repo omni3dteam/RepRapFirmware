@@ -4758,6 +4758,23 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+	// save/restore last selected tool (S0 - save, S1 - restore)
+	case 790:
+		if (gb.Seen('S'))
+		{
+			static int lastSelectedTool = -1;
+			const int param = gb.GetUIValue();
+			if (param)
+			{
+				SelectTool(lastSelectedTool);
+			}
+			else
+			{
+				lastSelectedTool = reprap.GetCurrentToolNumber();
+			}
+		}
+		break;
+
 	case 851: // Set Z probe offset, only for Marlin compatibility
 		{
 			ZProbe params = platform.GetCurrentZProbeParameters();

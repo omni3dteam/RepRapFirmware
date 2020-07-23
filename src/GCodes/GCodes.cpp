@@ -2538,6 +2538,13 @@ void GCodes::RunShutdownMacro() {
 	DoFileMacro(*daemonGCode, filename.c_str(), true);
 }
 
+void GCodes::SelectTool(int toolNr)
+{
+	String<StringLength20> filename;
+	filename.printf("%s%s", DEFAULT_SYS_DIR, toolNr < 0 ? T_DESELECT_G : (toolNr > 0 ? T1_SELECT_G : T0_SELECT_G));
+	DoFileMacro(*daemonGCode, filename.c_str(), true);
+}
+
 void GCodes::Diagnostics(MessageType mtype)
 {
 	platform.Message(mtype, "=== GCodes ===\n");
