@@ -28,6 +28,7 @@ constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manua
 #define OMNI_VIP_HTTP           1                   // Enable VIP network addr support to omit password check for custom IP
 #define OMNI_CHAMBER_FAN_COOLING	1
 #define OMNI_TOWER_LED			0
+#define OMNI_STANDBY_TEMPERATURES	1
 
 #define SUPPORT_INKJET			0					// set nonzero to support inkjet control
 #define SUPPORT_ROLAND			0					// set nonzero to support Roland mill

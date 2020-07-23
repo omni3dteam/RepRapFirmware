@@ -648,6 +648,10 @@ public:
 
 	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
 
+	void SetStandbyTemperaturesStampTime(void) {standbyTemperaturesStampTimeMs = millis();}
+	void SetStandbyTemperaturesMaxTime(uint32_t value) {standbyTemperaturesMaxTimeMs = value * 1000; }
+	void SetStandbyTemperaturesActivity(bool activity) {standbyTemperaturesActivity = activity; }
+
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
 	//-------------------------------------------------------------------------------------------------------
@@ -987,6 +991,14 @@ private:
 	bool chamberFanCoolingStatus{false};
 	uint32_t lastChamberFanCheckTime{0};
 	const uint16_t checkChamberFanIntervalMs{5000};
+
+	// STANDBY TEMPERATURES
+	uint32_t standbyTemperaturesStampTimeMs{0};
+	uint32_t standbyTemperaturesMaxTimeMs{180000};
+	bool standbyTemperaturesActivity{true};
+	bool standbyTemperaturesState{false};
+	int standbyTemperaturesLastToolNr{-1};
+	float standbyTemperaturesLastActiveTemp{0};
 
 	// Print time
 	uint32_t printTimeUpdateTime{0};

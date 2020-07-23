@@ -1968,6 +1968,52 @@ void Platform::Spin()
 	}
 #endif //OMNI_CHAMBER_FAN_COOLING
 
+#if OMNI_STANDBY_TEMPERATURES
+	{
+		float activeTemp = reprap.GetTool(reprap.GetCurrentToolNumber())->GetToolHeaterActiveTemperature(0);
+		float standbyTemp = reprap.GetTool(reprap.GetCurrentToolNumber())->GetToolHeaterStandbyTemperature(0);
+
+		if (standbyTemperaturesActivity && reprap.GetStatusCharacter() == 'I'
+				&& activeTemp > standbyTemp)
+		{
+			if (millis() >= standbyTemperaturesStampTimeMs + standbyTemperaturesMaxTimeMs)
+			{
+				if (standbyTemperaturesState == false)
+				{
+					standbyTemperaturesState = true;
+
+					standbyTemperaturesLastToolNr = reprap.GetCurrentToolNumber();
+					standbyTemperaturesLastActiveTemp = activeTemp;
+
+					if (standbyTemperaturesLastToolNr >= 0)
+					{
+						reprap.GetTool(standbyTemperaturesLastToolNr)->SetToolHeaterActiveTemperature(0, standbyTemp + 0.01f);
+						SendAlert(GenericMessage, "Due to inactivity, the temperature of the heads has been lowered to the \"standby\" value. Press \"OK\" to return to the \"active\" value.",
+								"Extruder standby mode enabled", 2, 0.0, 0);
+					}
+				}
+			}
+			else
+			{
+				if (standbyTemperaturesState)
+				{
+					standbyTemperaturesState = false;
+					if (standbyTemperaturesLastToolNr >= 0) reprap.GetTool(standbyTemperaturesLastToolNr)->SetToolHeaterActiveTemperature(0, standbyTemperaturesLastActiveTemp);
+				}
+			}
+		}
+		else
+		{
+			if (standbyTemperaturesState)
+			{
+				standbyTemperaturesState = false;
+				if (standbyTemperaturesLastToolNr >= 0) reprap.GetTool(standbyTemperaturesLastToolNr)->SetToolHeaterActiveTemperature(0, standbyTemperaturesLastActiveTemp);
+			}
+			standbyTemperaturesStampTimeMs = millis();
+		}
+	}
+#endif
+
 	// PrintTime
 	if(millis() - printTimeUpdateTime > printTimeUpdateIntervalMs)
 	{

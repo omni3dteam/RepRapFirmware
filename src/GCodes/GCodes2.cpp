@@ -97,6 +97,10 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 {
 	GCodeResult result = GCodeResult::ok;
 	const int code = gb.GetCommandNumber();
+
+	// set standby temperatures stamp time for disable standby temperatures
+	platform.SetStandbyTemperaturesStampTime();
+
 	if (simulationMode != 0 && code > 4 && code != 10 && code != 11 && code != 20 && code != 21 && (code < 53 || code > 59) && (code < 90 || code > 92))
 	{
 		return true;					// we only simulate some gcodes
@@ -433,6 +437,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	OutputBuffer *outBuf = nullptr;
 
 	const int code = gb.GetCommandNumber();
+
+	// set standby temperatures stamp time for disable standby temperatures
+	if (code != 408) platform.SetStandbyTemperaturesStampTime();
+
 	if (   simulationMode != 0
 		&& (code < 20 || code > 37)
 		&& code != 0 && code != 1 && code != 82 && code != 83 && code != 105 && code != 109 && code != 111 && code != 112 && code != 122
@@ -4729,6 +4737,27 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+	// set temperature standby time for extruders (S0 - disable, S1 - enable, T - time to set (s))
+	case 785:
+		if (gb.Seen('S'))
+		{
+			const unsigned int state = gb.GetUIValue();
+			if (state)
+			{
+				platform.SetStandbyTemperaturesActivity(true);
+				if (gb.Seen('T'))
+				{
+					const uint32_t timeToSet = gb.GetUIValue();
+					platform.SetStandbyTemperaturesMaxTime(timeToSet);
+				}
+			}
+			else
+			{
+				platform.SetStandbyTemperaturesActivity(false);
+			}
+		}
+		break;
+
 	case 851: // Set Z probe offset, only for Marlin compatibility
 		{
 			ZProbe params = platform.GetCurrentZProbeParameters();
@@ -4994,6 +5023,9 @@ bool GCodes::HandleTcode(GCodeBuffer& gb, const StringRef& reply)
 	{
 		return true;			// when running M502 we don't execute T commands
 	}
+
+	// set standby temperatures stamp time for disable standby temperatures
+	platform.SetStandbyTemperaturesStampTime();
 
 	bool seen = false;
 	int toolNum;
