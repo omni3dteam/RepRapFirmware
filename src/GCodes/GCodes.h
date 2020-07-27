@@ -676,9 +676,9 @@ private:
 	static constexpr const char* LED_STRIP_G = "led-strip.g";
 	static constexpr const char* T0_Z_OFFSET_G = "t0-zoffset.g";
 	static constexpr const char* T1_Z_OFFSET_G = "t1-zoffset.g";
-	static constexpr const char* T0_SELECT_G = "selectT0.g";
-	static constexpr const char* T1_SELECT_G = "selectT1.g";
-	static constexpr const char* T_DESELECT_G = "deselectT.g";
+	static constexpr const char* T0_SELECT_G = "t0-select.g";
+	static constexpr const char* T1_SELECT_G = "t1-select.g";
+	static constexpr const char* T_DESELECT_G = "t-deselect.g";
 #if HAS_SMART_DRIVERS
 	static constexpr const char* REHOME_G = "rehome.g";
 #endif
