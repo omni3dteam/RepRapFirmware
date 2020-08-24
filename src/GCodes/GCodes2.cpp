@@ -4481,6 +4481,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (!reprap.GetPrintMonitor().IsPrinting())
 			{
 				reprap.GetMikrotikInstance().Configure(gb, reply);
+				reprap.GetMikrotikInstance().Check();
 				reprap.GetMikrotikInstance().SendNetworkStatus();
 			}
 			else
@@ -4496,6 +4497,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (!reprap.GetPrintMonitor().IsPrinting())
 			{
 				reprap.GetMikrotikInstance().DisableInterface();
+				reprap.GetMikrotikInstance().Check();
+				reprap.GetMikrotikInstance().SendNetworkStatus();
 			}
 		}
 		break;
@@ -4519,10 +4522,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 725:
 		{
-			if (!reprap.GetPrintMonitor().IsPrinting())
-			{
-				reprap.GetMikrotikInstance().Check();
-			}
+			reprap.GetMikrotikInstance().Check();
 			reprap.GetMikrotikInstance().SendNetworkStatus();
 		}
 		break;

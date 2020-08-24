@@ -777,9 +777,12 @@ uint16_t Mikrotik::ScanWiFiNetworks( TInterface iface, uint8_t duration, char *p
             if ( length >= MAX_BUF_SIZE )
                 break;
 
-            strcpy( pNext, pStr );
-            pNext += strlen( pStr ) + 1;
-            count++;
+            if (strlen(pStr) > 0)
+            {
+            	strcpy( pNext, pStr );
+            	pNext += strlen( pStr ) + 1;
+            	count++;
+            }
         }
 
         pWord = block->GetNextWord( pWord );
@@ -951,7 +954,12 @@ bool Mikrotik::Login(uint8_t numLoginTry)
 
 //#warning "ACHTUNG! Default credentials!"
     char default_username[] = "admin";
-    char default_password[] = "";
+
+    // put here pass for mikrotik routers
+    char default_password[2][12] = { "", "" };
+
+    static bool isKnownPass = false;
+    static uint8_t nbrPass = 0;
 
     for ( int i = 0; i < numLoginTry; i++ )
     {
@@ -963,18 +971,21 @@ bool Mikrotik::Login(uint8_t numLoginTry)
         if ( !Connect( d_ip, d_port ) )
             return false;
 
-        debugPrintf( "Login attempt %i of %i... ", i + 1, numLoginTry );
-        if ( try_to_log_in( default_username, default_password ) )
+        debugPrintf( "Login attempt %i of %i... [%s] ", i + 1, numLoginTry, isKnownPass ? default_password[nbrPass] : default_password[i % 2] );
+        if ( try_to_log_in( default_username, isKnownPass ? default_password[nbrPass] : default_password[i % 2] ) )
         {
-            debugPrintf( "success\n" );
+        	nbrPass = i % 2;
+        	debugPrintf( "success default credentials [%d]\n", nbrPass );
+            isKnownPass = true;
             isLogged = true;
             break;
         }
-        else
-        {
-            debugPrintf( "FAILED!\n" );
-            Disconnect();
-        }
+		else
+		{
+			debugPrintf( "FAILED!\n" );
+			isKnownPass = false;
+			Disconnect();
+		}
     }
 
     block->ReInit();
@@ -1009,7 +1020,7 @@ bool Mikrotik::ProcessRequest()
 bool Mikrotik::LoginRequest()
 {
     if ( !isLogged )
-        if ( !Login(1) )
+        if ( !Login(5) )
         {
             return false;
         }
@@ -1771,12 +1782,12 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 		{
 			if (cParam)
 			{
-				reprap.GetMikrotikInstance().CreateAP(tSsid.c_str(), tPass.c_str(), interface);
+				CreateAP(tSsid.c_str(), tPass.c_str(), interface);
 				mode = AccessPoint;
 			}
 			else
 			{
-				reprap.GetMikrotikInstance().ConnectToWiFi(tSsid.c_str(), tPass.c_str(), interface);
+				ConnectToWiFi(tSsid.c_str(), tPass.c_str(), interface);
 				mode = Station;
 			}
 			strcpy(ssid, tSsid.c_str());
@@ -1835,6 +1846,13 @@ void Mikrotik::SendNetworkStatus()
 	if (charPtr > 0 && charPtr < strlen(tempIp))
 	{
 		tempIp[charPtr] = 0;
+	}
+
+	if (status == Disconnected || status == Booting)
+	{
+		strncpy(md, "X", sizeof( md ));
+		typeIp = 'Y';
+		tempIp[0] = mask[0] = gateway[0] = ssid[0] = 0;
 	}
 
 	SafeSnprintf(outputBuffer, sizeof(outputBuffer),"{\"networkStatus\":[\"%s\",\"%s\",\"%c\",\"%s\",\"%s\",\"%s\",\"%s\"]}",
@@ -1904,9 +1922,9 @@ void Mikrotik::Check()
 
 void Mikrotik::DisableInterface()
 {
-	if(reprap.GetMikrotikInstance().GetCurrentInterface(&interface))
+	if (GetCurrentInterface(&interface))
 	{
-		reprap.GetMikrotikInstance().DisableInterface(interface);
+		DisableInterface(interface);
 	}
 	else
 	{
@@ -1940,6 +1958,7 @@ GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply
 
 	debugPrintf( "Available networks count: %u\n\n", count );
 	char *pNext = list;
+	debugPrintf( "%s", list );
 
 	if ( count )
 	{
@@ -2085,7 +2104,7 @@ GCodeResult Mikrotik::DHCPState(GCodeBuffer& gb, const StringRef& reply)
 		return GCodeResult::error;
 	}
 
-	if (reprap.GetMikrotikInstance().GetDhcpState(tInterface, dhcpMode, &dhcp))
+	if (GetDhcpState(tInterface, dhcpMode, &dhcp))
 	{
 		reply.printf("DHCP %s %s %s\n", mode ? "client" : "server", interface == 2 ? "wifi2g" : "wifi5g", dhcp ? "enabled" : "disabled");
 	}

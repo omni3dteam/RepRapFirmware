@@ -201,8 +201,8 @@ constexpr int HighestLogicalPin = 135;										// highest logical pin number on
 // Omni electronics pin map
 constexpr Pin topDoor = 201;  												// Endstop 5
 constexpr Pin frontDoor = 213;												// Endstop 6
-constexpr Pin turnOffPrinter = 7;
-constexpr Pin lostPower = 4;
+constexpr Pin turnOffPrinter = 7;											// Endstop 4
+constexpr Pin lostPower = 4;												// Endstop E1
 constexpr Pin boltPin = 5;
 constexpr Pin chamberFan = 28;
 constexpr Pin turnOffLed = 4;
