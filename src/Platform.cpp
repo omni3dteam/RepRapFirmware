@@ -1764,7 +1764,7 @@ void Platform::Spin()
 		const bool powerBtn = IoPort::ReadPin(endStopPins[turnOffPrinter]);
 
 		// If power button is low that means someone wants to power off the machine
-		if(powerBtn == false)
+		if(powerBtn == true)
 		{
 			if(isPowerBtnActivated == true)
 			{

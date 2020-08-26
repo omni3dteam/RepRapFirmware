@@ -1,4 +1,5 @@
 #include "Mikrotik.h"
+#include "MikrotikCredentials.h"
 
 #ifndef __LINUX_DBG
     #include "Platform.h"
@@ -951,12 +952,6 @@ bool Mikrotik::Login(uint8_t numLoginTry)
     uint8_t d_ip[] = { 192, 168, 60, 1 };
 #endif
     const uint16_t d_port = 8728;
-
-//#warning "ACHTUNG! Default credentials!"
-    char default_username[] = "admin";
-
-    // put here pass for mikrotik routers
-    char default_password[2][12] = { "", "" };
 
     static bool isKnownPass = false;
     static uint8_t nbrPass = 0;
