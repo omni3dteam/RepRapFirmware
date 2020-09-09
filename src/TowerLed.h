@@ -11,7 +11,6 @@ enum class PinTowerLed : uint8_t
 	red
 };
 
-// Led pins due to documentation
 enum class ActionTowerLed : uint8_t
 {
 	light,
@@ -22,6 +21,7 @@ class TowerLed
 {
 private:
 	char previousState;
+	bool previousHeatStatus;
 	PinTowerLed activeLed;
 	ActionTowerLed actionState;
 	uint32_t lastActionTime;

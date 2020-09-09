@@ -2064,7 +2064,7 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
-			reply.copy("Can't set IP address");
+			reply.copy("Can't set gateway address");
 			return GCodeResult::error;
 		}
 		//reprap.GetNetwork().ReinitSockets();

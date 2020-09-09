@@ -1,9 +1,11 @@
 #include "TowerLed.h"
 #include "Platform.h"
+#include "GCodes/Gcodes.h"
 
 void TowerLed::Init()
 {
 	previousState = 0;
+	previousHeatStatus = false;
 }
 
 void TowerLed::Spin()
@@ -11,18 +13,37 @@ void TowerLed::Spin()
 
 	char state = reprap.GetStatusCharacter();
 
-	if (state != previousState)
+	// while printing we can heat up so we need to check it
+	if ((state != previousState) || (state == 'P'))
 	{
 		previousState = state;
 
 		switch(state)
 		{
-		case 'I':
+		case 'I':			// Idle
 			SetGreedLed(ActionTowerLed::light);
+			break;
+		case 'P':			// Printing
+			{
+				bool heatStatus = reprap.GetGCodes().IsHeatingUp();
+
+				if (heatStatus != previousHeatStatus)
+				{
+					previousHeatStatus = heatStatus;
+
+					if (heatStatus)
+					{
+						SetGreedLed(ActionTowerLed::blink);
+					}
+					else
+					{
+						SetGreedLed(ActionTowerLed::light);
+					}
+				}
+			}
 			break;
 		case 'F':			// Flashing a new firmware binary
 		case 'C':			// Reading the configuration file
-		case 'P':			// Printing
 		case 'B':			// Busy
 		case 'T':			// Changing Tool
 			SetGreedLed(ActionTowerLed::blink);
