@@ -13,6 +13,7 @@
 SimpleFilteredFilamentMonitor::SimpleFilteredFilamentMonitor(unsigned int extruder, int type)
 	: FilamentMonitor(extruder, type), highWhenNoFilament(type == 12), filamentPresent(false), enabled(false)
 {
+	filterDistance = 2.0;
 }
 
 // Configure this sensor, returning true if error and setting 'seen' if we processed any configuration parameters
@@ -30,10 +31,6 @@ bool SimpleFilteredFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& 
 	if (seen)
 	{
 		filterDistance = tempfilterDistance > 0 ? tempfilterDistance : 2.0;
-	}
-	else
-	{
-		filterDistance = 2.0;
 	}
 
 	if (gb.Seen('S'))

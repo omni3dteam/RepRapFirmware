@@ -42,7 +42,7 @@ bool LcdUpdater::OpenLcdFirmware()
 	uploadFile = platform.OpenFile(DEFAULT_SYS_DIR, LCD_FIRMWARE_FILE, OpenMode::read);
 	if (uploadFile == nullptr)
 	{
-		MessageF("Failed to open file %s\n", LCD_FIRMWARE_FILE);
+		MessageF(ErrorMessage, "Failed to open file %s\n", LCD_FIRMWARE_FILE);
 		state = UploadState::idle;
 		return false;
 	}
@@ -51,7 +51,7 @@ bool LcdUpdater::OpenLcdFirmware()
 	if (fileSize == 0)
 	{
 		uploadFile->Close();
-		MessageF("Upload file is empty %s\n", LCD_FIRMWARE_FILE);
+		MessageF(ErrorMessage, "Upload file is empty %s\n", LCD_FIRMWARE_FILE);
 		state = UploadState::idle;
 		return false;
 	}
@@ -127,11 +127,11 @@ void LcdUpdater::prepareFrameToLcd()
 	}
 	else
 	{
-		debugPrintf("Error code: %d \n", (int)stat);
+		//debugPrintf("Error code: %d \n", (int)stat);
 		retransmission = true;
 		if(++retransmissionTry > 3)
 		{
-			MessageF("Internal problem. Can't upload firmware to LCD. Reason: %d\n", (int)stat);
+			MessageF(ErrorMessage, "Internal problem. Can't upload firmware to LCD. Reason: %d\n", (int)stat);
 			state = UploadState::done;
 		}
 	}
@@ -186,11 +186,11 @@ void LcdUpdater::write(const uint8_t c)
 	uploadPort.write(c);
 }
 
-void LcdUpdater::MessageF(const char *fmt, ...)
+void LcdUpdater::MessageF(MessageType type, const char *fmt, ...)
 {
 	va_list vargs;
 	va_start(vargs, fmt);
-	reprap.GetPlatform().MessageF(FirmwareUpdateMessage, fmt, vargs);
+	reprap.GetPlatform().MessageF(type, fmt, vargs);
 	va_end(vargs);
 }
 

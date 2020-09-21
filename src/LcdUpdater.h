@@ -3,6 +3,7 @@
 
 #include "RepRapFirmware.h"
 #include "crc32_lcd.h"
+#include "MessageType.h"
 
 class LcdUpdater
 {
@@ -46,7 +47,7 @@ private:
 	void writePacketRaw(uint8_t *data, size_t dataLen);
 	void prepareFrameToLcd();
 	void flushInput();
-	void MessageF(const char *fmt, ...);
+	void MessageF(MessageType type, const char *fmt, ...);
 	errorId readPacket(uint32_t msTimeout);
 	UARTClass& uploadPort;
 	FileStore *uploadFile;

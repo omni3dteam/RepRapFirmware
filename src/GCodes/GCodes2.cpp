@@ -4478,7 +4478,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 	case 720:
 		{
-			if (!reprap.GetPrintMonitor().IsPrinting())
+			if (!reprap.GetPrintMonitor().IsPrinting() || gb.Seen('E'))
 			{
 				reprap.GetMikrotikInstance().Configure(gb, reply);
 				reprap.GetMikrotikInstance().Check();
@@ -4494,7 +4494,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 721:
 		{
-			if (!reprap.GetPrintMonitor().IsPrinting())
+			if (!reprap.GetPrintMonitor().IsPrinting() || gb.Seen('E'))
 			{
 				reprap.GetMikrotikInstance().DisableInterface();
 				reprap.GetMikrotikInstance().Check();

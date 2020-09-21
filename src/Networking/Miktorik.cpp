@@ -1582,6 +1582,8 @@ bool Mikrotik::read_sentence()
     char word[512] = { 0 };
     TSentenceRetVal retval = Sentence_None;
 
+    uint32_t readTime = millis();
+
     while ( read_word( word ) )
     {
         if ( !block->AddWordToSentence( word ) )
@@ -1599,6 +1601,13 @@ bool Mikrotik::read_sentence()
             retval = Sentence_Fatal;
         else
             retval = Sentence_None;
+
+        // if we cannot read whole sentence we need to return false
+        if (millis() - readTime > 15000)
+        {
+        	debugPrintf( "Timeout read sentence!\n" );
+        	return false;
+        }
     }
 
     // if any errors, get the next sentence

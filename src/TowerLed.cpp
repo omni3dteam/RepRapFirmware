@@ -5,67 +5,82 @@
 void TowerLed::Init()
 {
 	previousState = 0;
+	towerLedSpinTime = 0;
 	previousHeatStatus = false;
+	previousPrintStatus = false;
 }
 
 void TowerLed::Spin()
 {
 
-	char state = reprap.GetStatusCharacter();
 
-	// while printing we can heat up so we need to check it
-	if ((state != previousState) || (state == 'P'))
+	if (millis() - towerLedSpinTime > 100)
 	{
-		previousState = state;
+		towerLedSpinTime = millis();
 
-		switch(state)
+		char state = reprap.GetStatusCharacter();
+
+		// while printing we can heat up so we need to check it
+		if ((state != previousState) || (state == 'P'))
 		{
-		case 'I':			// Idle
-			SetGreedLed(ActionTowerLed::light);
-			break;
-		case 'P':			// Printing
-			{
-				bool heatStatus = reprap.GetGCodes().IsHeatingUp();
+			previousState = state;
 
-				if (heatStatus != previousHeatStatus)
+			switch(state)
+			{
+			case 'I':			// Idle
+				SetGreedLed(ActionTowerLed::light);
+				break;
+			case 'P':			// Printing
 				{
-					previousHeatStatus = heatStatus;
+					bool heatStatus = reprap.GetGCodes().IsHeatingUp();
 
 					if (heatStatus)
 					{
-						SetGreedLed(ActionTowerLed::blink);
+						if (previousHeatStatus != heatStatus)
+						{
+							SetGreedLed(ActionTowerLed::blink);
+							previousHeatStatus = heatStatus;
+						}
+						previousPrintStatus = false;
 					}
 					else
 					{
-						SetGreedLed(ActionTowerLed::light);
+						if (!previousPrintStatus)
+						{
+							SetGreedLed(ActionTowerLed::light);
+							previousPrintStatus = true;
+						}
+						previousHeatStatus = false;
 					}
 				}
+				break;
+			case 'F':			// Flashing a new firmware binary
+			case 'C':			// Reading the configuration file
+			case 'B':			// Busy
+			case 'T':			// Changing Tool
+				SetGreedLed(ActionTowerLed::blink);
+				break;
+			case 'O':			// Off i.e. powered down
+			case 'M':			// Simulating
+				SetRedLed(ActionTowerLed::blink);
+				break;
+			case 'R':			// Resuming
+			case 'D':			// Pausing / Decelerating
+				SetYellowLed(ActionTowerLed::blink);
+				break;
+			case 'S':			// Paused / Stopped
+			case 'H':			// Halted
+				SetYellowLed(ActionTowerLed::light);
+				previousPrintStatus = false;
+				previousHeatStatus = false;
+				break;
+			default:
+				SetRedLed(ActionTowerLed::light);
 			}
-			break;
-		case 'F':			// Flashing a new firmware binary
-		case 'C':			// Reading the configuration file
-		case 'B':			// Busy
-		case 'T':			// Changing Tool
-			SetGreedLed(ActionTowerLed::blink);
-			break;
-		case 'O':			// Off i.e. powered down
-		case 'M':			// Simulating
-			SetRedLed(ActionTowerLed::blink);
-			break;
-		case 'R':			// Resuming
-		case 'D':			// Pausing / Decelerating
-			SetYellowLed(ActionTowerLed::blink);
-			break;
-		case 'S':			// Paused / Stopped
-		case 'H':			// Halted
-			SetYellowLed(ActionTowerLed::light);
-			break;
-		default:
-			SetRedLed(ActionTowerLed::light);
 		}
-	}
 
-	Show();
+		Show();
+	}
 }
 
 void TowerLed::Show()

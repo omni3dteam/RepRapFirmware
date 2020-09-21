@@ -22,9 +22,11 @@ class TowerLed
 private:
 	char previousState;
 	bool previousHeatStatus;
+	bool previousPrintStatus;
 	PinTowerLed activeLed;
 	ActionTowerLed actionState;
 	uint32_t lastActionTime;
+	uint32_t towerLedSpinTime;
 
 	void SetGreedLed(ActionTowerLed action);
 	void SetRedLed(ActionTowerLed action);
