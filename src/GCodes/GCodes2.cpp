@@ -3147,14 +3147,14 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 472:
 		{
-		// Copy root directory
-		CopyFilesFromDir(reply, RESTORE_DIR, DEFAULT_SYS_DIR);
+			// Copy root directory
+			CopyFilesFromDir(reply, RESTORE_DIR, DEFAULT_SYS_DIR);
 
-		// Copy procedure directory
-		CopyFilesFromDir(reply, RESTORE_DIR PROCEDURES_DIR, DEFAULT_SYS_DIR PROCEDURES_DIR);
+			// Copy procedure directory
+			CopyFilesFromDir(reply, RESTORE_DIR PROCEDURES_DIR, DEFAULT_SYS_DIR PROCEDURES_DIR);
 
-		// Copy user procedure directory
-		CopyFilesFromDir(reply, RESTORE_DIR USER_PROCEDURES_DIR, DEFAULT_SYS_DIR USER_PROCEDURES_DIR);
+			// Copy user procedure directory
+			CopyFilesFromDir(reply, RESTORE_DIR USER_PROCEDURES_DIR, DEFAULT_SYS_DIR USER_PROCEDURES_DIR);
 		}
 		break;
 
@@ -4749,6 +4749,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				{
 					const uint32_t timeToSet = gb.GetUIValue();
 					platform.SetStandbyTemperaturesMaxTime(timeToSet);
+				}
+				if (gb.Seen('B'))
+				{
+					const float fval = gb.GetFValue();
+					platform.SetStandbyIdleTemperatures(fval);
 				}
 			}
 			else

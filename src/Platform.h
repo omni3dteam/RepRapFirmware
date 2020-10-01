@@ -46,6 +46,7 @@ Licence: GPL
 #include "TowerLed.h"
 #include <General/IPAddress.h>
 #include "LcdUpdater.h"
+#include "Tools/Tool.h"
 
 #if defined(DUET_NG)
 # include "DueXn.h"
@@ -651,6 +652,7 @@ public:
 	void SetStandbyTemperaturesStampTime(void) {standbyTemperaturesStampTimeMs = millis();}
 	void SetStandbyTemperaturesMaxTime(uint32_t value) {standbyTemperaturesMaxTimeMs = value * 1000; }
 	void SetStandbyTemperaturesActivity(bool activity) {standbyTemperaturesActivity = activity; }
+	void SetStandbyIdleTemperatures(float temp) {standbyIdleTemperature = temp; }
 
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
@@ -999,6 +1001,11 @@ private:
 	bool standbyTemperaturesState{false};
 	int standbyTemperaturesLastToolNr{-1};
 	float standbyTemperaturesLastActiveTemp{0};
+	float standbyIdleTemperature{100};
+	ToolState toolState[2];
+	float savedPreviousTemperature[2];
+
+
 
 	// Print time
 	uint32_t printTimeUpdateTime{0};

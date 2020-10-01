@@ -2241,15 +2241,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			if (ok)
 			{
 				// Write a G92 Z Axis, we cannot lost this information
-				buf.copy("G92");
-				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
-				{
-					if(axis == Z_AXIS)
-					{
-						buf.catf(" %c%.3f", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
-					}
-				}
-				buf.cat('\n');
+				buf.catf("G92 Z%.3f\n", (double)pauseRestorePoint.moveCoords[Z_AXIS]);
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
@@ -2272,7 +2264,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
 					const float totalOffset = currentBabyStepOffsets[axis] - GetCurrentToolOffset(axis);
-					buf.catf(" %c%.3f", axisLetters[axis], (double)(pauseRestorePoint.moveCoords[axis] - totalOffset));
+					buf.catf(" %c%.3f", axisLetters[axis], (double)(pauseRestorePoint.moveCoords[axis] + totalOffset));
 				}
 				buf.cat("\nG60 S1\n");										// save the coordinates as restore point 1 too
 				ok = f->Write(buf.c_str())
@@ -2507,16 +2499,6 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 					buf.printf("M781 D%d F%.3f\n", extruder, (double)FilamentMonitor::GetExtrusionMeasured(extruder));
 					ok = f->Write(buf.c_str());
 				}
-			}
-			if (ok)
-			{
-				buf.copy("M290");
-				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
-				{
-					buf.catf(" %c%.3f", axisLetters[axis], (double)GetTotalBabyStepOffset(axis));
-				}
-				buf.cat('\n');
-				ok = f->Write(buf.c_str());								// write baby stepping offsets
 			}
 			if (!f->Close())
 			{
