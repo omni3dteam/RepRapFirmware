@@ -1608,6 +1608,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				result = GCodeResult::error;
 			}
 		}
+		else if (gb.Seen('L'))
+		{
+			// Here we'll get firmware number from LCD
+			String<8> lcdFirmwareVersion;
+			gb.GetPossiblyQuotedString(lcdFirmwareVersion.GetRef());
+			platform.SetLcdVersion(lcdFirmwareVersion.c_str());
+		}
 		else
 #endif
 		{
@@ -1622,6 +1629,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (additionalExpansionName != nullptr)
 			{
 				reply.catf(" + %s", additionalExpansionName);
+			}
+			const char* const lcdVersion = platform.GetLcdVersion();
+			if (lcdVersion != nullptr)
+			{
+				reply.catf(" LCD_VERSION: %s", lcdVersion);
 			}
 #endif
 			reply.catf(" FIRMWARE_DATE: %s", DATE);

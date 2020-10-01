@@ -490,7 +490,9 @@ void RepRap::Diagnostics(MessageType mtype)
 #ifdef DUET_NG
 	platform->MessageF(mtype, "%s version %s running on %s", FIRMWARE_NAME, VERSION, platform->GetElectronicsString());
 	const char* const expansionName = DuetExpansion::GetExpansionBoardName();
-	platform->MessageF(mtype, (expansionName == nullptr) ? "\n" : " + %s\n", expansionName);
+	platform->MessageF(mtype, (expansionName == nullptr) ? "\n" : " + %s", expansionName);
+	const char* const lcdVersion = platform->GetLcdVersion();
+	platform->MessageF(mtype, (lcdVersion == nullptr) ? "\n" : " LCD version %s\n", lcdVersion);
 #else
 	platform->MessageF(mtype, "%s version %s running on %s\n", FIRMWARE_NAME, VERSION, platform->GetElectronicsString());
 #endif

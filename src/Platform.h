@@ -334,6 +334,8 @@ public:
 	void AtxPowerOn();
 	void AtxPowerOff(bool defer);
 	void SetBoardType(BoardType bt);
+	void SetLcdVersion(const char *str);
+	const char* GetLcdVersion() const;
 	const char* GetElectronicsString() const;
 	const char* GetBoardString() const;
 
@@ -750,6 +752,9 @@ private:
 #ifdef DUET_NG
 	ExpansionBoardType expansionBoard;
 #endif
+
+	// LCD
+	char lcdVersionString[8];
 
 	bool active;
 	Compatibility compatibility;

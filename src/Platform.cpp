@@ -4458,6 +4458,16 @@ void Platform::ResetChannel(size_t chan)
 	}
 }
 
+const char* Platform::GetLcdVersion() const
+{
+	return auxDetected ? lcdVersionString : nullptr;
+}
+
+void Platform::SetLcdVersion(const char *str)
+{
+	SafeStrncpy(lcdVersionString, str, ARRAY_SIZE(lcdVersionString));
+}
+
 void Platform::SetBoardType(BoardType bt)
 {
 	if (bt == BoardType::Auto)
