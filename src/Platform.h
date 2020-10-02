@@ -641,6 +641,11 @@ public:
 	void SetServoTarget(float pwm, Pin pin, uint16_t frequency);
 #endif
 
+#if OMNI_STANDBY_TEMPERATURES
+	void SaveIdleStandbyTemperatures(void);
+	void RestoreIdleStandbyTemperatures(void);
+#endif
+
 #if OMNI_DOORS_CHECK
 	bool GetBoltStatus();
 #endif
@@ -999,16 +1004,15 @@ private:
 	uint32_t lastChamberFanCheckTime{0};
 	const uint16_t checkChamberFanIntervalMs{5000};
 
-	// STANDBY TEMPERATURES
+#if OMNI_STANDBY_TEMPERATURES
 	uint32_t standbyTemperaturesStampTimeMs{0};
 	uint32_t standbyTemperaturesMaxTimeMs{180000};
-	bool standbyTemperaturesActivity{true};
-	bool standbyTemperaturesState{false};
-	int standbyTemperaturesLastToolNr{-1};
-	float standbyTemperaturesLastActiveTemp{0};
+	bool standbyTemperaturesActivity{false};
+	bool isIdleStandbyTempActive{false};
 	float standbyIdleTemperature{100};
-	ToolState toolState[2];
 	float savedPreviousTemperature[2];
+	ToolState toolState[2];
+#endif
 
 
 

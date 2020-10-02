@@ -1973,112 +1973,16 @@ void Platform::Spin()
 	{
 		if (millis() >= standbyTemperaturesStampTimeMs + standbyTemperaturesMaxTimeMs)
 		{
-			if (standbyTemperaturesState == false)
-			{
-				standbyTemperaturesState = true;
-				bool doSendAlert = false;
-				uint8_t toolIdx = 0;
-
-				//debugPrintf("Start Idle Temps\n");
-
-				for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
-				{
-					for (size_t heater = 0; heater < tool->HeaterCount(); heater++)
-					{
-						const ToolState state = tool->GetState();
-
-						if (state == ToolState::active || state == ToolState::standby)
-						{
-							float tmpActive = tool->GetToolHeaterActiveTemperature(heater);
-							float tmpStandby = tool->GetToolHeaterStandbyTemperature(heater);
-
-							//debugPrintf("State active/standby\n");
-
-							const float ftemp = state == ToolState::active ? tmpActive : tmpStandby;
-
-							if (ftemp > standbyIdleTemperature)
-							{
-								toolState[toolIdx] = state;
-								savedPreviousTemperature[toolIdx] = ftemp;
-
-								if (state == ToolState::active)
-								{
-										tool->SetToolHeaterActiveTemperature(heater, standbyIdleTemperature + 0.01f);
-								}
-								else
-								{
-										tool->SetToolHeaterStandbyTemperature(heater, standbyIdleTemperature + 0.01f);
-								}
-
-								doSendAlert = true;
-								//debugPrintf("Saved and set\n");
-							}
-						}
-					}
-					++toolIdx;
-				}
-
-				if (doSendAlert)
-				{
-					SendAlert(GenericMessage, "Due to inactivity, the temperature of the heads has been lowered to the \"standby\" value. Press \"OK\" to return to the \"active\" value.",
-						"Extruder standby mode enabled", 2, 0.0, 0);
-				}
-
-			}
+			SaveIdleStandbyTemperatures();
 		}
 		else
 		{
-			if (standbyTemperaturesState)
-			{
-				standbyTemperaturesState = false;
-				uint8_t toolIdx = 0;
-
-				for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
-				{
-					for (size_t heater = 0; heater < tool->HeaterCount(); heater++)
-					{
-						if (toolState[toolIdx] == ToolState::active)
-						{
-							tool->SetToolHeaterActiveTemperature(heater, savedPreviousTemperature[toolIdx]);
-						}
-						else
-						{
-							tool->SetToolHeaterStandbyTemperature(heater, savedPreviousTemperature[toolIdx]);
-						}
-
-						//debugPrintf("Restored1\n");
-					}
-					++toolIdx;
-				}
-			}
+			RestoreIdleStandbyTemperatures();
 		}
 	}
 	else
 	{
-		if (standbyTemperaturesState)
-		{
-			standbyTemperaturesState = false;
-			uint8_t toolIdx = 0;
-
-			for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
-			{
-				for (size_t heater = 0; heater < tool->HeaterCount(); heater++)
-				{
-					if (toolState[toolIdx] == ToolState::active)
-					{
-						tool->SetToolHeaterActiveTemperature(heater, savedPreviousTemperature[toolIdx]);
-					}
-					else
-					{
-						tool->SetToolHeaterStandbyTemperature(heater, savedPreviousTemperature[toolIdx]);
-					}
-
-					//debugPrintf("Restored2\n");
-				}
-				++toolIdx;
-			}
-
-		}
+		RestoreIdleStandbyTemperatures();
 		standbyTemperaturesStampTimeMs = millis();
 	}
 #endif
@@ -2099,6 +2003,85 @@ void Platform::Spin()
 		logger->Flush(false);
 	}
 }
+
+#if OMNI_STANDBY_TEMPERATURES
+void Platform::SaveIdleStandbyTemperatures(void)
+{
+	if (!isIdleStandbyTempActive)
+	{
+		isIdleStandbyTempActive = true;
+		bool doSendAlert = false;
+		uint8_t toolIdx = 0;
+
+		for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
+		{
+			for (size_t heater = 0; heater < tool->HeaterCount(); heater++)
+			{
+				const ToolState state = tool->GetState();
+
+				if (state == ToolState::active || state == ToolState::standby)
+				{
+					float tmpActive = tool->GetToolHeaterActiveTemperature(heater);
+					float tmpStandby = tool->GetToolHeaterStandbyTemperature(heater);
+
+					const float ftemp = state == ToolState::active ? tmpActive : tmpStandby;
+
+					if (ftemp > standbyIdleTemperature)
+					{
+						toolState[toolIdx] = state;
+						savedPreviousTemperature[toolIdx] = ftemp;
+
+						if (state == ToolState::active)
+						{
+								tool->SetToolHeaterActiveTemperature(heater, standbyIdleTemperature + 0.01f);
+						}
+						else
+						{
+								tool->SetToolHeaterStandbyTemperature(heater, standbyIdleTemperature + 0.01f);
+						}
+
+						doSendAlert = true;
+					}
+				}
+			}
+			++toolIdx;
+		}
+
+		if (doSendAlert)
+		{
+			SendAlert(GenericMessage, "Due to inactivity, the temperature of the heads has been lowered to the \"standby\" value. Press \"OK\" to return to the \"active\" value.",
+				"Extruder standby mode enabled", 2, 0.0, 0);
+		}
+
+	}
+}
+
+void Platform::RestoreIdleStandbyTemperatures(void)
+{
+	if (isIdleStandbyTempActive)
+	{
+		isIdleStandbyTempActive = false;
+		uint8_t toolIdx = 0;
+
+		for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
+		{
+			for (size_t heater = 0; heater < tool->HeaterCount(); heater++)
+			{
+				if (toolState[toolIdx] == ToolState::active)
+				{
+					tool->SetToolHeaterActiveTemperature(heater, savedPreviousTemperature[toolIdx]);
+				}
+				else
+				{
+					tool->SetToolHeaterStandbyTemperature(heater, savedPreviousTemperature[toolIdx]);
+				}
+			}
+			++toolIdx;
+		}
+
+	}
+}
+#endif
 
 #if OMNI_SERVO_POSITIONING
 void Platform::SetServoTarget(float pwm, Pin pin, uint16_t frequency)
