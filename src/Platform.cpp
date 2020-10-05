@@ -521,6 +521,56 @@ void Platform::Init()
 	autoSaveState = AutoSaveState::starting;
 #endif
 
+#if OMNI_POWER_MONITOR
+	powCheckInterval = 1000;
+	detCheckInterval = 3000;
+#endif
+
+#if OMNI_DOORS_CHECK
+	doorsDuexPins[topDoor] = topDoorPin;
+	doorsDuexPins[frontDoor] = frontDoorPin;
+
+	checkDoorsInterval = 500;
+	startClosingBoltsTime = 0;
+	boltsClosingDelay = 1000;
+
+	areBoltsActive = false;
+	activateBoltsState = false;
+	startClosingBoltsDelay = false;
+#endif
+
+#if OMNI_SERVO_POSITIONING
+	isTargetServoPositionReached = false;
+
+	checkServoInterval = 25;
+	targetServoPwm = 0;
+	currentServoPwm = 0;
+	targetServoFrequency = 0;
+	servoStep = 0.01;
+	servoDirection = 1.0;
+#endif
+
+#if OMNI_STANDBY_TEMPERATURES
+	standbyTemperaturesStampTimeMs = 0;
+	standbyTemperaturesMaxTimeMs = 180000;
+	standbyIdleTemperature = 100;
+
+	standbyTemperaturesActivity = false;
+	isIdleStandbyTempActive = false;
+#endif
+
+#if OMNI_CHAMBER_FAN_COOLING
+	chamberHeatingPermission = true;
+	chamberFanCoolingStatus = false;
+	chamberFanCoolingPermission = false;
+
+	lastChamberFanCheckTime = 0;
+	checkChamberFanIntervalMs = 5000;
+#endif
+
+	printTimeUpdateTime = 0;
+	printTimeUpdateIntervalMs = 1000;
+
 #if HAS_SMART_DRIVERS && HAS_VOLTAGE_MONITOR
 	warnDriversNotPowered = false;
 #endif
@@ -1934,6 +1984,7 @@ void Platform::Spin()
 		}
 	}
 #endif //OMNI_SERVO_POSITIONING
+
 #if OMNI_CHAMBER_FAN_COOLING
 	if(reprap.GetMachineType() && (millis() - lastChamberFanCheckTime > checkChamberFanIntervalMs))	// only for F2.0Net
 	{

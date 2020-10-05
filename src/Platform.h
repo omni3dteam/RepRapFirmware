@@ -965,60 +965,62 @@ private:
 	bool isRunShutDownMacro;
 	bool isShutDownAlertSend;
 	uint32_t lastPowTime;
-	uint32_t powCheckInterval = 1000;
+	uint32_t powCheckInterval;
 
 	bool isLostPowerDetected;
 	bool isSaveResumeInfo;
 	uint32_t lastPowDetected;
-	uint32_t detCheckInterval = 3000;
+	uint32_t detCheckInterval;
 #endif
+
 #if OMNI_DOORS_CHECK
-	uint16_t checkDoorsInterval = 500;
+	uint16_t checkDoorsInterval;
 	uint32_t lastDoorsCheckTime;
 	bool doorState[NumberOfDoors];
-	uint8_t doorsDuexPins[NumberOfDoors] = {topDoor, frontDoor};
-	bool areBoltsActive = false;
-	const uint16_t boltsClosingDelay = 1000;
-	bool activateBoltsState = false;
-	bool startClosingBoltsDelay = false;
-	uint32_t startClosingBoltsTime = 0;
+	uint8_t doorsDuexPins[NumberOfDoors];
+	bool areBoltsActive;
+	uint16_t boltsClosingDelay;
+	bool activateBoltsState;
+	bool startClosingBoltsDelay;
+	uint32_t startClosingBoltsTime;
 #endif
+
 #if OMNI_SERVO_POSITIONING
-	bool isTargetServoPositionReached {false};
+	bool isTargetServoPositionReached;
 	uint32_t lastServoCheckTime;
-	const uint16_t checkServoInterval {25};
+	uint16_t checkServoInterval;
 
-	float targetServoPwm {0}, currentServoPwm {0};
-	uint16_t targetServoFrequency {0};
+	float targetServoPwm, currentServoPwm;
+	uint16_t targetServoFrequency;
 	Pin targetServoPin;
-	const float servoStep {0.01};
-	float servoDirection {1.0};
+	float servoStep;
+	float servoDirection;
 #endif
 
+#if OMNI_CHAMBER_FAN_COOLING
 	// CHAMBER heating permission
-	bool chamberHeatingPermission{true};
+	bool chamberHeatingPermission;
 
 	// CHAMBER fan cooling
-	bool chamberFanCoolingPermission{false};
-	bool chamberFanCoolingStatus{false};
-	uint32_t lastChamberFanCheckTime{0};
-	const uint16_t checkChamberFanIntervalMs{5000};
+	bool chamberFanCoolingPermission;
+	bool chamberFanCoolingStatus;
+	uint32_t lastChamberFanCheckTime;
+	uint16_t checkChamberFanIntervalMs;
+#endif
 
 #if OMNI_STANDBY_TEMPERATURES
-	uint32_t standbyTemperaturesStampTimeMs{0};
-	uint32_t standbyTemperaturesMaxTimeMs{180000};
-	bool standbyTemperaturesActivity{false};
-	bool isIdleStandbyTempActive{false};
-	float standbyIdleTemperature{100};
+	uint32_t standbyTemperaturesStampTimeMs;
+	uint32_t standbyTemperaturesMaxTimeMs;
+	bool standbyTemperaturesActivity;
+	bool isIdleStandbyTempActive;
+	float standbyIdleTemperature;
 	float savedPreviousTemperature[2];
 	ToolState toolState[2];
 #endif
 
-
-
 	// Print time
-	uint32_t printTimeUpdateTime{0};
-	const uint16_t printTimeUpdateIntervalMs{1000};
+	uint32_t printTimeUpdateTime;
+	uint16_t printTimeUpdateIntervalMs;
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 
