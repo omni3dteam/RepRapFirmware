@@ -2240,8 +2240,11 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
-				// Write a G92 Z Axis, we cannot lost this information
-				buf.catf("G92 Z%.3f\n", (double)pauseRestorePoint.moveCoords[Z_AXIS]);
+				// Let's set Z height according to Z position and baby stepping
+				// It is necessary due to case when user will cancel restore printing
+				// and we need to know precise Z position
+				const float totalOffset = currentBabyStepOffsets[Z_AXIS] - GetCurrentToolOffset(Z_AXIS);
+				buf.catf("G92 Z%.3f\n", (double)(pauseRestorePoint.moveCoords[Z_AXIS] + totalOffset));
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
