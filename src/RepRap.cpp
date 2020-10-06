@@ -1070,9 +1070,10 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 			response->catf("%c%.1f", ch, HideNan(FilamentMonitor::GetExtrusionMeasured(extruder)));
 			ch = ',';
 		}
-
+#if OMNI_DOORS_CHECK
 		// doors states
 		response->catf("],\"doors\":[%d,%d]}", reprap.GetPlatform().GetDoorState(0), reprap.GetPlatform().GetDoorState(1)); // end sensors
+#endif
 	}
 
 	/* Temperatures */
@@ -1721,7 +1722,9 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	{
 		ch = 'S';
 	}
+#if OMNI_DOORS_CHECK
 	response->printf("{\"status\":\"%c\",\"areBoltsActive\":%d", ch, reprap.GetPlatform().GetBoltStatus());
+#endif
 
 	const int8_t chamberHeater = (NumChamberHeaters > 0) ? heat->GetChamberHeater(0) : -1;
 	if(chamberHeater == -1)
@@ -1896,10 +1899,10 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 	// Send Z offsets
 	response->catf(",\"z_offsets\":[%.2f,%.2f]", (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[0]),
 												 (double)(reprap.GetPlatform().switchZProbeParameters.zOffset[1]));
-
+#if OMNI_DOORS_CHECK
 	// doors states
 	response->catf(",\"doors\":[%d,%d]", reprap.GetPlatform().GetDoorState(0), reprap.GetPlatform().GetDoorState(1));
-
+#endif
 	if (printMonitor->IsPrinting())
 	{
 		// Send the fraction printed
@@ -1961,17 +1964,20 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		response->EncodeString(VERSION, false);
 		response->catf(",\"machineType\":%" PRIi32"", GetMachineType());
 
+#if OMNI_GCODES
 		// send led brightness to panelDue
 		response->catf(",\"leds\":%d", gCodes->ledBrightness);
 
 		// send pass to LCD
 		response->catf(",\"passLCD\":\"%04d\"", gCodes->passLCD);
-
+#endif
+#if OMNI_TIME
 		// sent printer work time //platform.GetWorkTime()->GetHours()
 		response->catf(",\"workTime\":\"%d\"", reprap.GetPlatform().GetWorkTime()->GetHours());
 
 		// sent printer print time
 		response->catf(",\"totalPrintTime\":\"%d\"", reprap.GetPlatform().GetWorkTime()->GetPrintHours());
+#endif
 
 		if (printMonitor->IsPrinting())
 		{

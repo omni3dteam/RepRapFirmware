@@ -419,7 +419,7 @@ void PID::Spin()
 				DoTuningStep();
 			}
 		}
-
+#if OMNI_CHAMBER_FAN_COOLING
 		// we can only heat alternately with a bed heater or a chamber heater
 		// if the bed heater is on, we need turn the chamber heater off
 		if (reprap.GetHeat().GetBedHeater(0) == heater)
@@ -440,7 +440,7 @@ void PID::Spin()
 			if (lastPwm) platform.SetChamberFanCoolingPermission(true);
 			else platform.SetChamberFanCoolingPermission(false);
 		}
-
+#endif
 		// Set the heater power and update the average PWM
 		SetHeater(lastPwm);
 		averagePWM = averagePWM * (1.0 - HeatSampleIntervalMillis/(HeatPwmAverageTime * SecondsToMillis)) + lastPwm;

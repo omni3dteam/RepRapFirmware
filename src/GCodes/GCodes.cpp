@@ -1566,7 +1566,9 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		else
 		{
 			SaveResumeInfo(true);											// create the resume file so that we can resume after power down
+#if OMNI_TIME
 			platform.GetWorkTime()->Write();
+#endif
 			platform.Message(LoggedGenericMessage, "Print auto-paused due to low voltage\n");
 			gb.SetState(GCodeState::normal);
 		}
@@ -2144,7 +2146,9 @@ bool GCodes::LowVoltagePause()
 		// Don't do any more here, we want the auto pause thread to run as soon as possible
 	} else {
 		SaveResumeInfo(true);
+#if OMNI_TIME
 		platform.GetWorkTime()->Write();
+#endif
 	}
 
 	return true;
@@ -2445,6 +2449,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 		}
 	}
+#if OMNI_GCODES
 	else if (!isStateSaved)				// create startup file if we don't have this state saved
 	{
 		FileStore * const f = platform.OpenSysFile(STARTUP_G, OpenMode::write);
@@ -2515,6 +2520,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 		}
 		isStateSaved = true;
 	}
+#endif
 }
 
 void GCodes::RunShutdownMacro() {
@@ -3531,7 +3537,9 @@ void GCodes::EmergencyStop()
 
 	// save necessary info
 	SaveResumeInfo(true);
+#if OMNI_TIME
 	platform.GetWorkTime()->Write();
+#endif
 }
 
 // Run a file macro. Prior to calling this, 'state' must be set to the state we want to enter when the macro has been completed.

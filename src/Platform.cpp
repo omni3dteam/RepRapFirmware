@@ -176,8 +176,12 @@ Platform::Platform()
 	  lastWarningMillis(0), deliberateError(false)
 {
 	massStorage = new MassStorage(this);
+#if OMNI_TIME
 	workTime = new WorkTime();
+#endif
+#if OMNI_TOWER_LED
 	towerLed = new TowerLed();
+#endif
 }
 
 //*******************************************************************************************************************
@@ -256,8 +260,12 @@ void Platform::Init()
 	}
 
 	massStorage->Init();
+#if OMNI_TIME
 	workTime->Init();
+#endif
+#if OMNI_TOWER_LED
 	towerLed->Init();
+#endif
 
 	ipAddress = DefaultIpAddress;
 	netMask = DefaultNetMask;
@@ -524,6 +532,8 @@ void Platform::Init()
 #if OMNI_POWER_MONITOR
 	powCheckInterval = 1000;
 	detCheckInterval = 3000;
+
+	turnOffLcdPin = turnOffLcd;
 #endif
 
 #if OMNI_DOORS_CHECK
@@ -568,8 +578,10 @@ void Platform::Init()
 	checkChamberFanIntervalMs = 5000;
 #endif
 
+#if OMNI_TIME
 	printTimeUpdateTime = 0;
 	printTimeUpdateIntervalMs = 1000;
+#endif
 
 #if HAS_SMART_DRIVERS && HAS_VOLTAGE_MONITOR
 	warnDriversNotPowered = false;
@@ -1088,7 +1100,9 @@ void Platform::UpdateFirmware()
 			cpu_irq_disable();
 			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
 			cpu_irq_enable();*/
+#if OMNI_TIME
 			workTime->Write();
+#endif
 			cpu_irq_disable();
 			flash_write(flashAddr, data, IFLASH_PAGE_SIZE, 0);
 			cpu_irq_enable();
@@ -1454,8 +1468,9 @@ void Platform::Spin()
 #endif
 
 	massStorage->Spin();
+#if OMNI_TOWER_LED
 	towerLed->Spin();
-
+#endif
 	// Try to flush messages to serial ports
 	(void)FlushMessages();
 
@@ -1870,14 +1885,16 @@ void Platform::Spin()
 					{
 						IoPort::WriteDigital(pin, true);	// Turn OFF LED strip
 					}
-					if(GetFirmwarePin(turnOffLcd, PinAccess::write, pin, invert))
+					if(GetFirmwarePin(turnOffLcdPin, PinAccess::write, pin, invert))
 					{
 						// Turn OFF LCD
 						// In this case we need to turn on H6 in order to turn off DC/DC converter (short GND disable the converter)
 						IoPort::WriteDigital(pin, false);
 					}
 					reprap.GetGCodes().SaveResumeInfo(true);
+#if OMNI_TIME
 					workTime->Write();
+#endif
 					isSaveResumeInfo = true;
 				}
 			}
@@ -2038,6 +2055,7 @@ void Platform::Spin()
 	}
 #endif
 
+#if OMNI_TIME
 	// PrintTime
 	if(millis() - printTimeUpdateTime > printTimeUpdateIntervalMs)
 	{
@@ -2047,7 +2065,7 @@ void Platform::Spin()
 			workTime->IncrementPrintTime();
 		}
 	}
-
+#endif
 	// Flush the log file it it is time. This may take some time, so do it last.
 	if (logger != nullptr)
 	{
@@ -5346,10 +5364,12 @@ void Platform::Tick()
 	AnalogInStartConversion();
 }
 
+#if OMNI_DOORS_CHECK
 bool Platform::GetBoltStatus()
 {
 	return areBoltsActive;
 }
+#endif
 
 // Pragma pop_options is not supported on this platform
 //#pragma GCC pop_options

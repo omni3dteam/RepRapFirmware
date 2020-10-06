@@ -98,8 +98,10 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 	GCodeResult result = GCodeResult::ok;
 	const int code = gb.GetCommandNumber();
 
+#if OMNI_STANDBY_TEMPERATURES
 	// set standby temperatures stamp time for disable standby temperatures
 	platform.SetStandbyTemperaturesStampTime();
+#endif
 
 	if (simulationMode != 0 && code > 4 && code != 10 && code != 11 && code != 20 && code != 21 && (code < 53 || code > 59) && (code < 90 || code > 92))
 	{
@@ -438,8 +440,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	const int code = gb.GetCommandNumber();
 
+#if OMNI_STANDBY_TEMPERATURES
 	// set standby temperatures stamp time for disable standby temperatures
 	if (code != 408) platform.SetStandbyTemperaturesStampTime();
+#endif
 
 	if (   simulationMode != 0
 		&& (code < 20 || code > 37)
@@ -1193,6 +1197,16 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 			}
 		}
+		break;
+
+	case 43:	// Change some hardcoded pins in firmware
+#if OMNI_POWER_MONITOR
+		if (gb.Seen('L'))
+		{
+			// Change LCD converter pin
+			platform.SetLcdPowerPin(gb.GetUIValue());
+		}
+#endif
 		break;
 
 	case 80:	// ATX power on
@@ -1973,7 +1987,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	{
 #if SUPPORT_DOTSTAR_LED
 		result = DotStarLed::SetColours(gb, reply);
-#else
+#endif
+#if OMNI_GCODES
 		if (gb.Seen('Y'))
 		{
 			size_t brightness = gb.GetUIValue();
@@ -2628,7 +2643,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-#ifdef OMNI_GCODES
+#if OMNI_GCODES
 	case 392:
 #endif
 	case 292:	// Acknowledge message
@@ -2641,7 +2656,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				if (targetGb != nullptr)
 				{
 					targetGb->MessageAcknowledged(cancelled);
-#ifdef OMNI_GCODES
+#if OMNI_GCODES
 					if(cancelled == true)
 					{
 						isProcedure = false;
@@ -2849,7 +2864,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
-#ifdef OMNI_GCODES
+#if OMNI_GCODES
 	case 391: // Set procedure step
 	{
 		isProcedure = true;
@@ -3267,26 +3282,29 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+#if OMNI_TIME
 	case 520:
-	{
-		if (gb.Seen('S'))
 		{
-			 platform.GetWorkTime()->Write();
+			if (gb.Seen('S'))
+			{
+				 platform.GetWorkTime()->Write();
+			}
+			else if (gb.Seen('H'))
+			{
+				platform.GetWorkTime()->SetHours(gb.GetIValue());
+			}
+			else if (gb.Seen('P'))
+			{
+				platform.GetWorkTime()->SetPrintHours(gb.GetIValue());
+			}
+			else
+			{
+				reply.printf("Printer work time, Hours: %d Seconds: %" PRIu64, platform.GetWorkTime()->GetHours(), platform.GetWorkTime()->GetSeconds());
+			}
 		}
-		else if (gb.Seen('H'))
-		{
-			platform.GetWorkTime()->SetHours(gb.GetIValue());
-		}
-		else if (gb.Seen('P'))
-		{
-			platform.GetWorkTime()->SetPrintHours(gb.GetIValue());
-		}
-		else
-		{
-			reply.printf("Printer work time, Hours: %d Seconds: %" PRIu64, platform.GetWorkTime()->GetHours(), platform.GetWorkTime()->GetSeconds());
-		}
-	}
         break;
+#endif
+
 	case 540: // Set/report MAC address
 		if (!gb.MachineState().runningM502)			// when running M502 we don't execute network-related commands
 		{
@@ -4196,6 +4214,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		result = reprap.GetMove().ConfigureDynamicAcceleration(gb, reply);
 		break;
 
+#if OMNI_GCODES
 	case 611: // Set LCD password - it's similar to M551
 	{
 		String<RepRapPasswordLength> password, oldPassword;
@@ -4273,7 +4292,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 	}
 		break;
-
+#endif
 	// For case 600, see 226
 
 	// M650 (set peel move parameters) and M651 (execute peel move) are no longer handled specially. Use macros to specify what they should do.
@@ -4749,6 +4768,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		break;
 
+#if OMNI_STANDBY_TEMPERATURES
 	// set temperature standby time for extruders (S0 - disable, S1 - enable, T - time to set (s))
 	case 785:
 		if (gb.Seen('S'))
@@ -4774,6 +4794,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 		}
 		break;
+#endif
 
 	// save/restore last selected tool (S0 - save, S1 - restore)
 	case 790:
@@ -5058,8 +5079,10 @@ bool GCodes::HandleTcode(GCodeBuffer& gb, const StringRef& reply)
 		return true;			// when running M502 we don't execute T commands
 	}
 
+#if OMNI_STANDBY_TEMPERATURES
 	// set standby temperatures stamp time for disable standby temperatures
 	platform.SetStandbyTemperaturesStampTime();
+#endif
 
 	bool seen = false;
 	int toolNum;

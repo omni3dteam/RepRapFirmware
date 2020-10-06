@@ -382,8 +382,12 @@ public:
 	// File functions
 	MassStorage* GetMassStorage() const;
 	LcdUpdater* GetLcdUpdater() const;
+#if OMNI_TIME
 	WorkTime* GetWorkTime() const;
+#endif
+#if OMNI_TOWER_LED
 	TowerLed* GetTowerLed() const;
+#endif
 	FileStore* OpenFile(const char* folder, const char* fileName, OpenMode mode, uint32_t preAllocSize = 0) const;
 	bool Delete(const char* folder, const char *filename) const;
 	bool FileExists(const char* folder, const char *filename) const;
@@ -648,18 +652,25 @@ public:
 
 #if OMNI_DOORS_CHECK
 	bool GetBoltStatus();
+	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
 #endif
 
+#if OMNI_CHAMBER_FAN_COOLING
 	bool GetChamberHeatingPermission() { return chamberHeatingPermission; }
 	void SetChamberHeatingPermission(bool value) { chamberHeatingPermission = value; }
 	void SetChamberFanCoolingPermission(bool value) { chamberFanCoolingPermission = value; }
+#endif
 
-	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
-
+#if OMNI_STANDBY_TEMPERATURES
 	void SetStandbyTemperaturesStampTime(void) {standbyTemperaturesStampTimeMs = millis();}
 	void SetStandbyTemperaturesMaxTime(uint32_t value) {standbyTemperaturesMaxTimeMs = value * 1000; }
 	void SetStandbyTemperaturesActivity(bool activity) {standbyTemperaturesActivity = activity; }
 	void SetStandbyIdleTemperatures(float temp) {standbyIdleTemperature = temp; }
+#endif
+
+#if OMNI_POWER_MONITOR
+	void SetLcdPowerPin(Pin pin) { turnOffLcdPin = pin; }
+#endif
 
 	static uint8_t softwareResetDebugInfo;				// extra info for debugging
 
@@ -893,9 +904,12 @@ private:
 
 	// Files
 	MassStorage* massStorage;
+#if OMNI_TIME
 	WorkTime* workTime;
+#endif
+#if OMNI_TOWER_LED
 	TowerLed* towerLed;
-
+#endif
 	const char *sysDir;
   
 	// Data used by the tick interrupt handler
@@ -971,6 +985,8 @@ private:
 	bool isSaveResumeInfo;
 	uint32_t lastPowDetected;
 	uint32_t detCheckInterval;
+
+	Pin turnOffLcdPin;
 #endif
 
 #if OMNI_DOORS_CHECK
@@ -1018,9 +1034,11 @@ private:
 	ToolState toolState[2];
 #endif
 
+#if OMNI_TIME
 	// Print time
 	uint32_t printTimeUpdateTime;
 	uint16_t printTimeUpdateIntervalMs;
+#endif
 
 	uint32_t lastWarningMillis;							// When we last sent a warning message
 
@@ -1278,15 +1296,19 @@ inline LcdUpdater* Platform::GetLcdUpdater() const
 	return lcdUpdater;
 }
 
+#if OMNI_TIME
 inline WorkTime* Platform::GetWorkTime() const
 {
 	return workTime;
 }
+#endif
 
+#if OMNI_TOWER_LED
 inline TowerLed* Platform::GetTowerLed() const
 {
 	return towerLed;
 }
+#endif
 
 inline OutputBuffer *Platform::GetAuxGCodeReply()
 {
