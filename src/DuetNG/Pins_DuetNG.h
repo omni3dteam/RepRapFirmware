@@ -29,6 +29,7 @@ constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manua
 #define OMNI_VIP_HTTP           1                   // Enable VIP network addr support to omit password check for custom IP
 #define OMNI_TOWER_LED			1
 #define OMNI_TIME				1
+#define OMNI_PUMP_CONTROL		1
 #define OMNI_STANDBY_TEMPERATURES	1
 #define OMNI_CHAMBER_FAN_COOLING	1
 
@@ -202,14 +203,17 @@ constexpr int HighestLogicalPin = 135;										// highest logical pin number on
 
 // Omni electronics pin map
 constexpr uint8_t topDoor = 0, frontDoor = 1;
+
+constexpr Pin fluidLevel = 200;												// Endstop 2
+constexpr Pin turnOffPrinter = 7;											// Endstop 4
 constexpr Pin topDoorPin = 201;  											// Endstop 5
 constexpr Pin frontDoorPin = 213;											// Endstop 6
-constexpr Pin turnOffPrinter = 7;											// Endstop 4
 constexpr Pin lostPower = 4;												// Endstop E1
-constexpr Pin boltPin = 5;
-constexpr Pin chamberFan = 28;
-constexpr Pin turnOffLed = 4;
-constexpr Pin turnOffLcd = 7;
+constexpr Pin pumpPin = 0;													// Fan 2 pin for pump, only F20Net
+constexpr Pin turnOffLed = 4;												// Heater 3
+constexpr Pin boltPin = 5;													// Heater 4, only F20Net
+constexpr Pin chamberFan = 7;												// Heater 6, only F20Net
+constexpr Pin turnOffLcd = 7;												// Heater 6 in old Omni500Lite, need to be change by M43
 
 // SAM4E Flash locations (may be expanded in the future)
 constexpr uint32_t IAP_FLASH_START = 0x00470000;

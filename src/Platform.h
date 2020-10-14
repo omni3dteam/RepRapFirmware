@@ -1024,6 +1024,11 @@ private:
 	uint16_t checkChamberFanIntervalMs;
 #endif
 
+#if OMNI_PUMP_CONTROL
+	uint32_t lastPumpCheckTime;
+	bool isSendFluidAlert;
+#endif
+
 #if OMNI_STANDBY_TEMPERATURES
 	uint32_t standbyTemperaturesStampTimeMs;
 	uint32_t standbyTemperaturesMaxTimeMs;

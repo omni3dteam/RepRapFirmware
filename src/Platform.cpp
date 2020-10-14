@@ -498,6 +498,8 @@ void Platform::Init()
 
 	DuetExpansion::AdditionalOutputInit();
 
+	strcpy(lcdVersionString, "None");
+
 #elif defined(DUET_M)
 	numSmartDrivers = MaxSmartDrivers;							// for now we assume that expansion drivers are smart too
 #elif defined(PCCB)
@@ -712,6 +714,15 @@ void Platform::Init()
 #ifdef DUET_NG
 	DuetExpansion::DueXnTaskInit();								// must initialise interrupt priorities before calling this
 #endif
+
+#if OMNI_PUMP_CONTROL
+	lastPumpCheckTime = 5000;
+	isSendFluidAlert = false;
+
+	IoPort::SetPinMode(pumpPin, OUTPUT_LOW);
+	logicalPinModes[COOLING_FAN_PINS[2]] = (int8_t)OUTPUT_LOW;
+#endif
+
 	active = true;
 }
 
@@ -2035,6 +2046,48 @@ void Platform::Spin()
 		}
 	}
 #endif //OMNI_CHAMBER_FAN_COOLING
+
+#if OMNI_PUMP_CONTROL
+	if (reprap.GetMachineType())
+	{
+		if (millis() - lastPumpCheckTime > 2000)
+		{
+			// check fluid level
+			if (IoPort::ReadPin(fluidLevel))
+			{
+				if (!isSendFluidAlert)
+				{
+					isSendFluidAlert = true;
+
+					IoPort::WriteDigital(pumpPin, false);	// Turn off pump
+
+					SendAlert(GenericMessage, "Due to low level of coolant the pump has been stopped. Fill in the coolant immediately!",
+									"Low level of coolant", 2, 0.0, 0);
+				}
+			}
+			else
+			{
+				isSendFluidAlert = false;
+
+				// get extruders temps
+				float temp0 = reprap.GetHeat().GetTemperature(DefaultE0Heater);
+				float temp1 = reprap.GetHeat().GetTemperature(DefaultE0Heater + 1);
+
+				// if it is above 50 deg. C we'll turn on the pump
+				if (temp0 > 50.0 || temp1 > 50.0)
+				{
+					IoPort::WriteDigital(pumpPin, true);	// Turn on pump
+				}
+				else
+				{
+					IoPort::WriteDigital(pumpPin, false);	// Turn off pump
+				}
+			}
+
+			lastPumpCheckTime = millis();
+		}
+	}
+#endif
 
 #if OMNI_STANDBY_TEMPERATURES
 	if (reprap.GetStatusCharacter() == 'I' && standbyTemperaturesActivity)
