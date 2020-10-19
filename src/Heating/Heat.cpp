@@ -737,7 +737,7 @@ bool Heat::WriteBedAndChamberTempSettings(FileStore *f) const
 		const int chamberHeater = chamberHeaters[index];
 		if (chamberHeater >= 0 && pids[chamberHeater]->Active() && !pids[chamberHeater]->SwitchedOff())
 		{
-			buf.printf("M141 P%u S%.1f\n", index, (double)GetActiveTemperature(chamberHeater));
+			buf.catf("M141 P%u S%.1f\n", index, (double)GetActiveTemperature(chamberHeater));
 		}
 	}
 	return (buf.strlen() == 0) || f->Write(buf.c_str());
