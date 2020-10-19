@@ -2229,7 +2229,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 		}
 		else
 		{
-			String<StringLength500> buf;
+			String<StringLength1500> buf;
 
 			// Write the header comment
 			buf.printf("; File \"%s\" resume print after %s", printingFilename, (wasPowerFailure) ? "power failure" : "print paused");
@@ -2248,7 +2248,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				// It is necessary due to case when user will cancel restore printing
 				// and we need to know precise Z position
 				const float totalOffset = currentBabyStepOffsets[Z_AXIS] - GetCurrentToolOffset(Z_AXIS);
-				buf.catf("G92 Z%.3f\n", (double)(pauseRestorePoint.moveCoords[Z_AXIS] + totalOffset));
+				buf.printf("G92 Z%.3f\n", (double)(pauseRestorePoint.moveCoords[Z_AXIS] + totalOffset));
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
@@ -2259,7 +2259,8 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 			}
 			if (ok)
 			{
-				buf.printf("M391 P\"Printer is restoring parameters. Heating up platform and extruders. It can take a few minutes.\" S2 B0 D6\n");
+				buf.printf("M391 P\"Printer is restoring parameters. Heating up platform and extruders. It can take a few minutes.\" S2 B0 D");
+				buf.catf("%c\n", reprap.GetMachineType() ? '7' : '6');
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
