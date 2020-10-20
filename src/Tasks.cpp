@@ -29,7 +29,7 @@ extern char _end;
 #if defined(LPC_NETWORKING)
 constexpr unsigned int MainTaskStackWords = 1600-424;
 #else
-constexpr unsigned int MainTaskStackWords = 1600;
+constexpr unsigned int MainTaskStackWords = 1800;
 #endif
 
 constexpr unsigned int IdleTaskStackWords = 60;

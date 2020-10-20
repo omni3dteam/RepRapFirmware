@@ -43,7 +43,7 @@
 #if __LPC17xx__
 constexpr size_t NetworkStackWords = 470;
 #else
-constexpr size_t NetworkStackWords = 550;
+constexpr size_t NetworkStackWords = 750;
 #endif
 
 static Task<NetworkStackWords> networkTask;
