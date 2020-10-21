@@ -1863,6 +1863,9 @@ void GCodes::FilamentError(size_t extruder, FilamentSensorStatus fstat)
 // Execute an emergency stop
 void GCodes::DoEmergencyStop()
 {
+	// save necessary info
+	SaveResumeInfo(true);
+
 	reprap.EmergencyStop();
 	Reset();
 	platform.Message(GenericMessage, "Emergency Stop! Reset the controller to continue.");
@@ -3536,8 +3539,6 @@ void GCodes::EmergencyStop()
 		}
 	}
 
-	// save necessary info
-	SaveResumeInfo(true);
 #if OMNI_TIME
 	platform.GetWorkTime()->Write();
 #endif

@@ -4579,6 +4579,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		reprap.GetNetwork().Init();
 		break;
 
+	case 730:
+		SaveResumeInfo(true);
+		break;
+
 #if SUPPORT_SCANNER
 	case 750: // Enable 3D scanner extension
 		reprap.GetScanner().Enable();
@@ -5035,7 +5039,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		result = DoDwellTime(gb, 1000);		// wait a second to allow the response to be sent back to the web server, otherwise it may retry
 		if (result != GCodeResult::notFinished)
 		{
-			reprap.EmergencyStop();			// this disables heaters and drives - Duet WiFi pre-production boards need drives disabled here
+			DoEmergencyStop();		// do emergency stop like M112
 			bool doErase;
 			if (gb.Seen('P'))
 			{

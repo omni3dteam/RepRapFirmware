@@ -230,13 +230,13 @@ void debugPrintf(const char* fmt, ...)
 {
 	// Calls to debugPrintf() from with ISRs are unsafe, both because of timing issues and because the call to Platform::MessageF tries to acquire a mutex.
 	// So ignore the call if we are coming from within an ISR.
-	if (!inInterrupt())
+/*	if (!inInterrupt())
 	{
 		va_list vargs;
 		va_start(vargs, fmt);
 		reprap.GetPlatform().MessageF(DebugMessage, fmt, vargs);
 		va_end(vargs);
-	}
+	}*/
 }
 
 #ifdef RTOS
