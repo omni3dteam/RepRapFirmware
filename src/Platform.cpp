@@ -2026,7 +2026,7 @@ void Platform::Spin()
 				bool invert;
 				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
 				{
-					IoPort::WriteDigital(pin, false);	// Turn OFF fan
+					IoPort::WriteDigital(pin, true);	// Turn off fan
 					chamberFanCoolingStatus = false;
 				}
 			}
@@ -2039,7 +2039,7 @@ void Platform::Spin()
 				bool invert;
 				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
 				{
-					IoPort::WriteDigital(pin, true);	// Turn ON fan
+					IoPort::WriteDigital(pin, false);	// Turn on fan
 					chamberFanCoolingStatus = true;
 				}
 			}
