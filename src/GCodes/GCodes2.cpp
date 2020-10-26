@@ -5039,6 +5039,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		result = DoDwellTime(gb, 1000);		// wait a second to allow the response to be sent back to the web server, otherwise it may retry
 		if (result != GCodeResult::notFinished)
 		{
+			if (!isZSaved)
+			{
+				SaveZPosition();
+			}
 			DoEmergencyStop();		// do emergency stop like M112
 			bool doErase;
 			if (gb.Seen('P'))

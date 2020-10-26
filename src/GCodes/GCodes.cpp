@@ -192,6 +192,8 @@ void GCodes::Init()
 #ifdef SERIAL_AUX_DEVICE
 	SERIAL_AUX_DEVICE.SetInterruptCallback(GCodes::CommandEmergencyStop);
 #endif
+
+	isZSaved = false;
 }
 
 // This is called from Init and when doing an emergency stop
@@ -2222,8 +2224,19 @@ bool GCodes::ReHomeOnStall(DriversBitmap stalledDrivers)
 
 void GCodes::SaveZPosition()
 {
-	savedZPosition = HideNan(currentUserPosition[Z_AXIS]);
-	isZSaved = true;
+	const Tool * const tool = reprap.GetCurrentTool();
+	if (tool != nullptr)
+	{
+		if (tool->Number() == 0)
+		{
+			savedZPosition = HideNan(currentUserPosition[Z_AXIS]);
+		}
+		else
+		{
+			savedZPosition = HideNan(currentUserPosition[Z_AXIS] - tool->GetOffset(Z_AXIS));
+		}
+		isZSaved = true;
+	}
 }
 
 void GCodes::SaveResumeInfo(bool wasPowerFailure)
@@ -2489,7 +2502,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" %c%.3f\n", axisLetters[axis], isZSaved ? savedZPosition : (double)HideNan(currentUserPosition[axis]));
+						buf.catf(" %c%.3f    ;%s\n", axisLetters[axis], isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?");
 					}
 				}
 				ok = f->Write(buf.c_str());
