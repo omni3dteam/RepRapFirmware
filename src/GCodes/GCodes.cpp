@@ -1864,7 +1864,7 @@ void GCodes::FilamentError(size_t extruder, FilamentSensorStatus fstat)
 void GCodes::DoEmergencyStop()
 {
 	// save necessary info
-	SaveResumeInfo(true);
+	SaveResumeInfo(false);
 
 	reprap.EmergencyStop();
 	Reset();
@@ -2220,6 +2220,12 @@ bool GCodes::ReHomeOnStall(DriversBitmap stalledDrivers)
 
 #endif
 
+void GCodes::SaveZPosition()
+{
+	savedZPosition = HideNan(currentUserPosition[Z_AXIS]);
+	isZSaved = true;
+}
+
 void GCodes::SaveResumeInfo(bool wasPowerFailure)
 {
 	const char* const printingFilename = reprap.GetPrintMonitor().GetPrintingFilename();
@@ -2483,7 +2489,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" %c%.3f\n", axisLetters[axis], (double)HideNan(currentUserPosition[axis]));
+						buf.catf(" %c%.3f\n", axisLetters[axis], isZSaved ? savedZPosition : (double)HideNan(currentUserPosition[axis]));
 					}
 				}
 				ok = f->Write(buf.c_str());

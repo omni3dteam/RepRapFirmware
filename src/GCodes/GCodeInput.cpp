@@ -144,6 +144,7 @@ void NetworkGCodeInput::Put(MessageType mtype, char c)
 			if (c <= ' ' || c == ';')
 			{
 				// Emergency stop requested - perform it now
+				reprap.GetGCodes().SaveZPosition();
 				reprap.EmergencyStop();
 				reprap.GetGCodes().Reset();
 

@@ -208,6 +208,7 @@ public:
 
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
+	void SaveZPosition();
 	void SaveResumeInfo(bool wasPowerFailure);
 	void RunShutdownMacro();
 	void SelectTool(int toolNr);
@@ -519,6 +520,9 @@ private:
 	float arcCurrentAngle;
 	float arcAngleIncrement;
 	bool doingArcMove;
+
+	float savedZPosition;
+	bool isZSaved;
 
 	enum class SegmentedMoveState : uint8_t
 	{
