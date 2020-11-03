@@ -2018,22 +2018,11 @@ void Platform::Spin()
 	{
 		lastChamberFanCheckTime = millis();
 
-		if (chamberFanCoolingStatus)
+		/* Chamber */
+		const int8_t chamberHeater = (NumChamberHeaters > 0) ? reprap.GetHeat().GetChamberHeater(0) : -1;
+		if (chamberHeater != -1)
 		{
-			if (!chamberFanCoolingPermission)
-			{
-				Pin pin;
-				bool invert;
-				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
-				{
-					IoPort::WriteDigital(pin, true);	// Turn off fan
-					chamberFanCoolingStatus = false;
-				}
-			}
-		}
-		else
-		{
-			if (chamberFanCoolingPermission)
+			if (reprap.GetHeat().GetStatus(chamberHeater) == reprap.GetHeat().HeaterStatus::HS_active)
 			{
 				Pin pin;
 				bool invert;
@@ -2041,6 +2030,16 @@ void Platform::Spin()
 				{
 					IoPort::WriteDigital(pin, false);	// Turn on fan
 					chamberFanCoolingStatus = true;
+				}
+			}
+			else
+			{
+				Pin pin;
+				bool invert;
+				if(GetFirmwarePin(chamberFan, PinAccess::write, pin, invert))
+				{
+					IoPort::WriteDigital(pin, true);	// Turn off fan
+					chamberFanCoolingStatus = false;
 				}
 			}
 		}
@@ -2053,7 +2052,7 @@ void Platform::Spin()
 		if (millis() - lastPumpCheckTime > 2000)
 		{
 			// check fluid level
-			if (IoPort::ReadPin(fluidLevel))
+			if (IoPort::ReadPin(fluidLevel) == false)
 			{
 				if (!isSendFluidAlert)
 				{
