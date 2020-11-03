@@ -739,10 +739,10 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		{
 			// Restore the original Z axis user position, so that different tool Z offsets work even if the first move after the tool change doesn't have a Z coordinate
 			// Only do this if we are running as an FDM printer, because it's not appropriate for CNC machines.
-			if (machineType == MachineType::fff)
+			/*if (machineType == MachineType::fff)
 			{
 				currentUserPosition[Z_AXIS] = toolChangeRestorePoint.moveCoords[Z_AXIS];
-			}
+			}*/
 			gb.MachineState().feedRate = toolChangeRestorePoint.feedRate;
 			// We don't restore the default fan speed in case the user wants to use a different one for the new tool
 			doingToolChange = false;
@@ -909,6 +909,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		if ((firmwareUpdateModuleMap & 1) != 0)
 		{
 			// Update main firmware
+			SaveResumeInfo(false);
 			platform.UpdateFirmware();
 			// The above call does not return unless an error occurred
 		}
