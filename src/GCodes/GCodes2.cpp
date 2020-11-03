@@ -2344,6 +2344,17 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 			}
 
+			if (gb.Seen('T'))
+			{
+				int toolNumber = gb.GetIValue();
+				toolNumber += gb.GetToolNumberAdjust();
+				Tool* const tool = reprap.GetTool(toolNumber);
+
+				platform.SetAxisMinimum(Z_AXIS, -tool->GetOffset(Z_AXIS), gb.MachineState().runningM501);
+
+				seen = true;
+			}
+
 			if (!seen)
 			{
 				reply.copy("Axis limit");
