@@ -909,7 +909,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		if ((firmwareUpdateModuleMap & 1) != 0)
 		{
 			// Update main firmware
-			SaveResumeInfo(false);
+			SaveResumeInfo(false, 0);
 			platform.UpdateFirmware();
 			// The above call does not return unless an error occurred
 		}
@@ -1568,7 +1568,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
-			SaveResumeInfo(true);											// create the resume file so that we can resume after power down
+			SaveResumeInfo(true, 1);											// create the resume file so that we can resume after power down
 #if OMNI_TIME
 			platform.GetWorkTime()->Write();
 #endif
@@ -1867,7 +1867,7 @@ void GCodes::FilamentError(size_t extruder, FilamentSensorStatus fstat)
 void GCodes::DoEmergencyStop()
 {
 	// save necessary info
-	SaveResumeInfo(false);
+	SaveResumeInfo(false, 2);
 
 	reprap.EmergencyStop();
 	Reset();
@@ -1958,7 +1958,7 @@ void GCodes::DoPause(GCodeBuffer& gb, PauseReason reason, const char *msg)
 
 	if (simulationMode == 0)
 	{
-		SaveResumeInfo(false);															// create the resume file so that we can resume after power down
+		SaveResumeInfo(false, 3);															// create the resume file so that we can resume after power down
 	}
 
 	gb.SetState((reason == PauseReason::filamentChange) ? GCodeState::filamentChangePause1 : GCodeState::pausing1);
@@ -2151,7 +2151,8 @@ bool GCodes::LowVoltagePause()
 
 		// Don't do any more here, we want the auto pause thread to run as soon as possible
 	} else {
-		SaveResumeInfo(true);
+		SaveZPosition();
+		SaveResumeInfo(true, 4);
 #if OMNI_TIME
 		platform.GetWorkTime()->Write();
 #endif
@@ -2240,7 +2241,7 @@ void GCodes::SaveZPosition()
 	}
 }
 
-void GCodes::SaveResumeInfo(bool wasPowerFailure)
+void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 {
 	const char* const printingFilename = reprap.GetPrintMonitor().GetPrintingFilename();
 	if (printingFilename != nullptr)
@@ -2503,7 +2504,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" %c%.3f    ;%s\n", axisLetters[axis], isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?");
+						buf.catf(" Z%.3f    ;%s[%d]\n", isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?", nbr);
 					}
 				}
 				ok = f->Write(buf.c_str());

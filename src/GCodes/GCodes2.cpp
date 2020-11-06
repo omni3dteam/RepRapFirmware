@@ -4591,7 +4591,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case 730:
-		SaveResumeInfo(true);
+		SaveResumeInfo(true, 5);
 		break;
 
 #if SUPPORT_SCANNER

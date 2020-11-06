@@ -209,7 +209,7 @@ public:
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
 	void SaveZPosition();
-	void SaveResumeInfo(bool wasPowerFailure);
+	void SaveResumeInfo(bool wasPowerFailure, uint8_t nbr);
 	void RunShutdownMacro();
 	void SelectTool(int toolNr);
 

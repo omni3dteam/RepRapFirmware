@@ -1902,10 +1902,12 @@ void Platform::Spin()
 						// In this case we need to turn on H6 in order to turn off DC/DC converter (short GND disable the converter)
 						IoPort::WriteDigital(pin, false);
 					}
-					reprap.GetGCodes().SaveResumeInfo(true);
+					reprap.GetGCodes().SaveResumeInfo(true, 6);
 #if OMNI_TIME
 					workTime->Write();
 #endif
+					reprap.EmergencyStop();
+
 					isSaveResumeInfo = true;
 				}
 			}
@@ -1919,7 +1921,7 @@ void Platform::Spin()
 		{
 			isLostPowerDetected = false;
 			isSaveResumeInfo = false;
-			detCheckInterval = 1;
+			detCheckInterval = 200;
 		}
 	}
 
