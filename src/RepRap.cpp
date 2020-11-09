@@ -2503,6 +2503,13 @@ bool RepRap::WriteToolSettings(FileStore *f) const
 		if (t != currentTool)
 		{
 			ok = t->WriteSettings(f);
+			if (ok)
+			{
+				// We use only one heater per tool, so add only one temperature
+				String<StringLength40> buf;
+				buf.printf("M104 T%d S%d B1\n", t->Number(), (int)(t->standbyTemperatures[0]));
+				ok = f->Write(buf.c_str());
+			}
 		}
 	}
 
