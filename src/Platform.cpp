@@ -546,6 +546,7 @@ void Platform::Init()
 	startClosingBoltsTime = 0;
 	boltsClosingDelay = 1000;
 
+	isDoorAlert = false;
 	areBoltsActive = false;
 	activateBoltsState = false;
 	startClosingBoltsDelay = false;
@@ -1937,48 +1938,68 @@ void Platform::Spin()
 		{
 			doorState[i] = IoPort::ReadPin(doorsDuexPins[i]);
 		}
-	}
 
-	// check printer stat in order to manage the bolts
-	if(reprap.GetStatusCharacter() == 'P')
-	{
-		if(startClosingBoltsDelay)
+		if(reprap.GetStatusCharacter() == 'P')
 		{
-			if(millis() - startClosingBoltsTime > boltsClosingDelay)
+			if (!isDoorAlert)
 			{
-				areBoltsActive = true;
-				if(activateBoltsState)
+				if (doorState[0] || doorState[1])
 				{
-					Pin pin;
-					bool invert;
-					if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
-					{
-						IoPort::WriteDigital(pin, false);
-						activateBoltsState = false;
-					}
+					SendAlert(WarningMessage, "The doors are still open. Close the doors immediately!", "Doors status", 1, 0.0, 0);
+					isDoorAlert = true;
 				}
 			}
 		}
 		else
 		{
-			startClosingBoltsTime = millis();
-			startClosingBoltsDelay = true;
+			isDoorAlert = false;
 		}
 	}
-	else
+
+	// For F2.0Net only
+	if (reprap.GetMachineType())
 	{
-		if(!activateBoltsState)
+		// check printer stat in order to manage the bolts
+		if(reprap.GetStatusCharacter() == 'P')
 		{
-			Pin pin;
-			bool invert;
-			if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
+			if(startClosingBoltsDelay)
 			{
-				IoPort::WriteDigital(pin, true);
-				activateBoltsState = true;
+				if(millis() - startClosingBoltsTime > boltsClosingDelay)
+				{
+					areBoltsActive = true;
+					if(activateBoltsState)
+					{
+						Pin pin;
+						bool invert;
+						if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
+						{
+							IoPort::WriteDigital(pin, false);
+							activateBoltsState = false;
+						}
+					}
+				}
+			}
+			else
+			{
+				startClosingBoltsTime = millis();
+				startClosingBoltsDelay = true;
 			}
 		}
-		startClosingBoltsDelay = false;
-		areBoltsActive = false;
+		else
+		{
+			if(!activateBoltsState)
+			{
+				Pin pin;
+				bool invert;
+				if(GetFirmwarePin(boltPin, PinAccess::write, pin, invert))
+				{
+					IoPort::WriteDigital(pin, true);
+					activateBoltsState = true;
+				}
+			}
+			startClosingBoltsDelay = false;
+			areBoltsActive = false;
+		}
 	}
 #endif
 
@@ -2062,8 +2083,8 @@ void Platform::Spin()
 
 					IoPort::WriteDigital(pumpPin, false);	// Turn off pump
 
-					SendAlert(GenericMessage, "Due to low level of coolant the pump has been stopped. Fill in the coolant immediately!",
-									"Low level of coolant", 2, 0.0, 0);
+					SendAlert(WarningMessage, "Due to low level of coolant the pump has been stopped. Fill in the coolant immediately!",
+									"Low level of coolant", 1, 0.0, 0);
 				}
 			}
 			else

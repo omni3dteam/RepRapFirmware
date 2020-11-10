@@ -993,6 +993,7 @@ private:
 	uint16_t checkDoorsInterval;
 	uint32_t lastDoorsCheckTime;
 	bool doorState[NumberOfDoors];
+	bool isDoorAlert;
 	uint8_t doorsDuexPins[NumberOfDoors];
 	bool areBoltsActive;
 	uint16_t boltsClosingDelay;
