@@ -2090,13 +2090,17 @@ void Platform::Spin()
 			else
 			{
 				isSendFluidAlert = false;
+				constexpr float TurnOnPumpTemperature = 50.0;
 
 				// get extruders temps
 				float temp0 = reprap.GetHeat().GetTemperature(DefaultE0Heater);
 				float temp1 = reprap.GetHeat().GetTemperature(DefaultE0Heater + 1);
 
 				// if it is above 50 deg. C we'll turn on the pump
-				if (temp0 > 50.0 || temp1 > 50.0)
+				// We also need to consider case, when there is no extruder
+				// then we get temperature 2000 C. So we have to avoid this situation
+				if ((temp0 > TurnOnPumpTemperature || temp1 > TurnOnPumpTemperature)
+				 && (temp0 < BadErrorTemperature || temp1 < BadErrorTemperature))
 				{
 					IoPort::WriteDigital(pumpPin, true);	// Turn on pump
 				}
