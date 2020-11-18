@@ -919,8 +919,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 	case 25: // Pause the print
 		if (isPaused)
 		{
-			reply.copy("Printing is already paused!!");
-			result = GCodeResult::error;
+			// We don't need to inform user when he clicks multiple times Pause button
+			//reply.copy("Printing is already paused!!");
+			//result = GCodeResult::error;
 		}
 		else if (!reprap.GetPrintMonitor().IsPrinting())
 		{
@@ -3300,17 +3301,36 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				 platform.GetWorkTime()->Write();
 			}
-			else if (gb.Seen('H'))
+			else if(gb.Seen('K'))
 			{
-				platform.GetWorkTime()->SetHours(gb.GetIValue());
-			}
-			else if (gb.Seen('P'))
-			{
-				platform.GetWorkTime()->SetPrintHours(gb.GetIValue());
+				String<8> eraseString;
+				gb.GetPossiblyQuotedString(eraseString.GetRef());
+				bool doErase = StringStartsWith(eraseString.c_str(), "ERASE");
+
+				if (doErase)
+				{
+					if (gb.Seen('H'))
+					{
+						platform.GetWorkTime()->SetHours(gb.GetIValue());
+					}
+
+					if (gb.Seen('P'))
+					{
+						platform.GetWorkTime()->SetPrintHours(gb.GetIValue());
+					}
+					platform.GetWorkTime()->Write();
+				}
+				else
+				{
+					reply.printf("Wrong parameter");
+					result = GCodeResult::error;
+				}
 			}
 			else
 			{
-				reply.printf("Printer work time, Hours: %d Seconds: %" PRIu64, platform.GetWorkTime()->GetHours(), platform.GetWorkTime()->GetSeconds());
+				reply.printf("Printer work time: %dh [%" PRIu64"s], Printer print time, %dh [%" PRIu64"s]",
+						platform.GetWorkTime()->GetHours(), platform.GetWorkTime()->GetSeconds(),
+						platform.GetWorkTime()->GetPrintHours(), platform.GetWorkTime()->GetPrintSeconds());
 			}
 		}
         break;
