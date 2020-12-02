@@ -34,7 +34,8 @@ TemperatureError SpiTemperatureSensor::DoSpiTransaction(const uint8_t dataOut[],
 	uint8_t rawBytes[8];
 	spi_status_t sts;
 	{
-		MutexLocker lock(Tasks::GetSpiMutex(), 10);
+		// Extend mutex time(ticks) due to external SD card
+		MutexLocker lock(Tasks::GetSpiMutex(), 100);
 		if (!lock)
 		{
 			return TemperatureError::busBusy;

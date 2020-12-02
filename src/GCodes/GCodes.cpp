@@ -1483,6 +1483,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			{
 				tool->SetOffset(Z_AXIS, -g30zHeightError, true);
 				ToolOffsetInverseTransform(moveBuffer.coords, currentUserPosition);		// update user coordinates to reflect the new tool offset
+				platform.MessageF(LogMessage, "Z probe trigger height for tool T%d set to %.3fmm\n", tool->Number(), (double)-g30zHeightError);
 			}
 		}
 		else
