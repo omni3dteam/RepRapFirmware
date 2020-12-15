@@ -2487,18 +2487,47 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					}
 					else
 					{
-						if (angleOrWidth < MinServoPulseWidth)
+						float maxServoPulse = GenericMaxServoPulseWidth;
+						float minServoPulse = GenericMinServoPulseWidth;
+#if OMNI_SERVO_POSITIONING
+						bool isSlowServoPosition = true;
+
+						if (gb.Seen('A'))
+						{
+							if (gb.GetIValue() < 1)
+							{
+								isSlowServoPosition = false;
+							}
+							else
+							{
+								maxServoPulse = MaxServoPulseWidth;
+								minServoPulse = MinServoPulseWidth;
+							}
+						}
+						else
+						{
+							maxServoPulse = MaxServoPulseWidth;
+							minServoPulse = MinServoPulseWidth;
+						}
+#endif
+
+						if (angleOrWidth < minServoPulse)
 						{
 							// User gave an angle so convert it to a pulse width in microseconds
 #if OMNI_SERVO_POSITIONING
-							angleOrWidth =  ((min<float>(angleOrWidth, MaxServoPosition)) * ((MaxServoPulseWidth - MinServoPulseWidth) / (MaxServoPosition - MinServoPosition))) + MinServoPulseWidth;
-#else
-							angleOrWidth = (min<float>(angleOrWidth, 180.0) * ((MaxServoPulseWidth - MinServoPulseWidth) / 180.0)) + MinServoPulseWidth;
+							if (isSlowServoPosition)
+							{
+								angleOrWidth =  ((min<float>(angleOrWidth, MaxServoPosition)) * ((MaxServoPulseWidth - MinServoPulseWidth) / (MaxServoPosition - MinServoPosition))) + MinServoPulseWidth;
+							}
+							else
 #endif
+							{
+								angleOrWidth = (min<float>(angleOrWidth, 180.0) * ((GenericMaxServoPulseWidth - GenericMinServoPulseWidth) / 180.0)) + GenericMinServoPulseWidth;
+							}
 						}
-						else if (angleOrWidth > MaxServoPulseWidth)
+						else if (angleOrWidth > maxServoPulse)
 						{
-							angleOrWidth = MaxServoPulseWidth;
+							angleOrWidth = maxServoPulse;
 						}
 						float pwm = angleOrWidth * (ServoRefreshFrequency/1e6);
 						if (invert)
@@ -2506,10 +2535,15 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 							pwm = 1.0 - pwm;
 						}
 #if OMNI_SERVO_POSITIONING
-						reprap.GetPlatform().SetServoTarget(pwm, servoPin, ServoRefreshFrequency);
-#else
-						IoPort::WriteAnalog(servoPin, pwm, ServoRefreshFrequency);
+						if (isSlowServoPosition)
+						{
+							reprap.GetPlatform().SetServoTarget(pwm, servoPin, ServoRefreshFrequency);
+						}
+						else
 #endif
+						{
+							IoPort::WriteAnalog(servoPin, pwm, ServoRefreshFrequency);
+						}
 					}
 				}
 				// We don't currently allow the servo position to be read back
@@ -2887,6 +2921,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			String<MaxProcedureNameLength> procName;
 			gb.GetPossiblyQuotedString(procName.GetRef());
 			procedureName.copy(procName.c_str());
+
+			platform.MessageF(LogMessage, "Perform procedure: %s\n", procName.c_str());
 		}
 		if (gb.Seen('P'))
 		{
