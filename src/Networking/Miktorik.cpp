@@ -2012,13 +2012,21 @@ GCodeResult Mikrotik::StaticIP(GCodeBuffer& gb, const StringRef& reply)
 			strcpy(mask, maskStr.c_str());
 
 			uint8_t i;
-			uint32_t ipMask = maskIP.GetV4LittleEndian();
+			uint32_t ipMask = maskIP.GetV4BigEndian();
 
-			for(i = 31; i > 0; --i)
-				if(ipMask & (1u << i))
+			maskBits = 0;
+			for(i = 32; i > 0; --i)
+			{
+				if(ipMask & (1u << (i - 1)))
+				{
+					maskBits++;
+				}
+				else
+				{
 					break;
+				}
+			}
 
-			maskBits = i + 1;
 			maskBit = maskBits;
 		}
 		else
