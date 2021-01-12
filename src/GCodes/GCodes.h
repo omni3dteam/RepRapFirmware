@@ -241,6 +241,8 @@ public:
 	void EmergencyStop();												// Cancel everything
 	bool GetLastPrintingHeight(float& height) const;					// Get the height in user coordinates of the last printing move
 	bool IsConfigFile(const char* filename);							// Check whether file has .g extension
+	void UploadProgress(size_t uploaded, size_t postFileLength); 		// Calculate POST upload progress
+	void FinishFileUploadProgrss();										// Finish upload progress
 	void CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir); // Copy files from one directory to another
 
 	GCodeResult StartSDTiming(GCodeBuffer& gb, const StringRef& reply);	// Start timing SD card file writing
@@ -261,6 +263,7 @@ public:
 	int8_t procedureTemperatures;
 
 	bool isProcedure = false;
+	bool isUsbUpload = false;
 
 	int passLCD = 0;
 	size_t ledBrightness = 0;

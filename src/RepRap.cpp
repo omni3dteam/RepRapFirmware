@@ -1319,6 +1319,7 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 		size_t mountedCards = 0;
 		for (size_t i = 0; i < NumSdCards; i++)
 		{
+			//if (platform->GetMassStorage()->IsDriveMounted(i) || platform->GetVirtualStorage()->IsDriveMounted(i))
 			if (platform->GetMassStorage()->IsDriveMounted(i))
 			{
 				mountedCards |= (1 << i);
@@ -1327,7 +1328,7 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 		// Due to very long cable for external SD card we had to limit SPI speed
 		// It requies too much time to scan file for data so it can broken network connection
 		// Duet don't recommend use external SD card via internet so we display files only from internal card
-		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u",  1 /* NumSdCards */, mountedCards);
+		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u",  1 /*NumSdCards*/, mountedCards);
 
 		// Machine name
 		response->cat(",\"name\":");
@@ -1519,6 +1520,11 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 			// Based on slicer, most accurate so we calculate and send it to DWC
 			response->catf(",\"slicer\":%.1f}", (double)(printMonitor->EstimateTimeLeft(slicerBased)));
 		}
+	}
+	else if (type == 4)
+	{
+		// Get file from USB drive
+		platform->GetVirtualStorage()->SendDownloadRequest(response);
 	}
 
 #if OMNI_GCODES
@@ -1726,7 +1732,7 @@ OutputBuffer *RepRap::GetLegacyStatusResponse(uint8_t type, int seq)
 		ch = 'S';
 	}
 #if OMNI_DOORS_CHECK
-	response->printf("{\"status\":\"%c\",\"areBoltsActive\":%d", ch, reprap.GetPlatform().GetBoltStatus());
+	response->printf("{\"status\":\"%c\",\"areBoltsActive\":%d,\"virtualDrive\":%d", ch, reprap.GetPlatform().GetBoltStatus(), platform->GetVirtualStorage()->IsDriveMounted(1));
 #endif
 
 	const int8_t chamberHeater = (NumChamberHeaters > 0) ? heat->GetChamberHeater(0) : -1;
@@ -2066,6 +2072,11 @@ OutputBuffer *RepRap::GetFilesResponse(const char *dir, unsigned int startAt, bo
 	unsigned int err;
 	unsigned int nextFile = 0;
 
+	if (platform->GetVirtualStorage()->GetVirtualFileList(dir[0], response, false))
+	{
+		return response;
+	}
+
 	if (!platform->GetMassStorage()->CheckDriveMounted(dir))
 	{
 		err = 1;
@@ -2138,6 +2149,11 @@ OutputBuffer *RepRap::GetFilelistResponse(const char *dir, unsigned int startAt)
 	response->catf(",\"first\":%u,\"files\":[", startAt);
 	unsigned int err;
 	unsigned int nextFile = 0;
+
+	if (platform->GetVirtualStorage()->GetVirtualFileList(dir[0], response, true))
+	{
+		return response;
+	}
 
 	if (!platform->GetMassStorage()->CheckDriveMounted(dir))
 	{

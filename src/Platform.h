@@ -38,6 +38,7 @@ Licence: GPL
 #include "Storage/FileStore.h"
 #include "Storage/FileData.h"
 #include "Storage/MassStorage.h"	// must be after Pins.h because it needs NumSdCards defined
+#include "Storage/VirtualStorage.h"
 #include "MessageType.h"
 #include "Spindle.h"
 #include "ZProbe.h"
@@ -303,6 +304,8 @@ struct AxisDriversConfig
 	uint8_t driverNumbers[MaxDriversPerAxis];		// The driver numbers assigned - only the first numDrivers are meaningful
 };
 
+class VirtualStorage; // let the compiler know such a class will be defined TODO: why MassStorage is not needed
+
 // The main class that defines the RepRap machine for the benefit of the other classes
 class Platform
 {
@@ -381,6 +384,7 @@ public:
 
 	// File functions
 	MassStorage* GetMassStorage() const;
+	VirtualStorage* GetVirtualStorage() const;
 	LcdUpdater* GetLcdUpdater() const;
 #if OMNI_TIME
 	WorkTime* GetWorkTime() const;
@@ -904,6 +908,7 @@ private:
 
 	// Files
 	MassStorage* massStorage;
+	VirtualStorage* virtualStorage;
 #if OMNI_TIME
 	WorkTime* workTime;
 #endif
@@ -1295,6 +1300,11 @@ inline void Platform::SetNozzleDiameter(float diameter)
 inline MassStorage* Platform::GetMassStorage() const
 {
 	return massStorage;
+}
+
+inline VirtualStorage* Platform::GetVirtualStorage() const
+{
+	return virtualStorage;
 }
 
 inline LcdUpdater* Platform::GetLcdUpdater() const

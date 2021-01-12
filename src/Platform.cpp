@@ -176,6 +176,7 @@ Platform::Platform()
 	  lastWarningMillis(0), deliberateError(false)
 {
 	massStorage = new MassStorage(this);
+	virtualStorage = new VirtualStorage();
 #if OMNI_TIME
 	workTime = new WorkTime();
 #endif
@@ -260,6 +261,7 @@ void Platform::Init()
 	}
 
 	massStorage->Init();
+	virtualStorage->Init();
 #if OMNI_TIME
 	workTime->Init();
 #endif

@@ -755,7 +755,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		{
 			const size_t card = (gb.Seen('P')) ? gb.GetIValue() : 0;
-			result = platform.GetMassStorage()->Mount(card, reply, false);
+			VirtualStorage *v = platform.GetVirtualStorage();
+
+			v->Mount(card) ? result = GCodeResult::ok:
+				result = platform.GetMassStorage()->Mount(card, reply, false);
 		}
 		break;
 
@@ -788,6 +791,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			String<MaxFilenameLength> filename;
 			if (gb.GetUnprecedentedString(filename.GetRef()))
 			{
+				if (platform.GetVirtualStorage()->SelectFileToPrint(filename.c_str()))
+				{
+					break;
+				}
+
 				if (QueueFileToPrint(filename.c_str(), reply))
 				{
 					reprap.GetPrintMonitor().StartingPrint(filename.c_str());
@@ -2942,6 +2950,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			procedureTemperatures = gb.GetIValue();
 		}
+		if (gb.Seen('U'))
+		{
+			isUsbUpload = true;
+		}
 		if (gb.Seen('B'))
 		{
 			procedureButtons = gb.GetIValue();
@@ -4648,6 +4660,14 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 	case 730:
 		SaveResumeInfo(true, 5);
+		break;
+
+	case 740:
+		result = platform.GetVirtualStorage()->Configure(gb, reply);
+		break;
+
+	case 741:
+		platform.GetVirtualStorage()->StopDownloadRequest();
 		break;
 
 #if SUPPORT_SCANNER
