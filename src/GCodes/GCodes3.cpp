@@ -1042,7 +1042,7 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 		// Find out which modules we have been asked to update
 		if (gb.Seen('S'))
 		{
-			uint32_t modulesToUpdate[4];
+			uint32_t modulesToUpdate[5];
 			size_t numUpdateModules = ARRAY_SIZE(modulesToUpdate);
 			gb.GetUnsignedArray(modulesToUpdate, numUpdateModules, false);
 			for (size_t i = 0; i < numUpdateModules; ++i)
@@ -1056,6 +1056,12 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 					break;
 				}
 				firmwareUpdateModuleMap |= (1u << t);
+
+				// TODO: make it better
+				if (t == 5)
+				{
+					platform.GetVirtualStorage()->UploadRequest();
+				}
 			}
 		}
 		else

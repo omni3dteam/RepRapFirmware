@@ -3,7 +3,7 @@
 
 # define FIRMWARE_NAME	"RepRapFirmware for Duet 2 WiFi/Ethernet"
 # define DEFAULT_BOARD_TYPE BoardType::DuetWiFi_10
-constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manual upload to WiFi module (module 2 is now unused) + LCD module
+constexpr size_t NumFirmwareUpdateModules = 6;		// 3 modules, plus one for manual upload to WiFi module (module 2 is now unused) + LCD module
 # define IAP_FIRMWARE_FILE	"Duet2CombinedFirmware.bin"
 #define IAP_UPDATE_FILE		"iap4e.bin"				// using the same IAP file for both Duet WiFi and Duet Ethernet
 # define WIFI_FIRMWARE_FILE	"DuetWiFiServer.bin"

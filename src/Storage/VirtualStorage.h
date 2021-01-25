@@ -9,6 +9,9 @@
 #define FILES_LIST_DIR  "0:/"
 #define FILES_LIST 		"files.usb"
 
+#define UPDATE_FIRMWARE_FILE "usbFirmware.bin"
+
+
 class VirtualStorage
 {
 public:
@@ -19,6 +22,7 @@ public:
 	bool GetVirtualFileList(char dir, OutputBuffer *response, bool label);
 	void SendDownloadRequest(OutputBuffer *r);
 	void StopDownloadRequest();
+	void UploadRequest();
 	bool SelectFileToPrint(const char *file);
 	void SetFileToDownload(const char *name);
 	GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply);
@@ -28,8 +32,10 @@ private:
 	const char *GET_FILES_LIST() { return FILES_LIST; };
 	char virtualDir;
 	bool enabled;
+	bool uploadFirmware;
 
 	char filename[128];
+
 };
 
 #endif
