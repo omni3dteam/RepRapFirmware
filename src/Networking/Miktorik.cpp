@@ -165,7 +165,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     add_word_to_sentence( cmd[0], &mkSentence );
     add_word_to_sentence( wlanID, &mkSentence );
     add_word_to_sentence( apName, &mkSentence );
-    add_word_to_sentence( cmd[1], &mkSentence );
+    add_word_to_sentence( iface == wifi5g ? SET_PARAM_V( P_FREQUENCY, V_5180MHz ) : cmd[1], &mkSentence );
     add_word_to_sentence( cmd[2], &mkSentence );
     add_word_to_sentence( cmd[3], &mkSentence );
 

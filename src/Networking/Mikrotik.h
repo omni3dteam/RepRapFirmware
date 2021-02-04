@@ -138,6 +138,7 @@
 
 // values
 #define V_AUTO      "auto"
+#define V_5180MHz   "5180"
 #define V_TRUE      "true"
 #define V_FALSE     "false"
 #define V_STATION   "station"
