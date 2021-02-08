@@ -326,6 +326,8 @@ void RepRap::Init()
 #endif
 	platform->MessageF(UsbMessage, "%s is up and running.\n", FIRMWARE_NAME);
 
+	platform->MessageF(LogMessage, "Firmware started: %s. Work time: %dh Print time: %dh\n", VERSION, platform->GetWorkTime()->GetHours(), platform->GetWorkTime()->GetPrintHours());
+
 	fastLoop = UINT32_MAX;
 	slowLoop = 0;
 }
