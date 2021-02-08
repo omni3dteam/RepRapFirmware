@@ -1770,7 +1770,7 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 	}
 	else
 	{
-		reply.copy("I parameter is needed");
+		reply.copy("Interface parameter is needed");
 		return GCodeResult::error;
 	}
 
@@ -1781,6 +1781,13 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 	{
 		seen = false;
 		gb.TryGetPossiblyQuotedString('P', tPass.GetRef(), seen);
+
+		// Password must have at least 8 characters
+		if (tPass.strlen() < 8)
+		{
+			reply.copy("Password must have at least 8 characters");
+			return GCodeResult::error;
+		}
 
 		if (seen)
 		{
@@ -1799,13 +1806,13 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
-			reply.copy("P parameter is needed");
+			reply.copy("Password is needed");
 			return GCodeResult::error;
 		}
 	}
 	else
 	{
-		reply.copy("S parameter is needed");
+		reply.copy("SSID is needed");
 		return GCodeResult::error;
 	}
 
