@@ -718,7 +718,7 @@ void Platform::Init()
 
 #if OMNI_PUMP_CONTROL
 	lastPumpCheckTime = 5000;
-	isSendFluidAlert = false;
+	isCoolantEmpty = false;
 
 	IoPort::SetPinMode(pumpPin, OUTPUT_LOW);
 	logicalPinModes[COOLING_FAN_PINS[2]] = (int8_t)OUTPUT_LOW;
@@ -2077,19 +2077,21 @@ void Platform::Spin()
 			// check fluid level
 			if (IoPort::ReadPin(fluidLevel) == false)
 			{
-				if (!isSendFluidAlert)
+				if (!isCoolantEmpty)
 				{
-					isSendFluidAlert = true;
+					isCoolantEmpty = true;
 
-					IoPort::WriteDigital(pumpPin, false);	// Turn off pump
+					String<MediumStringLength> coolantAlert;
+					coolantAlert.printf("Fill in the coolant immediately! You will not be able to start printing%s.",
+							reprap.GetGCodes().IsReallyPrinting() ? " next time" : "");
 
-					SendAlert(WarningMessage, "Due to low level of coolant the pump has been stopped. Fill in the coolant immediately!",
-									"Low level of coolant", 1, 0.0, 0);
+
+					SendAlert(WarningMessage, coolantAlert.c_str(), "Low level of coolant", 1, 0.0, 0);
 				}
 			}
 			else
 			{
-				isSendFluidAlert = false;
+				isCoolantEmpty = false;
 				constexpr float TurnOnPumpTemperature = 50.0;
 
 				// get extruders temps
@@ -5447,6 +5449,14 @@ void Platform::Tick()
 bool Platform::GetBoltStatus()
 {
 	return areBoltsActive;
+}
+#endif
+
+#if OMNI_PUMP_CONTROL
+// If we use F2.0Net check level of coolant. If it is Lite return false
+bool Platform::IsCoolantEmpty()
+{
+	return reprap.GetMachineType() ? isCoolantEmpty : false;
 }
 #endif
 

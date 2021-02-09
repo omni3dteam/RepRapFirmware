@@ -655,6 +655,10 @@ public:
 	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
 #endif
 
+#if OMNI_PUMP_CONTROL
+	bool IsCoolantEmpty();
+#endif
+
 #if OMNI_CHAMBER_FAN_COOLING
 	bool GetChamberHeatingPermission() { return chamberHeatingPermission; }
 	void SetChamberHeatingPermission(bool value) { chamberHeatingPermission = value; }
@@ -1027,7 +1031,7 @@ private:
 
 #if OMNI_PUMP_CONTROL
 	uint32_t lastPumpCheckTime;
-	bool isSendFluidAlert;
+	bool isCoolantEmpty;
 #endif
 
 #if OMNI_STANDBY_TEMPERATURES

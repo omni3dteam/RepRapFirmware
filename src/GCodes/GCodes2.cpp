@@ -780,6 +780,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			break;
 		}
 
+		if (platform.IsCoolantEmpty())
+		{
+			platform.SendAlert(ErrorMessage, "Cannot set file to print, because a low level of coolant. Fill in the coolant.", "Low level of coolant", 1, 0.0, 0);
+			break;
+		}
+
 		if (code == 32 && !LockMovementAndWaitForStandstill(gb))
 		{
 			return false;
