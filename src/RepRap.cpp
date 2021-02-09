@@ -1326,10 +1326,8 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 				mountedCards |= (1 << i);
 			}
 		}
-		// Due to very long cable for external SD card we had to limit SPI speed
-		// It requies too much time to scan file for data so it can broken network connection
-		// Duet don't recommend use external SD card via internet so we display files only from internal card
-		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u",  1 /* NumSdCards */, mountedCards);
+
+		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u", NumSdCards, mountedCards);
 
 		// Machine name
 		response->cat(",\"name\":");
