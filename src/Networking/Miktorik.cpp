@@ -970,7 +970,7 @@ bool Mikrotik::Login(uint8_t numLoginTry)
         if ( try_to_log_in( default_username, isKnownPass ? default_password[nbrPass] : default_password[i % 2] ) )
         {
         	nbrPass = i % 2;
-        	debugPrintf( "success default credentials [%d]\n", nbrPass );
+        	//debugPrintf( "success default credentials [%d]\n", nbrPass );
             isKnownPass = true;
             isLogged = true;
             break;
@@ -1870,7 +1870,7 @@ void Mikrotik::SendNetworkStatus()
 				md, statusStr[status], typeIp, tempIp, mask, gateway,
 				interface == ether1 ? "" : ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
-	debugPrintf(outputBuffer);
+	//debugPrintf(outputBuffer);
 }
 
 void Mikrotik::Check()
