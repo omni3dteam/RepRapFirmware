@@ -55,17 +55,17 @@ private:
 	uint32_t lastAttemptTime;
 	FilePosition fileSize;
 
-	uint32_t fileOffset {0};
-    uint16_t filePayload {96};
-	uint8_t payloadBuffer[96];
-	bool retransmission {false};
-	uint16_t idPackage {0};
-	uint8_t retransmissionTry {0};
-	const uint8_t framePayload {96};
+	static constexpr char lcdFrameBegin = 0xAA;
+	static constexpr uint8_t framePayloadLength = 96;
+	static constexpr uint32_t firstAckTimeout = 7000; 		// 7s is enough. We need this time to wait for erase lcd flash space.
 
-	uint32_t blockWriteInterval {30};
-	static const uint32_t initWriteInterval {7000}; 		// 7s is enough. We need this time to wait for erase lcd flash space.
-
+	uint32_t packageAckTimeout;
+	uint32_t fileOffset;
+    uint16_t filePayload;
+    uint16_t idPackage;
+    uint8_t retransmissionTry;
+	uint8_t payloadBuffer[framePayloadLength];
+	bool retransmission;
 };
 
 #endif /* LCDUPDATER_H_ */
