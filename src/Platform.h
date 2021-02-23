@@ -534,7 +534,7 @@ public:
 	void UpdateConfiguredHeaters();
 
 	// Fans
-	bool ConfigureFan(unsigned int mcode, int fanNumber, GCodeBuffer& gb, const StringRef& reply, bool& error);
+	bool ConfigureFan(unsigned int mcode, int fanNumber, GCodeBuffer& gb, const StringRef& reply, bool& error, bool& runningConfigFile);
 
 	float GetFanValue(size_t fan) const;					// Result is returned in range 0..1
 	void SetFanValue(size_t fan, float speed);				// Accepts values between 0..1

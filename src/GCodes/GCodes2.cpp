@@ -1199,8 +1199,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 				else
 				{
-					reply.printf("Logical pin %d is not available for writing", logicalPin);
-					result = GCodeResult::error;
+					if (!runningConfigFile)
+					{
+						reply.printf("Logical pin %d is not available for writing", logicalPin);
+						result = GCodeResult::error;
+					}
 				}
 			}
 		}
@@ -1357,7 +1360,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (seenFanNum)
 			{
 				bool error = false;
-				processed = platform.ConfigureFan(code, fanNum, gb, reply, error);
+				processed = platform.ConfigureFan(code, fanNum, gb, reply, error, runningConfigFile);
 				result = GetGCodeResultFromError(error);
 			}
 			else
@@ -2556,8 +2559,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			else
 			{
-				reply.printf("Invalid servo index %d in M280 command\n", servoIndex);
-				result = GCodeResult::error;
+				if (!runningConfigFile)
+				{
+					reply.printf("Invalid servo index %d in M280 command\n", servoIndex);
+					result = GCodeResult::error;
+				}
 			}
 		}
 		break;

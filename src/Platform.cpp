@@ -3968,7 +3968,7 @@ bool Platform::GetDriverStepTiming(size_t driver, float microseconds[4]) const
 // then search for parameters used to configure the fan. If any are found, perform appropriate actions and return true.
 // If errors were discovered while processing parameters, put an appropriate error message in 'reply' and set 'error' to true.
 // If no relevant parameters are found, print the existing ones to 'reply' and return false.
-bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error)
+bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error, bool& runningConfigFile)
 {
 	if (fanNum < 0 || fanNum >= (int)NUM_FANS)
 	{
@@ -3977,7 +3977,7 @@ bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, con
 		return false;
 	}
 
-	return fans[fanNum].Configure(mcode, fanNum, gb, reply, error);
+	return fans[fanNum].Configure(mcode, fanNum, gb, reply, error, runningConfigFile);
 }
 
 // Get current cooling fan speed on a scale between 0 and 1
