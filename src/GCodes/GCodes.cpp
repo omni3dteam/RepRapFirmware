@@ -1840,7 +1840,6 @@ void GCodes::CheckFilament()
 		&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
 	   )
 	{
-		lastFilamentError = FilamentSensorStatus::ok;
 
 		// We have to wait for finish previous macro
 		if (daemonGCode->MachineState().doingFileMacro == false)
@@ -1850,7 +1849,14 @@ void GCodes::CheckFilament()
 
 				DoPause(*autoPauseGCode, PauseReason::filament, nullptr);
 				DoFileMacro(*daemonGCode, filename.c_str(), true);
+
+				// Add out of filament reason
+				platform.MessageF(LogMessage, "Out of filament due to %s error\n", FilamentMonitor::GetErrorMessage(lastFilamentError));
+
+				// Also add extra info what happend
+				FilamentMonitor::Diagnostics(LogMessage, false);
 		}
+		lastFilamentError = FilamentSensorStatus::ok;
 	}
 }
 
@@ -2390,7 +2396,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			}
 			if (ok)
 			{
-				buf.printf("M23 \"%s\"\nM26 S%" PRIu32, printingFilename, pauseRestorePoint.filePos);
+				buf.printf("M21 P%d\nM23 \"%s\"\nM26 S%" PRIu32, PrintingVolumeNumber(printingFilename), printingFilename, pauseRestorePoint.filePos);
 				if (pauseRestorePoint.proportionDone > 0.0)
 				{
 					buf.catf(" P%.3f X%.3f Y%.3f", (double)pauseRestorePoint.proportionDone, (double)pauseRestorePoint.initialUserX, (double)pauseRestorePoint.initialUserY);
@@ -5067,6 +5073,8 @@ void GCodes::StopPrint(StopPrintReason reason)
 		{
 			platform.DeleteSysFile(RESUME_AFTER_POWER_FAIL_G);
 		}
+
+		SavePrintInfoToCSV(printingFilename, reason, printMinutes/60u, printMinutes % 60u);
 	}
 
 	updateFileWhenSimulationComplete = false;
@@ -6007,6 +6015,70 @@ void GCodes::CopyFilesFromDir(const StringRef& reply, const char* sourceDir, con
 bool GCodes::IsConfigFile(const char* filename)
 {
 	return (bool)strstr(filename, ".g");
+}
+
+// Get volume in order to mount necessary SD card before resuming
+size_t GCodes::PrintingVolumeNumber(const char *filename)
+{
+    size_t vol = -1;
+
+	if (strlen(filename) > 2 && isdigit(filename[0]) && filename[1] == ':' && filename[2] == '/')
+	{
+	    vol = filename[0] - '0';
+	}
+
+	return vol;
+}
+
+// Save print info to CSV file for some statistics
+void GCodes::SavePrintInfoToCSV(const char *filename, StopPrintReason reason, uint32_t hours, uint32_t minutes)
+{
+	// We need to open in append mode
+	FileStore * const f = platform.OpenSysFile(SavePrintInfoFile, OpenMode::append);
+
+	if (f == nullptr)
+	{
+		return;
+	}
+	else
+	{
+		// Go to end of file
+		size_t fileLength = f->Length();
+		f->Seek(fileLength);
+
+		String<FormatStringLength> bufferSpace;
+		const StringRef buf = bufferSpace.GetRef();
+
+		// Get current date
+		time_t time = platform.GetDateTime();
+
+		if (time == 0)
+		{
+			const uint32_t timeSincePowerUp = (uint32_t)(millis64()/1000u);
+			buf.printf("power up + %02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 "", timeSincePowerUp/3600u, (timeSincePowerUp % 3600u)/60u, timeSincePowerUp % 60u);
+		}
+		else
+		{
+			const struct tm * const timeInfo = gmtime(&time);
+			buf.printf("%04u-%02u-%02u %02u:%02u:%02u",
+							timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+		}
+
+		f->Write(buf.c_str());
+
+		buf.printf(",%s,%s,%" PRIu32 ":%02" PRIu32 "",
+				filename, reason == StopPrintReason::normalCompletion ? "Finished" : "Cancelled", hours, minutes);
+
+		for (size_t extruder = 0; extruder < reprap.GetExtrudersInUse(); extruder++)		// loop through extruders
+		{
+			buf.catf(",%.3f", (double)(GetRawExtruderTotalByDrive(extruder)/1000.0));
+		}
+		buf.cat('\n');
+
+		// Write and close file
+		f->Write(buf.c_str());
+		f->Close();
+	}
 }
 
 #if OMNI_GCODES

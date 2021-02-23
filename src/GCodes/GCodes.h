@@ -241,7 +241,9 @@ public:
 	void EmergencyStop();												// Cancel everything
 	bool GetLastPrintingHeight(float& height) const;					// Get the height in user coordinates of the last printing move
 	bool IsConfigFile(const char* filename);							// Check whether file has .g extension
+	size_t PrintingVolumeNumber(const char *filename);					// Which volume is printing
 	void CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir); // Copy files from one directory to another
+	void SavePrintInfoToCSV(const char *filename, StopPrintReason reason, uint32_t hours, uint32_t minutes); // Save print info in csv file
 
 	GCodeResult StartSDTiming(GCodeBuffer& gb, const StringRef& reply);	// Start timing SD card file writing
 
@@ -667,6 +669,7 @@ private:
 	static constexpr const char* DEPLOYPROBE_G = "deployprobe.g";
 	static constexpr const char* RETRACTPROBE_G = "retractprobe.g";
 	static constexpr const char* DefaultHeightMapFile = "heightmap.csv";
+	static constexpr const char* SavePrintInfoFile = "print-statistics.csv";
 	static constexpr const char* LOAD_FILAMENT_G = "load.g";
 	static constexpr const char* CONFIG_FILAMENT_G = "config.g";
 	static constexpr const char* UNLOAD_FILAMENT_G = "unload.g";

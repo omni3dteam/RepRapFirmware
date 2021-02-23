@@ -102,7 +102,8 @@ FilamentSensorStatus SimpleFilteredFilamentMonitor::Check(bool isPrinting, bool 
 			if (totalExtrusion - followFilamentChange > filterDistance)
 			{
 				firstNoFilament = false;
-				fstat = FilamentSensorStatus::noFilament;			}
+				fstat = FilamentSensorStatus::noFilament;
+			}
 		}
 	}
 	else

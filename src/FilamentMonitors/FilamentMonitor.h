@@ -70,7 +70,7 @@ public:
 	static bool GetFilamentSettings(const StringRef& reply, unsigned int extruder);
 
 	// Send diagnostics info
-	static void Diagnostics(MessageType mtype);
+	static void Diagnostics(MessageType mtype, bool header);
 
 	static float GetExtrusionMeasured(unsigned int extruder);
 	static void SetExtrusionMeasured(unsigned int extruder, float value);

@@ -266,14 +266,14 @@ bool FilamentMonitor::GetFilamentSettings(const StringRef& reply, unsigned int e
 }
 
 // Send diagnostics info
-/*static*/ void FilamentMonitor::Diagnostics(MessageType mtype)
+/*static*/ void FilamentMonitor::Diagnostics(MessageType mtype, bool header)
 {
 	bool first = true;
 	for (size_t i = 0; i < MaxExtruders; ++i)
 	{
 		if (filamentSensors[i] != nullptr)
 		{
-			if (first)
+			if (first && header)
 			{
 				reprap.GetPlatform().Message(mtype, "=== Filament sensors ===\n");
 				first = false;

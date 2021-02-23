@@ -513,7 +513,7 @@ void RepRap::Diagnostics(MessageType mtype)
 	heat->Diagnostics(mtype);
 	gCodes->Diagnostics(mtype);
 	network->Diagnostics(mtype);
-	FilamentMonitor::Diagnostics(mtype);
+	FilamentMonitor::Diagnostics(mtype, true);
 #ifdef DUET_NG
 	DuetExpansion::Diagnostics(mtype);
 #endif
