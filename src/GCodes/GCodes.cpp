@@ -2396,7 +2396,17 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			}
 			if (ok)
 			{
-				buf.printf("M21 P%d\nM23 \"%s\"\nM26 S%" PRIu32, PrintingVolumeNumber(printingFilename), printingFilename, pauseRestorePoint.filePos);
+				// Volume 0 is mounted at startup. External SD card is not mounted so we need to do before resuming
+				size_t vol = PrintingVolumeNumber(printingFilename);
+				if (vol > 0)
+				{
+					buf.printf("M21 P%d\n", vol);
+					ok = f->Write(buf.c_str());
+				}
+			}
+			if (ok)
+			{
+				buf.printf("M23 \"%s\"\nM26 S%" PRIu32, printingFilename, pauseRestorePoint.filePos);
 				if (pauseRestorePoint.proportionDone > 0.0)
 				{
 					buf.catf(" P%.3f X%.3f Y%.3f", (double)pauseRestorePoint.proportionDone, (double)pauseRestorePoint.initialUserX, (double)pauseRestorePoint.initialUserY);

@@ -19,12 +19,12 @@
 # define VERSION OMNI_VERSION "(based on " MAIN_VERSION ")"
 #endif
 
-#define OMNI_VERSION    "1.17.04"
+#define OMNI_VERSION    "1.17.09"
 
 #ifndef DATE
 # define DATE "2020-06-11b1"
 #endif
 
-#define AUTHORS "reprappro, dc42, chrishamm, t3p3, dnewman, printm3d"
+#define AUTHORS "reprappro, dc42, chrishamm, t3p3, dnewman, printm3d, OMNI3D"
 
 #endif /* SRC_VERSION_H_ */
