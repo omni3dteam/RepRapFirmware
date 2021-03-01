@@ -14,6 +14,7 @@ SimpleFilteredFilamentMonitor::SimpleFilteredFilamentMonitor(unsigned int extrud
 	: FilamentMonitor(extruder, type), highWhenNoFilament(type == 12), filamentPresent(false), enabled(false)
 {
 	filterDistance = 2.0;
+	ResetExtrusionMeasured(extruder);
 }
 
 // Configure this sensor, returning true if error and setting 'seen' if we processed any configuration parameters
@@ -97,7 +98,7 @@ FilamentSensorStatus SimpleFilteredFilamentMonitor::Check(bool isPrinting, bool 
 		}
 		else
 		{
-			const float totalExtrusion = GetExtrusionMeasured();
+			const double totalExtrusion = GetExtrusionMeasured();
 
 			if (totalExtrusion - followFilamentChange > filterDistance)
 			{

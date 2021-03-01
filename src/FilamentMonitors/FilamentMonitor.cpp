@@ -283,7 +283,7 @@ bool FilamentMonitor::GetFilamentSettings(const StringRef& reply, unsigned int e
 	}
 }
 
-/*static*/ float FilamentMonitor::GetExtrusionMeasured(unsigned int extruder)
+/*static*/ double FilamentMonitor::GetExtrusionMeasured(unsigned int extruder)
 {
 	if (extruder >= MaxExtruders) return 0;
 	else if (filamentSensors[extruder] != nullptr)
@@ -297,12 +297,12 @@ bool FilamentMonitor::GetFilamentSettings(const StringRef& reply, unsigned int e
 	if (extruder >= MaxExtruders) return;
 	else if (filamentSensors[extruder] != nullptr)
 	{
-		filamentSensors[extruder]->extrusionMeasured = value;
+		filamentSensors[extruder]->extrusionMeasured = (double)value;
 	}
 }
 /*static*/ void FilamentMonitor::ResetExtrusionMeasured(unsigned int extruder)
 {
-	FilamentMonitor::SetExtrusionMeasured(extruder, 0);
+	FilamentMonitor::SetExtrusionMeasured(extruder, 0.0);
 }
 
 // End

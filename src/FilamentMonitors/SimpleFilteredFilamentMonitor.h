@@ -23,8 +23,8 @@ private:
 	bool enabled;
 	bool firstNoFilament;
 
-	float followFilamentChange;
-	float filterDistance;
+	double followFilamentChange;
+	double filterDistance;
 };
 
 #endif /* SRC_FILAMENTSENSORS_SIMPLEFILTEREDFILAMENTMONITOR_H_ */

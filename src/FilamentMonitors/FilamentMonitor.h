@@ -72,7 +72,7 @@ public:
 	// Send diagnostics info
 	static void Diagnostics(MessageType mtype, bool header);
 
-	static float GetExtrusionMeasured(unsigned int extruder);
+	static double GetExtrusionMeasured(unsigned int extruder);
 	static void SetExtrusionMeasured(unsigned int extruder, float value);
 	static void ResetExtrusionMeasured(unsigned int extruder);
 
@@ -86,8 +86,8 @@ protected:
 	Pin GetPin() const { return pin; }
 	bool HaveIsrStepsCommanded() const { return haveIsrStepsCommanded; }
 
-	void AddExtrusionMeasured(float value) { extrusionMeasured += value; }
-	float GetExtrusionMeasured() { return extrusionMeasured; }
+	void AddExtrusionMeasured(float value) { extrusionMeasured += (double)value; }
+	double GetExtrusionMeasured() { return extrusionMeasured; }
 
 private:
 	// Create a filament sensor returning null if not a valid sensor type
@@ -106,7 +106,7 @@ private:
 	Pin pin;
 	bool isrWasPrinting;
 	bool haveIsrStepsCommanded;
-	float extrusionMeasured{0};
+	double extrusionMeasured;
 };
 
 #endif /* SRC_FILAMENTSENSORS_FILAMENTMONITOR_H_ */

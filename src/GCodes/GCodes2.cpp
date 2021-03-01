@@ -4847,6 +4847,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					const float filamentValue = gb.GetFValue();
 					FilamentMonitor::SetExtrusionMeasured(extruder, filamentValue);
 				}
+				else
+				{
+					reply.printf("Extrusion measured %.2fmm for extruder %d", FilamentMonitor::GetExtrusionMeasured(extruder), extruder);
+				}
 			}
 		}
 		break;
