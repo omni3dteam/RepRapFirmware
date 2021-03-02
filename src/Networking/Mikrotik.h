@@ -297,7 +297,6 @@ private:
     // Send data
     TMKSentence mkSentence;
     static void clear_sentence( TMKSentence *pSentence );
-    void print_sentence( TMKSentence *pSentence );
     static void add_word_to_sentence( const char *pWord, TMKSentence *pSentence );
     void write_sentence( TMKSentence *pSentence );
     void write_word( const char *pWord );
