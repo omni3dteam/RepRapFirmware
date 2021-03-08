@@ -2101,8 +2101,8 @@ void Platform::Spin()
 				// if it is above 50 deg. C we'll turn on the pump
 				// We also need to consider case, when there is no extruder
 				// then we get temperature 2000 C. So we have to avoid this situation
-				if ((temp0 > TurnOnPumpTemperature || temp1 > TurnOnPumpTemperature)
-				 && (temp0 < BadErrorTemperature || temp1 < BadErrorTemperature))
+				if ((temp0 > TurnOnPumpTemperature && temp0 < BadErrorTemperature)
+				 || (temp1 > TurnOnPumpTemperature && temp1 < BadErrorTemperature))
 				{
 					IoPort::WriteDigital(pumpPin, true);	// Turn on pump
 				}
