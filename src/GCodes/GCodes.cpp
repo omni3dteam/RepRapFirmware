@@ -3984,6 +3984,30 @@ void GCodes::GetCurrentCoordinates(const StringRef& s) const
 // If successful return true, else write an error message to reply and return false
 bool GCodes::QueueFileToPrint(const char* fileName, const StringRef& reply)
 {
+	// Check extension .g/.gco/.gcode
+	static const char * const extension[] =
+	{
+		".gcode",
+		".gco",
+		".g"
+	};
+
+	bool isCorrectExtension = false;
+	for (size_t i = 0; i < ARRAY_SIZE(extension); ++i)
+	{
+		if (strstr(fileName, extension[i]) != nullptr)
+		{
+			isCorrectExtension = true;
+			break;
+		}
+	}
+
+	if (!isCorrectExtension)
+	{
+		reply.printf("File \"%s\" has incorrect extension\n", fileName);
+		return false;
+	}
+
 	FileStore * const f = platform.OpenFile(platform.GetGCodeDir(), fileName, OpenMode::read);
 	if (f != nullptr)
 	{

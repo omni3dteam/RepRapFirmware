@@ -395,7 +395,6 @@ public:
 
 	const char* GetWebDir() const; 					// Where the html etc files are
 	const char* GetGCodeDir() const; 				// Where the gcodes are
-	const char* GetProcedureGCodeDir() const;		// Where the procedure gcodes are
 	const char* GetMacroDir() const;				// Where the user-defined macros are
 	const char* GetConfigFile() const; 				// Where the configuration is stored (in the system dir).
 	const char* GetDefaultFile() const;				// Where the default configuration is stored (in the system dir).
@@ -1083,12 +1082,6 @@ inline const char* Platform::GetWebDir() const
 inline const char* Platform::GetGCodeDir() const
 {
 	return GCODE_DIR;
-}
-
-// Where the procedure gcodes are
-inline const char* Platform::GetProcedureGCodeDir() const
-{
-	return PROCEDURE_GCODE_DIR;
 }
 
 inline const char* Platform::GetMacroDir() const
