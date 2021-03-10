@@ -2397,7 +2397,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			if (ok)
 			{
 				// Volume 0 is mounted at startup. External SD card is not mounted so we need to do before resuming
-				size_t vol = PrintingVolumeNumber(printingFilename);
+				int vol = PrintingVolumeNumber(printingFilename);
 				if (vol > 0)
 				{
 					buf.printf("M21 P%d\n", vol);
@@ -6052,9 +6052,9 @@ bool GCodes::IsConfigFile(const char* filename)
 }
 
 // Get volume in order to mount necessary SD card before resuming
-size_t GCodes::PrintingVolumeNumber(const char *filename)
+int GCodes::PrintingVolumeNumber(const char *filename)
 {
-    size_t vol = -1;
+    int vol = -1;
 
 	if (strlen(filename) > 2 && isdigit(filename[0]) && filename[1] == ':' && filename[2] == '/')
 	{
