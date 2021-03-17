@@ -6115,6 +6115,98 @@ void GCodes::SavePrintInfoToCSV(const char *filename, StopPrintReason reason, ui
 	}
 }
 
+// Set default parameters like offsets, filaments
+void GCodes::SetUpDefaultParameters()
+{
+	int machine = static_cast<int>(reprap.GetMachineType());
+	debugPrintf("Static cast machine: %d\n", machine);
+
+	const size_t nrOfOffsetAxes = XYZ_AXES;
+	const float offsets[2][nrOfOffsetAxes] =
+	{
+			{30.0, 0.0, 0.0},
+			{45.0, 0.0, -2.5}
+	};
+
+	// We modify only offsets for right tool, left is reference
+	int rightTool = 1;
+
+	Tool* tool;
+	tool = reprap.GetTool(rightTool);
+
+	for (unsigned int i = 0; i < nrOfOffsetAxes; ++i)
+	{
+		tool->SetOffset(i, offsets[machine][i], false);
+	}
+
+	// Save default Z coefficient offset
+	// Z offset coefficient is the same for those printers
+	float zOffset = -0.3;
+
+	for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
+	{
+		int nr = tool->Number();
+		debugPrintf("Tool number: %d", nr);
+		SaveZOffsetsToFile(nr, zOffset);
+		reprap.GetPlatform().switchZProbeParameters.zOffset[nr] = zOffset;
+	}
+
+	// Zero filaments values
+	for (size_t i = 0; i < MaxExtruders; ++i)
+	{
+		FilamentMonitor::SetExtrusionMeasured(i, 0.0);
+	}
+}
+
+// Save Z offsets to file which help while calibrating machine
+void GCodes::SaveZOffsetsToFile(unsigned int ext, float zOffset)
+{
+	const char *file = ext ? T1_Z_OFFSET_G : T0_Z_OFFSET_G;
+
+	FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
+	if (f == nullptr)
+	{
+		platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
+	}
+	else
+	{
+		String<FormatStringLength> bufferSpace;
+		const StringRef buf = bufferSpace.GetRef();
+
+		// OMNI3D Factory 2.0 NET
+		if (reprap.GetMachineType())
+		{
+			buf.printf("G31 Z%.3f\n", (double)zOffset);
+		}
+		else
+		{
+			// OMNI3D Omni500 Lite
+			if(ext)
+			{
+				// right G1
+				buf.printf("G1 Z%.3f H2\n", (double)zOffset);
+			}
+			else
+			{
+				// left G31
+				buf.printf("G31 Z%.3f\n", (double)zOffset);
+			}
+		}
+
+		bool ok = f->Write(buf.c_str());
+
+		if (!f->Close())
+		{
+			ok = false;
+		}
+		if (!ok)
+		{
+			platform.DeleteSysFile(file);
+			platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
+		}
+	}
+}
+
 #if OMNI_GCODES
 //TODO: func...
 #endif

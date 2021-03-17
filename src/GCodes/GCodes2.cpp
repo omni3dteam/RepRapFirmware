@@ -309,50 +309,7 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				reprap.GetPlatform().switchZProbeParameters.zOffset[ext] = zOffset;
 			}
 
-			const char *file = ext ? T1_Z_OFFSET_G : T0_Z_OFFSET_G;
-
-			FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
-			if (f == nullptr)
-			{
-				platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
-			}
-			else
-			{
-				String<FormatStringLength> bufferSpace;
-				const StringRef buf = bufferSpace.GetRef();
-
-				// OMNI3D Factory 2.0 NET
-				if (reprap.GetMachineType())
-				{
-					buf.printf("G31 Z%.3f\n", (double)zOffset);
-				}
-				else
-				{
-					// OMNI3D Omni500 Lite
-					if(ext)
-					{
-						// right G1
-						buf.printf("G1 Z%.3f H2\n", (double)zOffset);
-					}
-					else
-					{
-						// left G31
-						buf.printf("G31 Z%.3f\n", (double)zOffset);
-					}
-				}
-
-				bool ok = f->Write(buf.c_str());
-
-				if (!f->Close())
-				{
-					ok = false;
-				}
-				if (!ok)
-				{
-					platform.DeleteSysFile(file);
-					platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
-				}
-			}
+			SaveZOffsetsToFile(ext, zOffset);
 		}
 
 		if (gb.Seen('R'))
@@ -3242,6 +3199,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 			// Copy user procedure directory
 			CopyFilesFromDir(reply, RESTORE_DIR USER_PROCEDURES_DIR, DEFAULT_SYS_DIR USER_PROCEDURES_DIR);
+
+			// File startup.g has values like Z position (old) so we don't need that
+			platform.DeleteSysFile(STARTUP_G);
+
+			// Set up default values
+			SetUpDefaultParameters();
 		}
 		break;
 

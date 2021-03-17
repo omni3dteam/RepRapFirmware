@@ -241,9 +241,11 @@ public:
 	void EmergencyStop();												// Cancel everything
 	bool GetLastPrintingHeight(float& height) const;					// Get the height in user coordinates of the last printing move
 	bool IsConfigFile(const char* filename);							// Check whether file has .g extension
-	int PrintingVolumeNumber(const char *filename);					// Which volume is printing
+	int PrintingVolumeNumber(const char *filename);						// Which volume is printing
 	void CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir); // Copy files from one directory to another
 	void SavePrintInfoToCSV(const char *filename, StopPrintReason reason, uint32_t hours, uint32_t minutes); // Save print info in csv file
+	void SetUpDefaultParameters();										// Set default parameters like offsets etc.
+	void SaveZOffsetsToFile(unsigned int ext, float zOffset);			// Save Z offsets to file which help while calibrating machine
 
 	GCodeResult StartSDTiming(GCodeBuffer& gb, const StringRef& reply);	// Start timing SD card file writing
 
@@ -481,8 +483,8 @@ private:
 
 	size_t nextGcodeSource;												// The one to check next
 
-	const GCodeBuffer* resourceOwners[NumResources];					// Which gcode buffer owns each resource
 
+	const GCodeBuffer* resourceOwners[NumResources];					// Which gcode buffer owns each resource
 	MachineType machineType;					// whether FFF, laser or CNC
 	bool active;								// Live and running?
 	bool isPaused;								// true if the print has been paused manually or automatically
