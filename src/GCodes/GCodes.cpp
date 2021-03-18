@@ -2272,7 +2272,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 				buf.catf(" at %04u-%02u-%02u %02u:%02u",
 								timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
-			buf.cat("\nG21\nM791 S1\n");											// set units to mm because we will be writing positions in mm
+			buf.cat("\nG21\n");											// set units to mm because we will be writing positions in mm
 																					// clear was filure flag due to resuming print
 			bool ok = f->Write(buf.c_str());
 			if (ok)
@@ -2405,6 +2405,12 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 					buf.printf("M21 P%d\n", vol);
 					ok = f->Write(buf.c_str());
 				}
+			}
+			if (ok)
+			{
+
+				buf.printf("M791 S%d\n", !wasPowerFailure);					// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
+				ok = f->Write(buf.c_str());
 			}
 			if (ok)
 			{
