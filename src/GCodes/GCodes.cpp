@@ -285,6 +285,7 @@ void GCodes::Reset()
 #if HAS_VOLTAGE_MONITOR
 	isPowerFailPaused = false;
 #endif
+	isZCalibratedBeforePrint = false;
 	doingToolChange = false;
 	doingManualBedProbe = false;
 	pausePending = filamentChangePausePending = false;
@@ -2248,7 +2249,7 @@ void GCodes::SaveZPosition()
 	}
 }
 
-void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
+void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 {
 	const char* const printingFilename = reprap.GetPrintMonitor().GetPrintingFilename();
 	if (printingFilename != nullptr)
@@ -2271,7 +2272,8 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 				buf.catf(" at %04u-%02u-%02u %02u:%02u",
 								timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
-			buf.cat("\nG21\n");												// set units to mm because we will be writing positions in mm
+			buf.cat("\nG21\nM791 S1\n");											// set units to mm because we will be writing positions in mm
+																					// clear was filure flag due to resuming print
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
@@ -2515,13 +2517,18 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
+				buf.printf("\nM791 S%d", !wasPowerFailure);							// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
 				buf.copy("\nG92");
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" Z%.3f    ;%s[%d]\n", isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?", nbr);
+						buf.catf(" Z%.3f    ;%s[%d]\n", isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?", savePlace);
 					}
 				}
 				ok = f->Write(buf.c_str());

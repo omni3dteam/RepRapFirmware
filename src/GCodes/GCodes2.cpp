@@ -743,6 +743,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			break;
 		}
 
+		if (!isZCalibratedBeforePrint)
+		{
+			platform.SendAlert(ErrorMessage, "Cannot set file to print, because Z axis may not have proper position. Perform Head Vertical Calibration procedure.",
+					"Improper shudown", 1, 0.0, 0);
+			break;
+		}
+
 		if (code == 32 && !LockMovementAndWaitForStandstill(gb))
 		{
 			return false;
@@ -4860,6 +4867,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				lastSelectedTool = reprap.GetCurrentToolNumber();
 			}
+		}
+		break;
+
+	case 791:
+		if (gb.Seen('S'))
+		{
+			isZCalibratedBeforePrint = gb.GetUIValue();
 		}
 		break;
 

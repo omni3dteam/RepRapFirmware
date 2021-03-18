@@ -209,7 +209,7 @@ public:
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
 	void SaveZPosition();
-	void SaveResumeInfo(bool wasPowerFailure, uint8_t nbr);
+	void SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace);
 	void RunShutdownMacro();
 	void SelectTool(int toolNr);
 
@@ -497,6 +497,7 @@ private:
 	bool isPowerFailPaused;						// true if the print was paused automatically because of a power failure
 	char *powerFailScript;						// the commands run when there is a power failure
 #endif
+	bool isZCalibratedBeforePrint;
 
 	// The current user position now holds the requested user position after applying workplace coordinate offsets.
 	// So we must subtract the workplace coordinate offsets when we want to display them.

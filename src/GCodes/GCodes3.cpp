@@ -120,6 +120,9 @@ GCodeResult GCodes::SetPrintZProbe(GCodeBuffer& gb, const StringRef& reply)
 		}
 		reply.catf(", threshold %d, trigger height %.2f, offsets X%.1f Y%.1f", params.adcValue, (double)params.triggerHeight, (double)params.xOffset, (double)params.yOffset);
 	}
+
+	// We assume that printer has calibrated Z axis so allow to print
+	isZCalibratedBeforePrint = true;
 	return GCodeResult::ok;
 }
 
