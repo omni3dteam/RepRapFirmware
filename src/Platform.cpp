@@ -2249,6 +2249,9 @@ void Platform::SetServoTarget(float pwm, Pin pin, uint16_t frequency)
 // Sets 'reported' if we reported anything, else leaves 'reported' alone.
 void Platform::ReportDrivers(MessageType mt, DriversBitmap& whichDrivers, const char* text, bool& reported)
 {
+	const unsigned int nrOfKnownDrivers = 7;
+	const char* driveLetter[] = { "X", "Y0", "Y1", "Z0", "Z1", "Z2", "E0", "E1" };
+
 	if (whichDrivers != 0)
 	{
 		String<ScratchStringLength> scratchString;
@@ -2258,7 +2261,7 @@ void Platform::ReportDrivers(MessageType mt, DriversBitmap& whichDrivers, const 
 		{
 			if ((wd & 1) != 0)
 			{
-				scratchString.catf(" %u", drive);
+				scratchString.catf(" %u[%s]", drive, drive < nrOfKnownDrivers ? driveLetter[drive] : "???");
 			}
 			wd >>= 1;
 		}
