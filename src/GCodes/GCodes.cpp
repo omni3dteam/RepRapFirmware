@@ -1457,6 +1457,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 					zDatumSetByProbing = true;			// if we successfully auto calibrated or adjusted leadscrews, we've set the Z datum by probing
 				}
 			}
+			isZCalibratedBeforePrint = true;
 			gb.SetState(GCodeState::normal);
 		}
 		break;
@@ -2523,7 +2524,9 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
-				buf.printf("\nM791 S%d", !wasPowerFailure);							// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
+				// If Z axis is not calibrated or power failure is shutdown reason we need to set S param to 0
+				// After power up it tells firmware that Z axis must be homed
+				buf.printf("\nM791 S%d", !wasPowerFailure && isZCalibratedBeforePrint);
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
@@ -2578,9 +2581,11 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 #endif
 }
 
-void GCodes::RunShutdownMacro() {
+void GCodes::RunShutdownMacro()
+{
 	String<StringLength20> filename;
 	filename.printf("%s%s", DEFAULT_SYS_DIR, SHUTDOWN_G);
+	SaveResumeInfo(false, 7);
 	DoFileMacro(*daemonGCode, filename.c_str(), true);
 }
 

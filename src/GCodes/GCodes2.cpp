@@ -4875,6 +4875,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		{
 			isZCalibratedBeforePrint = gb.GetUIValue();
 		}
+		else
+		{
+			reply.printf("Z axis %s calibrated\n", isZCalibratedBeforePrint ? "is" : "isn't");
+		}
 		break;
 
 	case 851: // Set Z probe offset, only for Marlin compatibility
