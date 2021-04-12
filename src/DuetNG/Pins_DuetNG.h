@@ -43,7 +43,7 @@ constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manua
 #define SUPPORT_12864_LCD		0					// set nonzero to support 12864 LCD and rotary encoder
 #define SUPPORT_OBJECT_MODEL	1
 #define SUPPORT_FTP				0
-#define SUPPORT_TELNET			0
+#define SUPPORT_TELNET			1
 
 #define USE_CACHE				1					// set nonzero to enable the cache
 
