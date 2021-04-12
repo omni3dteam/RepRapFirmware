@@ -1441,8 +1441,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (gb.Seen('H'))
 			{
 				float boundTemp = gb.GetFValue();
+				const size_t defaultHeaterNumber = 0;
 
-				if(applicableTool->GetToolHeaterActiveTemperature(0) > boundTemp)
+				if (applicableTool->GetToolHeaterActiveTemperature(defaultHeaterNumber) > boundTemp
+				 || applicableTool->GetToolHeaterStandbyTemperature(defaultHeaterNumber) > boundTemp)
 				{
 					break;		// no need to heat up
 				}
