@@ -3882,7 +3882,7 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool 
 
 		if (!seen)
 		{
-			reply.printf("Mesh compensation data available");
+			reply.printf("Mesh compensation enabled");
 		}
 
 		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
