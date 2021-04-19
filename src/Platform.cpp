@@ -2249,8 +2249,8 @@ void Platform::SetServoTarget(float pwm, Pin pin, uint16_t frequency)
 // Sets 'reported' if we reported anything, else leaves 'reported' alone.
 void Platform::ReportDrivers(MessageType mt, DriversBitmap& whichDrivers, const char* text, bool& reported)
 {
-	const unsigned int nrOfKnownDrivers = 7;
-	const char* driveLetter[] = { "X", "Y0", "Y1", "Z0", "Z1", "Z2", "E0", "E1" };
+	const unsigned int nrOfKnownDrivers = 10;
+	const char* driveLetter[] = { "X", "Y0", "Y1", "n/u", "n/u", "Z0", "Z1", "Z2", "E0", "E1" };
 
 	if (whichDrivers != 0)
 	{
