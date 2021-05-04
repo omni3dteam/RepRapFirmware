@@ -1038,7 +1038,6 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 	}
 
 	reprap.GetHeat().SwitchOffAll(true);				// turn all heaters off because the main loop may get suspended
-	DisableDrives();									// all motors off
 
 	if (firmwareUpdateModuleMap == 0)					// have we worked out which modules to update?
 	{
@@ -1082,6 +1081,7 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 		if ((firmwareUpdateModuleMap & 1) != 0 && !platform.CheckFirmwareUpdatePrerequisites(reply))
 		{
 			firmwareUpdateModuleMap = 0;
+			DisableDrives();							 // all motors off
 			return GCodeResult::error;
 		}
 
