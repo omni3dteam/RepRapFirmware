@@ -1187,7 +1187,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				const float absMean = fabsf(mean);
 				if (absMean >= 0.05 && absMean >= 2 * deviation)
 				{
-					platform.Message(WarningMessage, "the height map has a substantial Z offset. Suggest use Z-probe to establish Z=0 datum, then re-probe the mesh.\n");
+					platform.Message(LogMessage, "the height map has a substantial Z offset. Suggest use Z-probe to establish Z=0 datum, then re-probe the mesh.\n");
 				}
 			}
 			else
