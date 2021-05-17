@@ -195,7 +195,7 @@ void Scanner::Spin()
 					fileBeingUploaded = nullptr;
 					platform.Delete(SCANS_DIRECTORY, uploadFilename);
 
-					platform.Message(ErrorMessage, "Failed to write scan file\n");
+					platform.Message(ErrorMessage, "[E011] Failed to write scan file\n");
 					SetState(ScannerState::Idle);
 					break;
 				}
@@ -223,7 +223,7 @@ void Scanner::Spin()
 						fileBeingUploaded = nullptr;
 						platform.Delete(SCANS_DIRECTORY, uploadFilename);
 
-						platform.Message(ErrorMessage, "Failed to write scan file\n");
+						platform.Message(ErrorMessage, "[E012] Failed to write scan file\n");
 						SetState(ScannerState::Idle);
 						break;
 					}
@@ -263,7 +263,7 @@ void Scanner::Spin()
 					buffer[bufferPointer++] = b;
 					if (bufferPointer >= ScanBufferSize)
 					{
-						platform.Message(ErrorMessage, "Scan buffer overflow\n");
+						platform.Message(ErrorMessage, "[E013] Scan buffer overflow\n");
 						bufferPointer = 0;
 					}
 				}
@@ -337,7 +337,7 @@ void Scanner::ProcessCommand()
 		}
 		else
 		{
-			platform.Message(ErrorMessage, "Malformed scanner upload request\n");
+			platform.Message(ErrorMessage, "[E014] Malformed scanner upload request\n");
 		}
 	}
 
@@ -369,7 +369,7 @@ void Scanner::ProcessCommand()
 		// if this command contains a message, report it
 		if (bufferPointer > 6)
 		{
-			platform.MessageF(ErrorMessage, "%s\n", &buffer[6]);
+			platform.MessageF(ErrorMessage, "[E015] %s\n", &buffer[6]);
 		}
 
 		// reset the state

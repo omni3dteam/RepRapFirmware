@@ -717,7 +717,7 @@ void RepRap::StandbyTool(int toolNumber, bool simulating)
 	}
 	else
 	{
-		platform->MessageF(ErrorMessage, "Attempt to standby a non-existent tool: %d\n", toolNumber);
+		platform->MessageF(ErrorMessage, "[E009] Attempt to standby a non-existent tool: %d\n", toolNumber);
 	}
 }
 
@@ -2591,7 +2591,7 @@ bool RepRap::WriteToolParameters(FileStore *f) const
 // Report an internal error
 void RepRap::ReportInternalError(const char *file, const char *func, int line) const
 {
-	platform->MessageF(ErrorMessage, "Internal Error in %s at %s(%d)\n", func, file, line);
+	platform->MessageF(ErrorMessage, "[E010] Internal Error in %s at %s(%d)\n", func, file, line);
 }
 
 #if SUPPORT_12864_LCD

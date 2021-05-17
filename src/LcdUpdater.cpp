@@ -48,7 +48,7 @@ bool LcdUpdater::OpenLcdFirmware()
 	uploadFile = platform.OpenFile(DEFAULT_SYS_DIR, LCD_FIRMWARE_FILE, OpenMode::read);
 	if (uploadFile == nullptr)
 	{
-		MessageF(ErrorMessage, "Failed to open file %s\n", LCD_FIRMWARE_FILE);
+		MessageF(ErrorMessage, "[E001] Failed to open file %s\n", LCD_FIRMWARE_FILE);
 		state = UploadState::idle;
 		return false;
 	}
@@ -57,7 +57,7 @@ bool LcdUpdater::OpenLcdFirmware()
 	if (fileSize == 0)
 	{
 		uploadFile->Close();
-		MessageF(ErrorMessage, "Upload file is empty %s\n", LCD_FIRMWARE_FILE);
+		MessageF(ErrorMessage, "[E002] Upload file is empty %s\n", LCD_FIRMWARE_FILE);
 		state = UploadState::idle;
 		return false;
 	}
@@ -137,7 +137,7 @@ void LcdUpdater::prepareFrameToLcd()
 		retransmission = true;
 		if(++retransmissionTry > 3)
 		{
-			MessageF(ErrorMessage, "Internal problem. Can't upload firmware to LCD. Reason: %d\n", (int)stat);
+			MessageF(ErrorMessage, "[E003] Internal problem. Can't upload firmware to LCD. Reason: %d\n", (int)stat);
 			state = UploadState::done;
 		}
 	}

@@ -250,7 +250,7 @@ bool GCodeBuffer::LineFinished()
 
 	if (gcodeLineEnd == ARRAY_SIZE(gcodeBuffer))
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "G-Code buffer '%s' length overflow\n", identity);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E101] G-Code buffer '%s' length overflow\n", identity);
 		Init();
 		return false;
 	}
@@ -501,7 +501,7 @@ void GCodeBuffer::GetFloatArray(float arr[], size_t& returnedLength, bool doPad)
 		{
 			if (length >= returnedLength)		// array limit has been set in here
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "GCodes: Attempt to read a GCode float array that is too long: %s\n", gcodeBuffer);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E102] GCodes: Attempt to read a GCode float array that is too long: %s\n", gcodeBuffer);
 				readPointer = -1;
 				returnedLength = 0;
 				return;
@@ -549,7 +549,7 @@ void GCodeBuffer::GetIntArray(int32_t arr[], size_t& returnedLength, bool doPad)
 		{
 			if (length >= returnedLength) // Array limit has been set in here
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "GCodes: Attempt to read a GCode int array that is too long: %s\n", gcodeBuffer);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E103] GCodes: Attempt to read a GCode int array that is too long: %s\n", gcodeBuffer);
 				readPointer = -1;
 				returnedLength = 0;
 				return;
@@ -596,7 +596,7 @@ void GCodeBuffer::GetUnsignedArray(uint32_t arr[], size_t& returnedLength, bool 
 		{
 			if (length >= returnedLength) // Array limit has been set in here
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "GCodes: Attempt to read a GCode unsigned array that is too long: %s\n", gcodeBuffer);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E104] GCodes: Attempt to read a GCode unsigned array that is too long: %s\n", gcodeBuffer);
 				readPointer = -1;
 				returnedLength = 0;
 				return;

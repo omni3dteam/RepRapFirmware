@@ -679,7 +679,7 @@ GCodeResult GCodes::CheckOrConfigureTrigger(GCodeBuffer& gb, const StringRef& re
 						break;
 
 					default:
-						platform.Message(ErrorMessage, "Bad S parameter in M581 command\n");
+						platform.Message(ErrorMessage, "[E105] Bad S parameter in M581 command\n");
 					}
 				}
 				if (!seen)

@@ -1326,7 +1326,7 @@ void Platform::SetEmulating(Compatibility c)
 {
 	if (c != Compatibility::me && c != Compatibility::reprapFirmware && c != Compatibility::marlin && c != Compatibility::nanoDLP)
 	{
-		Message(ErrorMessage, "Attempt to emulate unsupported firmware.\n");
+		Message(ErrorMessage, "[E004] Attempt to emulate unsupported firmware.\n");
 	}
 	else
 	{
@@ -1693,8 +1693,8 @@ void Platform::Spin()
 		{
 			bool reported = false;
 #if HAS_SMART_DRIVERS
-			ReportDrivers(ErrorMessage, shortToGroundDrivers, "short-to-ground", reported);
-			ReportDrivers(ErrorMessage, temperatureShutdownDrivers, "over temperature shutdown", reported);
+			ReportDrivers(ErrorMessage, shortToGroundDrivers, "[E005] short-to-ground", reported);
+			ReportDrivers(ErrorMessage, temperatureShutdownDrivers, "[E006] over temperature shutdown", reported);
 			if (openLoadATimer.CheckAndStop(OpenLoadTimeout))
 			{
 				ReportDrivers(WarningMessage, openLoadADrivers, "motor phase A may be disconnected", reported);
@@ -1770,7 +1770,7 @@ void Platform::Spin()
 				&& digitalRead(VssaSensePin)
 			   )
 			{
-				Message(ErrorMessage, "VSSA fault, check thermistor wiring\n");
+				Message(ErrorMessage, "[E007] VSSA fault, check thermistor wiring\n");
 				reported = true;
 			}
 #endif
@@ -1779,7 +1779,7 @@ void Platform::Spin()
 			// Check for attempts to move motors when not powered
 			if (warnDriversNotPowered)
 			{
-				Message(ErrorMessage, "Attempt to move motors when VIN is not in range\n");
+				Message(ErrorMessage, "[E008] Attempt to move motors when VIN is not in range\n");
 				warnDriversNotPowered = false;
 				reported = true;
 			}

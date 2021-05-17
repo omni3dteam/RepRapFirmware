@@ -739,13 +739,13 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 		if (platform.IsCoolantEmpty())
 		{
-			platform.SendAlert(ErrorMessage, "Cannot set file to print, because a low level of coolant. Fill in the coolant.", "Low level of coolant", 1, 0.0, 0);
+			platform.SendAlert(ErrorMessage, "[E125] Cannot set file to print, because a low level of coolant. Fill in the coolant.", "Low level of coolant", 1, 0.0, 0);
 			break;
 		}
 
 		if (!isZCalibratedBeforePrint)
 		{
-			platform.SendAlert(ErrorMessage, "Cannot set file to print, because Z axis may not have proper position. Perform Head Vertical Calibration procedure.",
+			platform.SendAlert(ErrorMessage, "[E126] Cannot set file to print, because Z axis may not have proper position. Perform Head Vertical Calibration procedure.",
 					"Improper shudown", 1, 0.0, 0);
 			break;
 		}
@@ -2008,7 +2008,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				FileStore * const f = platform.OpenSysFile(LED_STRIP_G, OpenMode::write);
 				if (f == nullptr)
 				{
-					platform.MessageF(ErrorMessage, "Failed to create file %s\n", LED_STRIP_G);
+					platform.MessageF(ErrorMessage, "[E127] Failed to create file %s\n", LED_STRIP_G);
 				}
 				else
 				{
@@ -2026,7 +2026,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					if (!ok)
 					{
 						platform.DeleteSysFile(LED_STRIP_G);
-						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", LED_STRIP_G);
+						platform.MessageF(ErrorMessage, "[E128] Failed to write or close file %s\n", LED_STRIP_G);
 					}
 				}
 			}
@@ -3425,7 +3425,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				FileStore * const f = platform.OpenSysFile(DWC_PASS_G, OpenMode::write);
 				if (f == nullptr)
 				{
-					platform.MessageF(ErrorMessage, "Failed to create file %s\n", DWC_PASS_G);
+					platform.MessageF(ErrorMessage, "[E129] Failed to create file %s\n", DWC_PASS_G);
 					break;
 				}
 				else
@@ -3443,7 +3443,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					if (!ok)
 					{
 						platform.DeleteSysFile(DWC_PASS_G);
-						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", DWC_PASS_G);
+						platform.MessageF(ErrorMessage, "[E130] Failed to write or close file %s\n", DWC_PASS_G);
 					}
 					else
 					{
@@ -4311,7 +4311,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				FileStore * const f = platform.OpenSysFile(LCD_PASS_G, OpenMode::write);
 				if (f == nullptr)
 				{
-					platform.MessageF(ErrorMessage, "Failed to create file %s\n", LCD_PASS_G);
+					platform.MessageF(ErrorMessage, "[E131] Failed to create file %s\n", LCD_PASS_G);
 				}
 				else
 				{
@@ -4328,7 +4328,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					if (!ok)
 					{
 						platform.DeleteSysFile(LCD_PASS_G);
-						platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", LCD_PASS_G);
+						platform.MessageF(ErrorMessage, "[E132] Failed to write or close file %s\n", LCD_PASS_G);
 					}
 				}
 			}

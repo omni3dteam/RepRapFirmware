@@ -456,7 +456,7 @@ void GCodes::Spin()
 	{
 		if (displayNoToolWarning)
 		{
-			platform.Message(ErrorMessage, "Attempting to extrude with no tool selected.\n");
+			platform.Message(ErrorMessage, "[E106] Attempting to extrude with no tool selected.\n");
 			displayNoToolWarning = false;
 			lastWarningMillis = now;
 		}
@@ -1008,7 +1008,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			else if (platform.GetZProbeResult() == EndStopHit::lowHit)
 			{
 				reprap.GetHeat().SuspendHeaters(false);
-				platform.Message(ErrorMessage, "Z probe already triggered before probing move started\n");
+				platform.Message(ErrorMessage, "[E107] Z probe already triggered before probing move started\n");
 				gb.SetState(GCodeState::normal);
 				if (platform.GetZProbeType() != ZProbeType::none && !probeIsDeployed)
 				{
@@ -1046,7 +1046,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				platform.SetProbing(false);
 				if (!zProbeTriggered)
 				{
-					platform.Message(ErrorMessage, "Z probe was not triggered during probing move\n");
+					platform.Message(ErrorMessage, "[E108] Z probe was not triggered during probing move\n");
 					gb.SetState(GCodeState::normal);
 					if (platform.GetZProbeType() != ZProbeType::none && !probeIsDeployed)
 					{
@@ -1118,7 +1118,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			}
 			else
 			{
-				platform.Message(ErrorMessage, "Z probe readings not consistent\n");
+				platform.Message(ErrorMessage, "[E109] Z probe readings not consistent\n");
 				gb.SetState(GCodeState::normal);
 				if (platform.GetZProbeType() != ZProbeType::none && !probeIsDeployed)
 				{
@@ -1273,7 +1273,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			{
 				// Z probe is already triggered at the start of the move, so abandon the probe and record an error
 				reprap.GetHeat().SuspendHeaters(false);
-				platform.Message(ErrorMessage, "Z probe already triggered at start of probing move\n");
+				platform.Message(ErrorMessage, "[E110] Z probe already triggered at start of probing move\n");
 				if (g30ProbePointIndex >= 0)
 				{
 					reprap.GetMove().SetZBedProbePoint(g30ProbePointIndex, platform.GetZProbeDiveHeight(), true, true);
@@ -1319,7 +1319,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				platform.SetProbing(false);
 				if (!zProbeTriggered)
 				{
-					platform.Message(ErrorMessage, "Z probe was not triggered during probing move\n");
+					platform.Message(ErrorMessage, "[E111] Z probe was not triggered during probing move\n");
 					g30zHeightErrorSum = g30zHeightError = 0.0;
 					hadProbingError = true;
 				}
@@ -1478,7 +1478,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 			Tool * const tool = reprap.GetCurrentTool();
 			if (tool == nullptr)
 			{
-				platform.Message(ErrorMessage, "Tool was deselected during G30 S-2 command\n");
+				platform.Message(ErrorMessage, "[E112] Tool was deselected during G30 S-2 command\n");
 				error = true;
 			}
 			else
@@ -1611,7 +1611,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	default:				// should not happen
-		platform.Message(ErrorMessage, "Undefined GCodeState\n");
+		platform.Message(ErrorMessage, "[E113] Undefined GCodeState\n");
 		gb.SetState(GCodeState::normal);
 		break;
 	}
@@ -2258,7 +2258,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 		FileStore * const f = platform.OpenSysFile(RESUME_AFTER_POWER_FAIL_G, OpenMode::write);
 		if (f == nullptr)
 		{
-			platform.MessageF(ErrorMessage, "Failed to create file %s\n", RESUME_AFTER_POWER_FAIL_G);
+			platform.MessageF(ErrorMessage, "[E114] Failed to create file %s\n", RESUME_AFTER_POWER_FAIL_G);
 		}
 		else
 		{
@@ -2496,7 +2496,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 			else
 			{
 				platform.DeleteSysFile(RESUME_AFTER_POWER_FAIL_G);
-				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", RESUME_AFTER_POWER_FAIL_G);
+				platform.MessageF(ErrorMessage, "[E115] Failed to write or close file %s\n", RESUME_AFTER_POWER_FAIL_G);
 			}
 		}
 	}
@@ -2506,7 +2506,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 		FileStore * const f = platform.OpenSysFile(STARTUP_G, OpenMode::write);
 		if (f == nullptr)
 		{
-			platform.MessageF(ErrorMessage, "Failed to create file %s", STARTUP_G);
+			platform.MessageF(ErrorMessage, "[E116] Failed to create file %s", STARTUP_G);
 		}
 		else
 		{
@@ -2573,7 +2573,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 			if (!ok)
 			{
 				platform.DeleteSysFile(STARTUP_G);
-				platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", STARTUP_G);
+				platform.MessageF(ErrorMessage, "[E117] Failed to write or close file %s\n", STARTUP_G);
 			}
 		}
 		isStateSaved = true;
@@ -2648,7 +2648,7 @@ bool GCodes::Push(GCodeBuffer& gb)
 	const bool ok = gb.PushState();
 	if (!ok)
 	{
-		platform.Message(ErrorMessage, "Push(): stack overflow\n");
+		platform.Message(ErrorMessage, "[E118] Push(): stack overflow\n");
 	}
 	return ok;
 }
@@ -2658,7 +2658,7 @@ void GCodes::Pop(GCodeBuffer& gb)
 {
 	if (!gb.PopState())
 	{
-		platform.Message(ErrorMessage, "Pop(): stack underflow\n");
+		platform.Message(ErrorMessage, "[E119] Pop(): stack underflow\n");
 	}
 }
 
@@ -2835,7 +2835,7 @@ bool GCodes::LoadExtrusionAndFeedrateFromGCode(GCodeBuffer& gb, bool isPrintingM
 				}
 				else
 				{
-					platform.Message(ErrorMessage, "Multiple E parameters in G1 commands are not supported in absolute extrusion mode\n");
+					platform.Message(ErrorMessage, "[E120] Multiple E parameters in G1 commands are not supported in absolute extrusion mode\n");
 				}
 			}
 		}
@@ -4827,7 +4827,7 @@ void GCodes::SetToolHeaters(Tool *tool, float temperature, bool both)
 {
 	if (tool == nullptr)
 	{
-		platform.Message(ErrorMessage, "Setting temperature: no tool selected\n");
+		platform.Message(ErrorMessage, "[E121] Setting temperature: no tool selected\n");
 		return;
 	}
 
@@ -5839,7 +5839,7 @@ void GCodes::CheckHeaterFault()
 		{
 			StopPrint(StopPrintReason::abort);
 			reprap.GetHeat().SwitchOffAll(true);
-			platform.MessageF(ErrorMessage, "Shutting down due to un-cleared heater fault after %lu seconds\n", heaterFaultTimeout/1000);
+			platform.MessageF(ErrorMessage, "[E122] Shutting down due to un-cleared heater fault after %lu seconds\n", heaterFaultTimeout/1000);
 			heaterFaultState = HeaterFaultState::stopping;
 			heaterFaultTime = millis();
 		}
@@ -6184,7 +6184,7 @@ void GCodes::SaveZOffsetsToFile(unsigned int ext, float zOffset)
 	FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
 	if (f == nullptr)
 	{
-		platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
+		platform.MessageF(ErrorMessage, "[E123] Failed to create file %s\n", file);
 	}
 	else
 	{
@@ -6220,7 +6220,7 @@ void GCodes::SaveZOffsetsToFile(unsigned int ext, float zOffset)
 		if (!ok)
 		{
 			platform.DeleteSysFile(file);
-			platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
+			platform.MessageF(ErrorMessage, "[E124] Failed to write or close file %s\n", file);
 		}
 	}
 }
