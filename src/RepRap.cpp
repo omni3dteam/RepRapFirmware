@@ -441,7 +441,7 @@ void RepRap::Spin()
 		{
 			if (t->DisplayColdExtrudeWarning())
 			{
-				platform->MessageF(WarningMessage, "Tool %d was not driven because its heater temperatures were not high enough or it has a heater fault\n", t->myNumber);
+				platform->MessageF(WarningMessage, "[W009] Tool %d was not driven because its heater temperatures were not high enough or it has a heater fault\n", t->myNumber);
 				lastWarningMillis = now;
 			}
 		}

@@ -112,7 +112,7 @@ bool FileStore::Open(const char* filePath, OpenMode mode, uint32_t preAllocSize)
 		// It is up to the caller to report an error if necessary.
 		if (reprap.Debug(modulePlatform))
 		{
-			reprap.GetPlatform().MessageF(WarningMessage, "Failed to open %s to %s, error code %d\n", filePath, (writing) ? "write" : "read", (int)openReturn);
+			reprap.GetPlatform().MessageF(WarningMessage, "[W501] Failed to open %s to %s, error code %d\n", filePath, (writing) ? "write" : "read", (int)openReturn);
 		}
 		return false;
 	}
@@ -456,7 +456,7 @@ bool FileStore::Flush()
 
 				if ((writeStatus != FR_OK) || (bytesToWrite != bytesWritten))
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "[E07] Failed to flush data to file, error code %d. Card may be full.\n", (int)writeStatus);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E507] Failed to flush data to file, error code %d. Card may be full.\n", (int)writeStatus);
 					return false;
 				}
 			}

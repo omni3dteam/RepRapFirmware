@@ -1697,11 +1697,11 @@ void Platform::Spin()
 			ReportDrivers(ErrorMessage, temperatureShutdownDrivers, "[E006] over temperature shutdown", reported);
 			if (openLoadATimer.CheckAndStop(OpenLoadTimeout))
 			{
-				ReportDrivers(WarningMessage, openLoadADrivers, "motor phase A may be disconnected", reported);
+				ReportDrivers(WarningMessage, openLoadADrivers, "[W001] motor phase A may be disconnected", reported);
 			}
 			if (openLoadBTimer.CheckAndStop(OpenLoadTimeout))
 			{
-				ReportDrivers(WarningMessage, openLoadBDrivers, "motor phase B may be disconnected", reported);
+				ReportDrivers(WarningMessage, openLoadBDrivers, "[W002] motor phase B may be disconnected", reported);
 			}
 
 			// Don't warn about a hot driver if we recently turned on a fan to cool it
@@ -1724,7 +1724,7 @@ void Platform::Spin()
 						}
 					}
 				}
-				ReportDrivers(WarningMessage, temperatureWarningDrivers, "high temperature", reported);
+				ReportDrivers(WarningMessage, temperatureWarningDrivers, "[W003] high temperature", reported);
 			}
 #endif
 
@@ -1737,7 +1737,7 @@ void Platform::Spin()
 				stalledDriversToLog = 0;
 				float liveCoordinates[MaxTotalDrivers];
 				reprap.GetMove().LiveCoordinates(liveCoordinates, reprap.GetCurrentTool());
-				MessageF(WarningMessage, "Driver(s)%s stalled at Z height %.2f", scratchString.c_str(), (double)liveCoordinates[Z_AXIS]);
+				MessageF(WarningMessage, "[W004] Driver(s)%s stalled at Z height %.2f", scratchString.c_str(), (double)liveCoordinates[Z_AXIS]);
 				reported = true;
 			}
 #endif
@@ -1745,13 +1745,13 @@ void Platform::Spin()
 #if HAS_VOLTAGE_MONITOR
 			if (numOverVoltageEvents != previousOverVoltageEvents)
 			{
-				MessageF(WarningMessage, "VIN over-voltage event (%.1fV)", (double)AdcReadingToPowerVoltage(lastOverVoltageValue));
+				MessageF(WarningMessage, "[W005] VIN over-voltage event (%.1fV)", (double)AdcReadingToPowerVoltage(lastOverVoltageValue));
 				previousOverVoltageEvents = numOverVoltageEvents;
 				reported = true;
 			}
 			if (numUnderVoltageEvents != previousUnderVoltageEvents)
 			{
-				MessageF(WarningMessage, "VIN under-voltage event (%.1fV)", (double)AdcReadingToPowerVoltage(lastUnderVoltageValue));
+				MessageF(WarningMessage, "[W006] VIN under-voltage event (%.1fV)", (double)AdcReadingToPowerVoltage(lastUnderVoltageValue));
 				previousUnderVoltageEvents = numUnderVoltageEvents;
 				reported = true;
 			}
@@ -1945,7 +1945,7 @@ void Platform::Spin()
 			{
 				if (doorState[0] || doorState[1])
 				{
-					SendAlert(WarningMessage, "The doors are still open. Close the doors immediately!", "Doors status", 1, 0.0, 0);
+					SendAlert(WarningMessage, "[W007] The doors are still open. Close the doors immediately!", "Doors status", 1, 0.0, 0);
 					isDoorAlert = true;
 				}
 			}
@@ -2086,7 +2086,7 @@ void Platform::Spin()
 							reprap.GetGCodes().IsReallyPrinting() ? " next time" : "");
 
 
-					SendAlert(WarningMessage, coolantAlert.c_str(), "Low level of coolant", 1, 0.0, 0);
+					SendAlert(WarningMessage, coolantAlert.c_str(), "[W008] Low level of coolant", 1, 0.0, 0);
 				}
 			}
 			else

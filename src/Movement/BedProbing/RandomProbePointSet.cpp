@@ -168,7 +168,7 @@ bool RandomProbePointSet::SetProbedBedEquation(size_t numPoints, const StringRef
 	numBedCompensationPoints = numPoints;
 
 	reprap.GetPlatform().Message(WarningMessage,
-		"3/4/5-point bed compensation is deprecated and will be removed in a future firmware release. Please use G29 mesh bed compensation instead.\n");
+		"[W301] 3/4/5-point bed compensation is deprecated and will be removed in a future firmware release. Please use G29 mesh bed compensation instead.\n");
 
 	// Report what points the bed equation fits
 	reply.copy("Bed equation fits points");
@@ -319,7 +319,7 @@ float RandomProbePointSet::TriangleZ(float x, float y) const
 			return l1 * baryZBedProbePoints[i] + l2 * baryZBedProbePoints[j] + l3 * baryZBedProbePoints[4];
 		}
 	}
-	reprap.GetPlatform().Message(WarningMessage, "Triangle interpolation: point outside all triangles!\n");
+	reprap.GetPlatform().Message(WarningMessage, "[W302] Triangle interpolation: point outside all triangles!\n");
 	return 0.0;
 }
 

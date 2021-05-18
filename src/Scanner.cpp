@@ -94,7 +94,7 @@ void Scanner::Spin()
 		if (state == ScannerState::ScanningPre || state == ScannerState::Scanning || state == ScannerState::ScanningPost ||
 			state == ScannerState::Uploading)
 		{
-			platform.Message(WarningMessage, "Scanner disconnected while a 3D scan or upload was in progress");
+			platform.Message(WarningMessage, "[W010] Scanner disconnected while a 3D scan or upload was in progress");
 		}
 
 		// Delete any pending uploads

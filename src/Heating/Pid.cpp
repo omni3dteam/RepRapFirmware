@@ -141,7 +141,7 @@ void PID::SwitchOn()
 		{
 			if (reprap.Debug(Module::moduleHeat))
 			{
-				platform.MessageF(WarningMessage, "Heater %d not switched on due to temperature fault\n", heater);
+				platform.MessageF(WarningMessage, "[W201] Heater %d not switched on due to temperature fault\n", heater);
 			}
 		}
 		else if (model.IsEnabled())
@@ -947,7 +947,7 @@ void PID::CalculateModel()
 	}
 	else
 	{
-		platform.MessageF(WarningMessage, "Auto tune of heater %u failed due to bad curve fit (A=%.1f, C=%.1f, D=%.1f)\n", heater, (double)gain, (double)tc, (double)td);
+		platform.MessageF(WarningMessage, "[W202] Auto tune of heater %u failed due to bad curve fit (A=%.1f, C=%.1f, D=%.1f)\n", heater, (double)gain, (double)tc, (double)td);
 	}
 }
 
