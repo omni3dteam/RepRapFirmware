@@ -958,7 +958,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				}
 				else
 				{
-					platform.MessageF(WarningMessage, "[W001] Skipping grid point (%.1f, %.1f) because Z probe cannot reach it\n", (double)x, (double)y);
+					platform.MessageF(WarningMessage, "[W101] Skipping grid point (%.1f, %.1f) because Z probe cannot reach it\n", (double)x, (double)y);
 					gb.SetState(GCodeState::gridProbing6);
 				}
 			}
@@ -1413,7 +1413,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				g30zHeightError = g30zHeightErrorSum/tapsDone;
 				if (params.tolerance > 0.0)			// zero or negative tolerance means always average all readings, so no warning message
 				{
-					platform.Message(WarningMessage, "[W002] Z probe readings not consistent\n");
+					platform.Message(WarningMessage, "[W102] Z probe readings not consistent\n");
 				}
 			}
 
@@ -3615,7 +3615,7 @@ bool GCodes::DoFileMacro(GCodeBuffer& gb, const char* fileName, bool reportMissi
 		if (reportMissing)
 		{
 			// Don't use snprintf into scratchString here, because fileName may be aliased to scratchString
-			platform.MessageF(WarningMessage, "[W003] Macro file %s not found.\n", fileName);
+			platform.MessageF(WarningMessage, "[W103] Macro file %s not found.\n", fileName);
 			return true;
 		}
 		return false;
