@@ -66,19 +66,19 @@ void UploadingNetworkResponder::FinishUpload(uint32_t fileLength, time_t fileLas
 	if (!fileBeingUploaded.Flush())
 	{
 		uploadError = true;
-		GetPlatform().Message(ErrorMessage, "Could not flush remaining data while finishing upload\n");
+		GetPlatform().Message(ErrorMessage, "[E402] Could not flush remaining data while finishing upload\n");
 	}
 
 	// Check the file length is as expected
 	if (fileLength != 0 && fileBeingUploaded.Length() != fileLength)
 	{
 		uploadError = true;
-		GetPlatform().MessageF(ErrorMessage, "Uploaded file size is different (%lu vs. expected %lu bytes)\n", fileBeingUploaded.Length(), fileLength);
+		GetPlatform().MessageF(ErrorMessage, "[E403] Uploaded file size is different (%lu vs. expected %lu bytes)\n", fileBeingUploaded.Length(), fileLength);
 	}
 	else if (gotCrc && expectedCrc != fileBeingUploaded.GetCrc32())
 	{
 		uploadError = true;
-		GetPlatform().MessageF(ErrorMessage, "Uploaded file CRC is different (%08" PRIx32 " vs. expected %08" PRIx32 ")\n", fileBeingUploaded.GetCrc32(), expectedCrc);
+		GetPlatform().MessageF(ErrorMessage, "[E404] Uploaded file CRC is different (%08" PRIx32 " vs. expected %08" PRIx32 ")\n", fileBeingUploaded.GetCrc32(), expectedCrc);
 	}
 
 	// Close the file

@@ -78,7 +78,7 @@ bool FileStore::Open(const char* filePath, OpenMode mode, uint32_t preAllocSize)
 				filePathCopy[i] = 0;
 				if (!reprap.GetPlatform().GetMassStorage()->DirectoryExists(filePathCopy.GetRef()) && !reprap.GetPlatform().GetMassStorage()->MakeDirectory(filePathCopy.c_str()))
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "Failed to create folder %s while trying to open file %s\n", filePathCopy.c_str(), filePath);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E504] Failed to create folder %s while trying to open file %s\n", filePathCopy.c_str(), filePath);
 					return false;
 				}
 				filePathCopy[i] = '/';
@@ -306,7 +306,7 @@ int FileStore::Read(char* extBuf, size_t nBytes)
 			FRESULT readStatus = f_read(&file, extBuf, nBytes, &bytes_read);
 			if (readStatus != FR_OK)
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "Cannot read file, error code %d\n", (int)readStatus);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E505] Cannot read file, error code %d\n", (int)readStatus);
 				return -1;
 			}
 			return (int)bytes_read;
@@ -421,7 +421,7 @@ bool FileStore::Write(const char *s, size_t len)
 
 			if ((writeStatus != FR_OK) || (totalBytesWritten != len))
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "Failed to write to file, error code %d. Card may be full.\n", (int)writeStatus);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E506] Failed to write to file, error code %d. Card may be full.\n", (int)writeStatus);
 				return false;
 			}
 			return true;
@@ -456,7 +456,7 @@ bool FileStore::Flush()
 
 				if ((writeStatus != FR_OK) || (bytesToWrite != bytesWritten))
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "Failed to flush data to file, error code %d. Card may be full.\n", (int)writeStatus);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E07] Failed to flush data to file, error code %d. Card may be full.\n", (int)writeStatus);
 					return false;
 				}
 			}

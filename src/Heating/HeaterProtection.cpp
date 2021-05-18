@@ -42,7 +42,7 @@ bool HeaterProtection::Check()
 			badTemperatureCount++;
 			if (badTemperatureCount > MaxBadTemperatureCount)
 			{
-				reprap.GetPlatform().MessageF(ErrorMessage, "Temperature reading error on heater %d\n", supervisedHeater);
+				reprap.GetPlatform().MessageF(ErrorMessage, "[E204] Temperature reading error on heater %d\n", supervisedHeater);
 				return false;
 			}
 		}

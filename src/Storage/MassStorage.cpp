@@ -125,7 +125,7 @@ FileStore* MassStorage::OpenFile(const char* filePath, OpenMode mode, uint32_t p
 			}
 		}
 	}
-	reprap.GetPlatform().Message(ErrorMessage, "Max open file count exceeded.\n");
+	reprap.GetPlatform().Message(ErrorMessage, "[E508] Max open file count exceeded.\n");
 	return nullptr;
 }
 
@@ -168,7 +168,7 @@ void MassStorage::CloseAllFiles()
 	}
 	if (hadError)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Filename too long: cap=%u, dir=%.12s%s name=%.12s%s\n",
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E509] Filename too long: cap=%u, dir=%.12s%s name=%.12s%s\n",
 										outbuf.Capacity(),
 										directory, (strlen(directory) > 12 ? "..." : ""),
 										fileName, (strlen(fileName) > 12 ? "..." : "")
@@ -299,7 +299,7 @@ bool MassStorage::Delete(const char* filePath)
 
 	if (isOpen)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Cannot delete file %s because it is open\n", filePath);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E510] Cannot delete file %s because it is open\n", filePath);
 		return false;
 	}
 
@@ -308,7 +308,7 @@ bool MassStorage::Delete(const char* filePath)
 		// If the error was that the file or path doesn't exist, don't generate a global error message, but still return false
 		if (unlinkReturn != FR_NO_FILE && unlinkReturn != FR_NO_PATH)
 		{
-			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to delete file %s\n", filePath);
+			reprap.GetPlatform().MessageF(ErrorMessage, "[E511] Failed to delete file %s\n", filePath);
 		}
 		return false;
 	}
@@ -325,7 +325,7 @@ bool MassStorage::MakeDirectory(const char *parentDir, const char *dirName)
 	}
 	if (f_mkdir(location.c_str()) != FR_OK)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to create directory %s\n", location.c_str());
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E512] Failed to create directory %s\n", location.c_str());
 		return false;
 	}
 	return true;
@@ -335,7 +335,7 @@ bool MassStorage::MakeDirectory(const char *directory)
 {
 	if (f_mkdir(directory) != FR_OK)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to create directory %s\n", directory);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E513] Failed to create directory %s\n", directory);
 		return false;
 	}
 	return true;
@@ -353,7 +353,7 @@ bool MassStorage::Rename(const char *oldFilename, const char *newFilename)
 	}
 	if (f_rename(oldFilename, newFilename) != FR_OK)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to rename file or directory %s to %s\n", oldFilename, newFilename);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E514] Failed to rename file or directory %s to %s\n", oldFilename, newFilename);
 		return false;
 	}
 	return true;
@@ -415,7 +415,7 @@ bool MassStorage::SetLastModifiedTime(const char *filePath, time_t time)
     const bool ok = (f_utime(filePath, &fno) == FR_OK);
     if (!ok)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to set last modified time for file '%s'\n", filePath);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E515] Failed to set last modified time for file '%s'\n", filePath);
 	}
     return ok;
 }
@@ -646,7 +646,7 @@ void MassStorage::Spin()
 							const unsigned int numFiles = InternalUnmount(card, false);
 							if (numFiles != 0)
 							{
-								reprap.GetPlatform().MessageF(ErrorMessage, "SD card %u removed with %u file(s) open on it\n", card, numFiles);
+								reprap.GetPlatform().MessageF(ErrorMessage, "[E516] SD card %u removed with %u file(s) open on it\n", card, numFiles);
 							}
 						}
 					}
@@ -741,7 +741,7 @@ void MassStorage::RecordSimulationTime(const char *printingFilePath, uint32_t si
 
 	if (!ok)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to append simulated print time to file %s\n", printingFilePath);
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E517] Failed to append simulated print time to file %s\n", printingFilePath);
 	}
 }
 

@@ -131,7 +131,7 @@ bool FileInfoParser::GetFileInfo(const char *filePath, GCodeFileInfo& info, bool
 				const int nbytes = fileBeingParsed->Read(&buf[fileOverlapLength], sizeToRead);
 				if (nbytes != (int)sizeToRead)
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "Failed to read header of G-Code file \"%s\"\n", filePath);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E501] Failed to read header of G-Code file \"%s\"\n", filePath);
 					parseState = notParsing;
 					fileBeingParsed->Close();
 					info = parsedFileInfo;
@@ -224,7 +224,7 @@ bool FileInfoParser::GetFileInfo(const char *filePath, GCodeFileInfo& info, bool
 				const uint32_t startTime = millis();
 				if (!fileBeingParsed->Seek(thisSeekPos))
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "Could not seek from end of file \"%s\"\n", filePath);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E502] Could not seek from end of file \"%s\"\n", filePath);
 					parseState = notParsing;
 					fileBeingParsed->Close();
 					info = parsedFileInfo;
@@ -257,7 +257,7 @@ bool FileInfoParser::GetFileInfo(const char *filePath, GCodeFileInfo& info, bool
 				int nbytes = fileBeingParsed->Read(buf, sizeToRead);
 				if (nbytes != (int)sizeToRead)
 				{
-					reprap.GetPlatform().MessageF(ErrorMessage, "Failed to read footer from G-Code file \"%s\"\n", filePath);
+					reprap.GetPlatform().MessageF(ErrorMessage, "[E503] Failed to read footer from G-Code file \"%s\"\n", filePath);
 					parseState = notParsing;
 					fileBeingParsed->Close();
 					info = parsedFileInfo;

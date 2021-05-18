@@ -218,7 +218,7 @@ void PID::Spin()
 					}
 					mode = HeaterMode::fault;
 					reprap.GetGCodes().HandleHeaterFault(heater);
-					platform.MessageF(ErrorMessage, "Temperature reading fault on heater %d: %s\n", heater, TemperatureErrorString(err));
+					platform.MessageF(ErrorMessage, "[E205] Temperature reading fault on heater %d: %s\n", heater, TemperatureErrorString(err));
 					reprap.FlagTemperatureFault(heater);
 				}
 			}
@@ -270,7 +270,7 @@ void PID::Spin()
 								SetHeater(0.0);					// do this here just to be sure
 								mode = HeaterMode::fault;
 								reprap.GetGCodes().HandleHeaterFault(heater);
-								platform.MessageF(ErrorMessage, "Heating fault on heater %d, temperature rising much more slowly than the expected %.1f" DEGREE_SYMBOL "C/sec\n",
+								platform.MessageF(ErrorMessage, "[E206] Heating fault on heater %d, temperature rising much more slowly than the expected %.1f" DEGREE_SYMBOL "C/sec\n",
 											heater, (double)expectedRate);
 								reprap.FlagTemperatureFault(heater);
 							}
@@ -296,7 +296,7 @@ void PID::Spin()
 						SetHeater(0.0);					// do this here just to be sure
 						mode = HeaterMode::fault;
 						reprap.GetGCodes().HandleHeaterFault(heater);
-						platform.MessageF(ErrorMessage, "Heating fault on heater %d, temperature excursion exceeded %.1f" DEGREE_SYMBOL "C\n",
+						platform.MessageF(ErrorMessage, "[E207] Heating fault on heater %d, temperature excursion exceeded %.1f" DEGREE_SYMBOL "C\n",
 											heater, (double)maxTempExcursion);
 					}
 				}
@@ -401,7 +401,7 @@ void PID::Spin()
 						case HeaterProtectionAction::GenerateFault:
 							mode = HeaterMode::fault;
 							reprap.GetGCodes().HandleHeaterFault(heater);
-							platform.MessageF(ErrorMessage, "Heating fault on heater %d\n", heater);
+							platform.MessageF(ErrorMessage, "[E208] Heating fault on heater %d\n", heater);
 							break;
 
 						case HeaterProtectionAction::TemporarySwitchOff:
@@ -463,11 +463,11 @@ void PID::SetActiveTemperature(float t)
 {
 	if (t > GetHighestTemperatureLimit())
 	{
-		platform.MessageF(ErrorMessage, "Temperature %.1f" DEGREE_SYMBOL "C too high for heater %d\n", (double)t, heater);
+		platform.MessageF(ErrorMessage, "[E209] Temperature %.1f" DEGREE_SYMBOL "C too high for heater %d\n", (double)t, heater);
 	}
 	else if (t < GetLowestTemperatureLimit())
 	{
-		platform.MessageF(ErrorMessage, "Temperature %.1f" DEGREE_SYMBOL "C too low for heater %d\n", (double)t, heater);
+		platform.MessageF(ErrorMessage, "[E210] Temperature %.1f" DEGREE_SYMBOL "C too low for heater %d\n", (double)t, heater);
 	}
 	else
 	{
@@ -483,11 +483,11 @@ void PID::SetStandbyTemperature(float t)
 {
 	if (t > GetHighestTemperatureLimit())
 	{
-		platform.MessageF(ErrorMessage, "Temperature %.1f" DEGREE_SYMBOL "C too high for heater %d\n", (double)t, heater);
+		platform.MessageF(ErrorMessage, "[E211] Temperature %.1f" DEGREE_SYMBOL "C too high for heater %d\n", (double)t, heater);
 	}
 	else if (t < GetLowestTemperatureLimit())
 	{
-		platform.MessageF(ErrorMessage, "Temperature %.1f" DEGREE_SYMBOL "C too low for heater %d\n", (double)t, heater);
+		platform.MessageF(ErrorMessage, "[E212] Temperature %.1f" DEGREE_SYMBOL "C too low for heater %d\n", (double)t, heater);
 	}
 	else
 	{

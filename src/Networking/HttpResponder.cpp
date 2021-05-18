@@ -1285,7 +1285,7 @@ void HttpResponder::DoUpload()
 		if (!fileBeingUploaded.Write(buffer, len))
 		{
 			uploadError = true;
-			GetPlatform().Message(ErrorMessage, "HTTP: could not write upload data\n");
+			GetPlatform().Message(ErrorMessage, "[E401] HTTP: could not write upload data\n");
 			CancelUpload();
 			SendJsonResponse("upload");
 			return;

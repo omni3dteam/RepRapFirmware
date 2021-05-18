@@ -44,7 +44,7 @@ void CurrentLoopTemperatureSensor::Init()
 
 	if (lastResult != TemperatureError::success)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to initialise daughter board ADC: %s\n", TemperatureErrorString(lastResult));
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E201] Failed to initialise daughter board ADC: %s\n", TemperatureErrorString(lastResult));
 	}
 }
 

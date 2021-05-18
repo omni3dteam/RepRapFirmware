@@ -377,7 +377,7 @@ void DDARing::SetPositions(const float move[MaxTotalDrivers])
 	}
 	else
 	{
-		reprap.GetPlatform().Message(ErrorMessage, "SetPositions called when DDA ring not empty\n");
+		reprap.GetPlatform().Message(ErrorMessage, "[E302] SetPositions called when DDA ring not empty\n");
 	}
 }
 

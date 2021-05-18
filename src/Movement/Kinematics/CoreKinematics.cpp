@@ -48,7 +48,7 @@ void CoreKinematics::Recalc()
 		else
 		{
 			forwardMatrix.Fill(0.0);
-			reprap.GetPlatform().Message(ErrorMessage, "Invalid kinematics matrix\n");
+			reprap.GetPlatform().Message(ErrorMessage, "[E301] Invalid kinematics matrix\n");
 		}
 	}
 

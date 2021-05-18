@@ -125,7 +125,7 @@ void ThermocoupleSensor31856::Init()
 
 	if (rslt != TemperatureError::success)
 	{
-		reprap.GetPlatform().MessageF(ErrorMessage, "Failed to initialise thermocouple: %s\n", TemperatureErrorString(rslt));
+		reprap.GetPlatform().MessageF(ErrorMessage, "[E203] Failed to initialise thermocouple: %s\n", TemperatureErrorString(rslt));
 	}
 }
 
