@@ -41,14 +41,12 @@ bool MKTBlock::AddWordToSentence( const char *pWord )
 {
     if ( ( !pWord ) || ( strlen( pWord ) == 0 ) )
     {
-    	debugPrintf("No space left\n");
         return AddEndOfSentence();
     }
 
     size_t reqSize = strlen( pWord ) + 1;
     if ( spaceLeft < reqSize )
     {
-    	debugPrintf("No requied space REQ: %d, LEFT: %d\n", reqSize, spaceLeft);
         return false;
     }
 
@@ -64,12 +62,9 @@ bool MKTBlock::AddWordToSentence( const char *pWord )
 
 void MKTBlock::Print()
 {
-    debugPrintf( "\n\nReceived:\n" );
-
     const char* pWord = GetFirstWord();
     do
     {
-        debugPrintf( "%s\n", pWord );
         pWord = GetNextWord( pWord );
     } while ( pWord );
 }

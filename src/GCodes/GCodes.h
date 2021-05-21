@@ -209,7 +209,7 @@ public:
 	void FilamentError(size_t extruder, FilamentSensorStatus fstat);
 	void HandleHeaterFault(int heater);									// Respond to a heater fault
 	void SaveZPosition();
-	void SaveResumeInfo(bool wasPowerFailure, uint8_t nbr);
+	void SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace);
 	void RunShutdownMacro();
 	void SelectTool(int toolNr);
 
@@ -241,9 +241,12 @@ public:
 	void EmergencyStop();												// Cancel everything
 	bool GetLastPrintingHeight(float& height) const;					// Get the height in user coordinates of the last printing move
 	bool IsConfigFile(const char* filename);							// Check whether file has .g extension
-	void UploadProgress(size_t uploaded, size_t postFileLength); 		// Calculate POST upload progress
+	int PrintingVolumeNumber(const char *filename);						// Which volume is printing
 	void FinishFileUploadProgrss();										// Finish upload progress
 	void CopyFilesFromDir(const StringRef& reply, const char* sourceDir, const char* destinationDir); // Copy files from one directory to another
+	void SavePrintInfoToCSV(const char *filename, StopPrintReason reason, uint32_t hours, uint32_t minutes); // Save print info in csv file
+	void SetUpDefaultParameters();										// Set default parameters like offsets etc.
+	void SaveZOffsetsToFile(unsigned int ext, float zOffset);			// Save Z offsets to file which help while calibrating machine
 
 	GCodeResult StartSDTiming(GCodeBuffer& gb, const StringRef& reply);	// Start timing SD card file writing
 
@@ -482,8 +485,8 @@ private:
 
 	size_t nextGcodeSource;												// The one to check next
 
-	const GCodeBuffer* resourceOwners[NumResources];					// Which gcode buffer owns each resource
 
+	const GCodeBuffer* resourceOwners[NumResources];					// Which gcode buffer owns each resource
 	MachineType machineType;					// whether FFF, laser or CNC
 	bool active;								// Live and running?
 	bool isPaused;								// true if the print has been paused manually or automatically
@@ -496,6 +499,7 @@ private:
 	bool isPowerFailPaused;						// true if the print was paused automatically because of a power failure
 	char *powerFailScript;						// the commands run when there is a power failure
 #endif
+	bool isZCalibratedBeforePrint;
 
 	// The current user position now holds the requested user position after applying workplace coordinate offsets.
 	// So we must subtract the workplace coordinate offsets when we want to display them.
@@ -670,6 +674,7 @@ private:
 	static constexpr const char* DEPLOYPROBE_G = "deployprobe.g";
 	static constexpr const char* RETRACTPROBE_G = "retractprobe.g";
 	static constexpr const char* DefaultHeightMapFile = "heightmap.csv";
+	static constexpr const char* SavePrintInfoFile = "print-statistics.csv";
 	static constexpr const char* LOAD_FILAMENT_G = "load.g";
 	static constexpr const char* CONFIG_FILAMENT_G = "config.g";
 	static constexpr const char* UNLOAD_FILAMENT_G = "unload.g";

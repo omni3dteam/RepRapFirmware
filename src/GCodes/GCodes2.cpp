@@ -309,50 +309,7 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 				reprap.GetPlatform().switchZProbeParameters.zOffset[ext] = zOffset;
 			}
 
-			const char *file = ext ? T1_Z_OFFSET_G : T0_Z_OFFSET_G;
-
-			FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
-			if (f == nullptr)
-			{
-				platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
-			}
-			else
-			{
-				String<FormatStringLength> bufferSpace;
-				const StringRef buf = bufferSpace.GetRef();
-
-				// OMNI3D Factory 2.0 NET
-				if (reprap.GetMachineType())
-				{
-					buf.printf("G31 Z%.3f\n", (double)zOffset);
-				}
-				else
-				{
-					// OMNI3D Omni500 Lite
-					if(ext)
-					{
-						// right G1
-						buf.printf("G1 Z%.3f H2\n", (double)zOffset);
-					}
-					else
-					{
-						// left G31
-						buf.printf("G31 Z%.3f\n", (double)zOffset);
-					}
-				}
-
-				bool ok = f->Write(buf.c_str());
-
-				if (!f->Close())
-				{
-					ok = false;
-				}
-				if (!ok)
-				{
-					platform.DeleteSysFile(file);
-					platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
-				}
-			}
+			SaveZOffsetsToFile(ext, zOffset);
 		}
 
 		if (gb.Seen('R'))
@@ -783,6 +740,19 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			break;
 		}
 
+		if (platform.IsCoolantEmpty())
+		{
+			platform.SendAlert(ErrorMessage, "Cannot set file to print, because a low level of coolant. Fill in the coolant.", "Low level of coolant", 1, 0.0, 0);
+			break;
+		}
+
+		if (!isZCalibratedBeforePrint)
+		{
+			platform.SendAlert(ErrorMessage, "Cannot set file to print, because Z axis may not have proper position. Perform Head Vertical Calibration procedure.",
+					"Improper shudown", 1, 0.0, 0);
+			break;
+		}
+
 		if (code == 32 && !LockMovementAndWaitForStandstill(gb))
 		{
 			return false;
@@ -1201,8 +1171,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 				else
 				{
-					reply.printf("Logical pin %d is not available for writing", logicalPin);
-					result = GCodeResult::error;
+					if (!runningConfigFile)
+					{
+						reply.printf("Logical pin %d is not available for writing", logicalPin);
+						result = GCodeResult::error;
+					}
 				}
 			}
 		}
@@ -1359,7 +1332,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (seenFanNum)
 			{
 				bool error = false;
-				processed = platform.ConfigureFan(code, fanNum, gb, reply, error);
+				processed = platform.ConfigureFan(code, fanNum, gb, reply, error, runningConfigFile);
 				result = GetGCodeResultFromError(error);
 			}
 			else
@@ -1476,8 +1449,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			if (gb.Seen('H'))
 			{
 				float boundTemp = gb.GetFValue();
+				const size_t defaultHeaterNumber = 0;
 
-				if(applicableTool->GetToolHeaterActiveTemperature(0) > boundTemp)
+				if (applicableTool->GetToolHeaterActiveTemperature(defaultHeaterNumber) > boundTemp
+				 || applicableTool->GetToolHeaterStandbyTemperature(defaultHeaterNumber) > boundTemp)
 				{
 					break;		// no need to heat up
 				}
@@ -2558,8 +2533,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			}
 			else
 			{
-				reply.printf("Invalid servo index %d in M280 command\n", servoIndex);
-				result = GCodeResult::error;
+				if (!runningConfigFile)
+				{
+					reply.printf("Invalid servo index %d in M280 command\n", servoIndex);
+					result = GCodeResult::error;
+				}
 			}
 		}
 		break;
@@ -3242,6 +3220,12 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 
 			// Copy user procedure directory
 			CopyFilesFromDir(reply, RESTORE_DIR USER_PROCEDURES_DIR, DEFAULT_SYS_DIR USER_PROCEDURES_DIR);
+
+			// File startup.g has values like Z position (old) so we don't need that
+			platform.DeleteSysFile(STARTUP_G);
+
+			// Set up default values
+			SetUpDefaultParameters();
 		}
 		break;
 
@@ -4855,6 +4839,10 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					const float filamentValue = gb.GetFValue();
 					FilamentMonitor::SetExtrusionMeasured(extruder, filamentValue);
 				}
+				else
+				{
+					reply.printf("Extrusion measured %.2fmm for extruder %d", FilamentMonitor::GetExtrusionMeasured(extruder), extruder);
+				}
 			}
 		}
 		break;
@@ -4901,6 +4889,17 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				lastSelectedTool = reprap.GetCurrentToolNumber();
 			}
+		}
+		break;
+
+	case 791:
+		if (gb.Seen('S'))
+		{
+			isZCalibratedBeforePrint = gb.GetUIValue();
+		}
+		else
+		{
+			reply.printf("Z axis %s calibrated\n", isZCalibratedBeforePrint ? "is" : "isn't");
 		}
 		break;
 

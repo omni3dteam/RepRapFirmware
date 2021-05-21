@@ -538,7 +538,7 @@ public:
 	void UpdateConfiguredHeaters();
 
 	// Fans
-	bool ConfigureFan(unsigned int mcode, int fanNumber, GCodeBuffer& gb, const StringRef& reply, bool& error);
+	bool ConfigureFan(unsigned int mcode, int fanNumber, GCodeBuffer& gb, const StringRef& reply, bool& error, bool& runningConfigFile);
 
 	float GetFanValue(size_t fan) const;					// Result is returned in range 0..1
 	void SetFanValue(size_t fan, float speed);				// Accepts values between 0..1
@@ -657,6 +657,10 @@ public:
 #if OMNI_DOORS_CHECK
 	bool GetBoltStatus();
 	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
+#endif
+
+#if OMNI_PUMP_CONTROL
+	bool IsCoolantEmpty();
 #endif
 
 #if OMNI_CHAMBER_FAN_COOLING
@@ -1032,7 +1036,7 @@ private:
 
 #if OMNI_PUMP_CONTROL
 	uint32_t lastPumpCheckTime;
-	bool isSendFluidAlert;
+	bool isCoolantEmpty;
 #endif
 
 #if OMNI_STANDBY_TEMPERATURES

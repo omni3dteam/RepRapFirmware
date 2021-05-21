@@ -720,7 +720,7 @@ void Platform::Init()
 
 #if OMNI_PUMP_CONTROL
 	lastPumpCheckTime = 5000;
-	isSendFluidAlert = false;
+	isCoolantEmpty = false;
 
 	IoPort::SetPinMode(pumpPin, OUTPUT_LOW);
 	logicalPinModes[COOLING_FAN_PINS[2]] = (int8_t)OUTPUT_LOW;
@@ -2079,19 +2079,21 @@ void Platform::Spin()
 			// check fluid level
 			if (IoPort::ReadPin(fluidLevel) == false)
 			{
-				if (!isSendFluidAlert)
+				if (!isCoolantEmpty)
 				{
-					isSendFluidAlert = true;
+					isCoolantEmpty = true;
 
-					IoPort::WriteDigital(pumpPin, false);	// Turn off pump
+					String<MediumStringLength> coolantAlert;
+					coolantAlert.printf("Fill in the coolant immediately! You will not be able to start printing%s.",
+							reprap.GetGCodes().IsReallyPrinting() ? " next time" : "");
 
-					SendAlert(WarningMessage, "Due to low level of coolant the pump has been stopped. Fill in the coolant immediately!",
-									"Low level of coolant", 1, 0.0, 0);
+
+					SendAlert(WarningMessage, coolantAlert.c_str(), "Low level of coolant", 1, 0.0, 0);
 				}
 			}
 			else
 			{
-				isSendFluidAlert = false;
+				isCoolantEmpty = false;
 				constexpr float TurnOnPumpTemperature = 50.0;
 
 				// get extruders temps
@@ -2101,8 +2103,8 @@ void Platform::Spin()
 				// if it is above 50 deg. C we'll turn on the pump
 				// We also need to consider case, when there is no extruder
 				// then we get temperature 2000 C. So we have to avoid this situation
-				if ((temp0 > TurnOnPumpTemperature || temp1 > TurnOnPumpTemperature)
-				 && (temp0 < BadErrorTemperature || temp1 < BadErrorTemperature))
+				if ((temp0 > TurnOnPumpTemperature && temp0 < BadErrorTemperature)
+				 || (temp1 > TurnOnPumpTemperature && temp1 < BadErrorTemperature))
 				{
 					IoPort::WriteDigital(pumpPin, true);	// Turn on pump
 				}
@@ -2249,6 +2251,9 @@ void Platform::SetServoTarget(float pwm, Pin pin, uint16_t frequency)
 // Sets 'reported' if we reported anything, else leaves 'reported' alone.
 void Platform::ReportDrivers(MessageType mt, DriversBitmap& whichDrivers, const char* text, bool& reported)
 {
+	const unsigned int nrOfKnownDrivers = 10;
+	const char* driveLetter[] = { "X", "Y0", "Y1", "n/u", "n/u", "Z0", "Z1", "Z2", "E0", "E1" };
+
 	if (whichDrivers != 0)
 	{
 		String<ScratchStringLength> scratchString;
@@ -2258,7 +2263,7 @@ void Platform::ReportDrivers(MessageType mt, DriversBitmap& whichDrivers, const 
 		{
 			if ((wd & 1) != 0)
 			{
-				scratchString.catf(" %u", drive);
+				scratchString.catf(" %u[%s]", drive, drive < nrOfKnownDrivers ? driveLetter[drive] : "???");
 			}
 			wd >>= 1;
 		}
@@ -3968,7 +3973,7 @@ bool Platform::GetDriverStepTiming(size_t driver, float microseconds[4]) const
 // then search for parameters used to configure the fan. If any are found, perform appropriate actions and return true.
 // If errors were discovered while processing parameters, put an appropriate error message in 'reply' and set 'error' to true.
 // If no relevant parameters are found, print the existing ones to 'reply' and return false.
-bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error)
+bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error, bool& runningConfigFile)
 {
 	if (fanNum < 0 || fanNum >= (int)NUM_FANS)
 	{
@@ -3977,7 +3982,7 @@ bool Platform::ConfigureFan(unsigned int mcode, int fanNum, GCodeBuffer& gb, con
 		return false;
 	}
 
-	return fans[fanNum].Configure(mcode, fanNum, gb, reply, error);
+	return fans[fanNum].Configure(mcode, fanNum, gb, reply, error, runningConfigFile);
 }
 
 // Get current cooling fan speed on a scale between 0 and 1
@@ -5449,6 +5454,14 @@ void Platform::Tick()
 bool Platform::GetBoltStatus()
 {
 	return areBoltsActive;
+}
+#endif
+
+#if OMNI_PUMP_CONTROL
+// If we use F2.0Net check level of coolant. If it is Lite return false
+bool Platform::IsCoolantEmpty()
+{
+	return reprap.GetMachineType() ? isCoolantEmpty : false;
 }
 #endif
 

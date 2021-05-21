@@ -143,7 +143,6 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
         if ( !changeAccessPointPass( pass ) )
         {
             SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
-            debugPrintf( "ERROR: %s\n", answer );
             return false;
         }
     }
@@ -165,7 +164,7 @@ bool Mikrotik::CreateAP( const char *ssid, const char *pass, TInterface iface )
     add_word_to_sentence( cmd[0], &mkSentence );
     add_word_to_sentence( wlanID, &mkSentence );
     add_word_to_sentence( apName, &mkSentence );
-    add_word_to_sentence( cmd[1], &mkSentence );
+    add_word_to_sentence( iface == wifi5g ? SET_PARAM_V( P_FREQUENCY, V_5180MHz ) : cmd[1], &mkSentence );
     add_word_to_sentence( cmd[2], &mkSentence );
     add_word_to_sentence( cmd[3], &mkSentence );
 
@@ -207,7 +206,6 @@ bool Mikrotik::ConnectToWiFi( const char *ssid, const char *pass, TInterface ifa
         if ( !changeWiFiStationPass( pass ) )
         {
             SafeSnprintf( answer, MIKROTIK_MAX_ANSWER, "can't configure security profile" );
-            debugPrintf( "ERROR: %s\n", answer );
             return false;
         }
     }
@@ -325,7 +323,6 @@ bool Mikrotik::RemoveGateway()
 
 	char addr[28];
 	SafeSnprintf( addr, sizeof( addr ), SET_PARAM( P_ID ) "%s", gatewayId );
-	debugPrintf("Frame: %s\n", gatewayId);
 
     clear_sentence( &mkSentence );
     add_word_to_sentence( cmd,  &mkSentence );
@@ -806,7 +803,6 @@ bool Mikrotik::Connect( uint8_t *d_ip, uint16_t d_port )
 
     if ( se != MIKROTIK_SOCK_NUM )
     {
-        debugPrintf( "Socket error %i\n", se );
         return false;
     }
 
@@ -814,17 +810,14 @@ bool Mikrotik::Connect( uint8_t *d_ip, uint16_t d_port )
     // Should be placed between socket() and connect()
     setSn_KPALVTR( MIKROTIK_SOCK_NUM, 2 );
 
-    debugPrintf( "Connecting to: %d.%d.%d.%d:%d... ", d_ip[0], d_ip[1], d_ip[2], d_ip[3], d_port );
     int ce = __connect( MIKROTIK_SOCK_NUM, d_ip, d_port );
 
     if ( ce != SOCK_OK )
     {
-        debugPrintf( "connection error %i\n", ce );
         __close( MIKROTIK_SOCK_NUM );
     }
     else
     {
-        debugPrintf( "CONNECTED!\n" );
         isConnected = true;
     }
 #else
@@ -886,8 +879,6 @@ void Mikrotik::Disconnect()
 
     isConnected = false;
     isLogged    = false;
-
-    debugPrintf( "\n***DISCONNECTED***\n\n" );
 }
 
 
@@ -966,18 +957,15 @@ bool Mikrotik::Login(uint8_t numLoginTry)
         if ( !Connect( d_ip, d_port ) )
             return false;
 
-        debugPrintf( "Login attempt %i of %i... [%s] ", i + 1, numLoginTry, isKnownPass ? default_password[nbrPass] : default_password[i % 2] );
         if ( try_to_log_in( default_username, isKnownPass ? default_password[nbrPass] : default_password[i % 2] ) )
         {
         	nbrPass = i % 2;
-        	debugPrintf( "success default credentials [%d]\n", nbrPass );
             isKnownPass = true;
             isLogged = true;
             break;
         }
 		else
 		{
-			debugPrintf( "FAILED!\n" );
 			isKnownPass = false;
 			Disconnect();
 		}
@@ -1072,7 +1060,6 @@ bool Mikrotik::parseAnswer( const char *pSearchText )
         pWord = block->GetNextWord( pWord );
     } while ( pWord );
 
-    //debugPrintf( "FAILED to parse answer!\nCan't find %s\n", key );
     return false;
 }
 
@@ -1304,19 +1291,6 @@ void Mikrotik::clear_sentence( TMKSentence *pSentence )
     memset( pSentence, 0, sizeof( TMKSentence ) );
 }
 
-
-void Mikrotik::print_sentence( TMKSentence *pSentence )
-{
-    if ( pSentence->length == 0 )
-        return;
-
-    for ( int i = 0; i < pSentence->length; i++ )
-        debugPrintf( "sentence[%i]: len(%i), %s\n", i, (int)strlen(pSentence->pWord[i]), pSentence->pWord[i] );
-
-    debugPrintf( "\n" );
-}
-
-
 void Mikrotik::add_word_to_sentence( const char *pWord, TMKSentence *pSentence )
 {
     pSentence->pWord[pSentence->length++] = pWord;
@@ -1337,12 +1311,10 @@ void Mikrotik::write_sentence( TMKSentence *pSentence )
 
 void Mikrotik::write_word( const char *pWord )
 {
-    //debugPrintf( "Write: '%s'\n", pWord );
     write_len( strlen( pWord ) );
     for ( int i = 0; i < (int)strlen( pWord ); i++ )
     {
         char c = pWord[i];
-        //debugPrintf( "Send: 0x%02X - %c\n", c, c );
         __write( MIKROTIK_SOCK_NUM, &c, 1 );
     }
 }
@@ -1424,9 +1396,6 @@ void Mikrotik::write_len( int iLen )
     }
     else  // this should never happen
     {
-        debugPrintf( "length of word is %d\n", iLen );
-        debugPrintf( "word is too long.\n" );
-        debugPrintf( "FATAL ERROR!!!!!!!!!!!\n" );
         return;
     }
 }
@@ -1440,13 +1409,11 @@ int Mikrotik::read_len()
 
     int tmp;
     __read( MIKROTIK_SOCK_NUM, &cFirstChar, 1 );
-    //debugPrintf( "byte[1] = 0x%X\n", cFirstChar );
 
     // read 4 bytes
     // this code SHOULD work, but is untested...
     if (( cFirstChar & 0xE0 ) == 0xE0 )
     {
-        //debugPrintf( "4-byte encoded length\n" );
         if ( iLittleEndian )
         {
             cLength[3] = cFirstChar;
@@ -1469,7 +1436,6 @@ int Mikrotik::read_len()
     // read 3 bytes
     else if (( cFirstChar & 0xC0 ) == 0xC0 )
     {
-        //debugPrintf( "3-byte encoded length\n" );
         if ( iLittleEndian )
         {
             cLength[2] = cFirstChar;
@@ -1490,7 +1456,6 @@ int Mikrotik::read_len()
     // read 2 bytes
     else if (( cFirstChar & 0x80 ) == 0x80 )
     {
-        //debugPrintf( "2-byte encoded length\n" );
         if ( iLittleEndian )
         {
             cLength[1] = cFirstChar;
@@ -1509,7 +1474,6 @@ int Mikrotik::read_len()
     // assume 1-byte encoded length...same on both LE and BE systems
     else
     {
-        //debugPrintf( "1-byte encoded length\n" );
         iLen = &tmp;
         *iLen = (int)cFirstChar;
     }
@@ -1525,8 +1489,6 @@ bool Mikrotik::read_word( char *pWord )
     int iBytesToRead = 0;
     int iBytesRead = 0;
 
-    //debugPrintf( "Expected msg size is %i byte(s)\n", iLen );
-
     if ( iLen > 0 )
     {
         pWord[0] = 0;
@@ -1541,18 +1503,13 @@ bool Mikrotik::read_word( char *pWord )
             iBytesToRead = iLen > 511 ? 511 : iLen;
 
             // read iBytesToRead from the socket
-
-            //debugPrintf( "Ready to receive %i byte(s)... ", iBytesToRead );
             iBytesRead = __read( MIKROTIK_SOCK_NUM, tmpBuf, iBytesToRead );
-            //debugPrintf( "Received %i byte(s)\n", iBytesRead );
 
             if ( iBytesRead < 0 )
             {
                 if ( numOfTry++ > 7 )
                     return false;
 
-                debugPrintf( "Can't read data - %i\n", iBytesRead );
-                //usleep( 1000000 );
                 continue;
             }
 
@@ -1563,9 +1520,6 @@ bool Mikrotik::read_word( char *pWord )
 
             // subtract the number of bytes we just read from iLen
             iLen -= iBytesRead;
-
-//            if ( iLen )
-//                debugPrintf( "received %i byte(s)\nlefts - %i byte(s)\n", iBytesRead, iLen );
 
             numOfTry = 0;
         }
@@ -1588,7 +1542,6 @@ bool Mikrotik::read_sentence()
     {
         if ( !block->AddWordToSentence( word ) )
         {
-            debugPrintf( "\n\nFAILED TO ADD WORD TO SENTENSE!!!\n\n" );
             return false;
         }
 
@@ -1605,7 +1558,6 @@ bool Mikrotik::read_sentence()
         // if we cannot read whole sentence we need to return false
         if (millis() - readTime > 15000)
         {
-        	debugPrintf( "Timeout read sentence!\n" );
         	return false;
         }
     }
@@ -1666,7 +1618,6 @@ void Mikrotik::md5ToBinary( char *szHex, char *challenge )
         cBinWork[1] = szHex[di + 1];
         cBinWork[2] = 0;
 
-        // debugPrintf( "cBinWork = %s\n", cBinWork );
         challenge[di / 2] = hexStringToChar( cBinWork );
     }
 }
@@ -1725,7 +1676,6 @@ char Mikrotik::hexStringToChar( char *cToConvert )
     else
         iAccumulated += atoi( cString1 );
 
-    // debugPrintf( "%d\n", iAccumulated );
     return (char) iAccumulated;
 }
 
@@ -1770,7 +1720,7 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 	}
 	else
 	{
-		reply.copy("I parameter is needed");
+		reply.copy("Interface parameter is needed");
 		return GCodeResult::error;
 	}
 
@@ -1781,6 +1731,13 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 	{
 		seen = false;
 		gb.TryGetPossiblyQuotedString('P', tPass.GetRef(), seen);
+
+		// Password must have at least 8 characters
+		if (tPass.strlen() < 8)
+		{
+			reply.copy("Password must have at least 8 characters");
+			return GCodeResult::error;
+		}
 
 		if (seen)
 		{
@@ -1799,13 +1756,13 @@ GCodeResult Mikrotik::Configure(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
-			reply.copy("P parameter is needed");
+			reply.copy("Password is needed");
 			return GCodeResult::error;
 		}
 	}
 	else
 	{
-		reply.copy("S parameter is needed");
+		reply.copy("SSID is needed");
 		return GCodeResult::error;
 	}
 
@@ -1863,7 +1820,6 @@ void Mikrotik::SendNetworkStatus()
 				md, statusStr[status], typeIp, tempIp, mask, gateway,
 				interface == ether1 ? "" : ssid);
 	reprap.GetPlatform().MessageF(LcdMessage, outputBuffer);
-	debugPrintf(outputBuffer);
 }
 
 void Mikrotik::Check()
@@ -1876,14 +1832,10 @@ void Mikrotik::Check()
 		if (!GetCurrentInterface(&interface))
 		{
 			status = Disconnected;
-			debugPrintf("ERROR! Can't get current interface\n");
 		}
 		else
 		{
-			//debugPrintf("Current interface: %d\n", (uint8_t)interface);
-
 			isNetworkRunning = IsNetworkAvailable(interface);
-			//debugPrintf("Running: %s\n", isNetworkRunning ? "YES" : "NO");
 
 			if(isNetworkRunning)
 			{
@@ -1891,7 +1843,6 @@ void Mikrotik::Check()
 				TEnableState state;
 				if (!GetDhcpState(interface, DhcpClient, &state))
 				{
-					debugPrintf("ERROR! Can't get DHCP client state\n");
 					return;
 				}
 
@@ -1902,10 +1853,6 @@ void Mikrotik::Check()
 					strncpy(ip, "Obtaining", sizeof(ip));
 				}
 
-				//debugPrintf("IP addr: %s\n", ip);
-				//debugPrintf("IP type: %s\n", isStatic ? "static" : "dynamic");
-
-				//debugPrintf("Mode: ");
 				if (interface != ether1)
 				{
 					GetWifiMode(interface, &mode);
@@ -1929,10 +1876,6 @@ void Mikrotik::DisableInterface()
 	if (GetCurrentInterface(&interface))
 	{
 		DisableInterface(interface);
-	}
-	else
-	{
-		debugPrintf("Cannot find current interface\n");
 	}
 	interface = none;
 
@@ -1960,10 +1903,7 @@ GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply
 
 	uint16_t count = ScanWiFiNetworks( interface, searchTime, list, SIZE );
 
-	debugPrintf( "Available networks count: %u\n\n", count );
 	char *pNext = list;
-	debugPrintf( "%s", list );
-
 	if ( count )
 	{
 		while ( count-- )
@@ -1971,7 +1911,6 @@ GCodeResult Mikrotik::SearchWiFiNetworks(GCodeBuffer& gb, const StringRef& reply
 			SafeSnprintf(minBuffer, sizeof(minBuffer), "\"%s\"%s", pNext, count ? "," : "]}");
 			strcat(outBuffer, minBuffer);
 			memset(minBuffer, 0, sizeof(minBuffer));
-			debugPrintf( "SSID: %s\n", pNext );
 			pNext += strlen( pNext ) + 1;
 		}
 		reprap.GetPlatform().MessageF(LcdMessage, outBuffer);

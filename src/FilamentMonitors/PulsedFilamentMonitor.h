@@ -31,6 +31,7 @@ private:
 	void Init();
 	void Reset();
 	void Poll();
+	void SensorReport(const StringRef& reply);
 	FilamentSensorStatus CheckFilament(float amountCommanded, float amountMeasured, bool overdue);
 
 	// Configuration parameters

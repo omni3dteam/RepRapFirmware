@@ -326,6 +326,8 @@ void RepRap::Init()
 #endif
 	platform->MessageF(UsbMessage, "%s is up and running.\n", FIRMWARE_NAME);
 
+	platform->MessageF(LogMessage, "Firmware started: %s. Work time: %dh Print time: %dh\n", VERSION, platform->GetWorkTime()->GetHours(), platform->GetWorkTime()->GetPrintHours());
+
 	fastLoop = UINT32_MAX;
 	slowLoop = 0;
 }
@@ -511,7 +513,7 @@ void RepRap::Diagnostics(MessageType mtype)
 	heat->Diagnostics(mtype);
 	gCodes->Diagnostics(mtype);
 	network->Diagnostics(mtype);
-	FilamentMonitor::Diagnostics(mtype);
+	FilamentMonitor::Diagnostics(mtype, true);
 #ifdef DUET_NG
 	DuetExpansion::Diagnostics(mtype);
 #endif
@@ -1325,10 +1327,8 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 				mountedCards |= (1 << i);
 			}
 		}
-		// Due to very long cable for external SD card we had to limit SPI speed
-		// It requies too much time to scan file for data so it can broken network connection
-		// Duet don't recommend use external SD card via internet so we display files only from internal card
-		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u",  1 /*NumSdCards*/, mountedCards);
+
+		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u", NumSdCards, mountedCards);
 
 		// Machine name
 		response->cat(",\"name\":");
@@ -2430,7 +2430,9 @@ void RepRap::SetName(const char* nm)
 // 1 - F2.0Net
 void RepRap::SetMachineType(int32_t type)
 {
-	machineType = type;
+	// check boundaries
+	machineType = type > 1 ? 1 : type < 0 ? 0 : type;
+	debugPrintf("Set machine type: %ld\n", machineType);
 }
 
 int32_t RepRap::GetMachineType()

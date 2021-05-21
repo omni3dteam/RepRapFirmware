@@ -37,7 +37,7 @@ void Fan::Init(Pin p_pin, LogicalPin lp, bool hwInverted, PwmFrequency p_freq)
 // Exceptions:
 // 1. Only process the S parameter unless other values were processed.
 // 2. Don't process the R parameter, but if it is present don't print the existing configuration.
-bool Fan::Configure(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error)
+bool Fan::Configure(unsigned int mcode, int fanNum, GCodeBuffer& gb, const StringRef& reply, bool& error, bool& runningConfigFile)
 {
 	bool seen = false;
 	if (mcode == 106)
@@ -64,8 +64,11 @@ bool Fan::Configure(unsigned int mcode, int fanNum, GCodeBuffer& gb, const Strin
 		// The remaining parameters are not available if the fan has been disabled
 		if (!IsEnabled())
 		{
-			reply.printf("Fan %d is disabled", fanNum);
-			error = true;
+			if (!runningConfigFile)
+			{
+				reply.printf("Fan %d is disabled", fanNum);
+				error = true;
+			}
 			return true;											// say we have processed it
 		}
 

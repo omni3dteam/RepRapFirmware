@@ -120,6 +120,9 @@ GCodeResult GCodes::SetPrintZProbe(GCodeBuffer& gb, const StringRef& reply)
 		}
 		reply.catf(", threshold %d, trigger height %.2f, offsets X%.1f Y%.1f", params.adcValue, (double)params.triggerHeight, (double)params.xOffset, (double)params.yOffset);
 	}
+
+	// We assume that printer has calibrated Z axis so allow to print
+	isZCalibratedBeforePrint = true;
 	return GCodeResult::ok;
 }
 
@@ -1035,7 +1038,6 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 	}
 
 	reprap.GetHeat().SwitchOffAll(true);				// turn all heaters off because the main loop may get suspended
-	DisableDrives();									// all motors off
 
 	if (firmwareUpdateModuleMap == 0)					// have we worked out which modules to update?
 	{
@@ -1085,6 +1087,7 @@ GCodeResult GCodes::UpdateFirmware(GCodeBuffer& gb, const StringRef &reply)
 		if ((firmwareUpdateModuleMap & 1) != 0 && !platform.CheckFirmwareUpdatePrerequisites(reply))
 		{
 			firmwareUpdateModuleMap = 0;
+			DisableDrives();							 // all motors off
 			return GCodeResult::error;
 		}
 

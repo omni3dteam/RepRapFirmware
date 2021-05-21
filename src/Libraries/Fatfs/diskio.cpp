@@ -201,7 +201,7 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 			return RES_ERROR;
 		}
 		delay(retryDelay);
-		retryDelay *= 2;
+		retryDelay += SdCardRetryDelay;
 		lock.ReAcquire();
 	}
 
@@ -270,7 +270,7 @@ DRESULT disk_write(BYTE drv, BYTE const *buff, DWORD sector, BYTE count)
 			return RES_ERROR;
 		}
 		delay(retryDelay);
-		retryDelay *= 2;
+		retryDelay += SdCardRetryDelay;
 		lock.ReAcquire();
 	}
 

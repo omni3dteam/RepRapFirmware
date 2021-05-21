@@ -81,34 +81,7 @@ bool PulsedFilamentMonitor::Configure(GCodeBuffer& gb, const StringRef& reply, b
 	}
 	else
 	{
-		reply.printf("Pulse-type filament monitor on endstop input %u, %s, sensitivity %.3fmm/pulse, allowed movement %ld%% to %ld%%, check every %.1fmm, ",
-						GetEndstopNumber(),
-						(comparisonEnabled) ? "enabled" : "disabled",
-						(double)mmPerPulse,
-						lrintf(minMovementAllowed * 100.0),
-						lrintf(maxMovementAllowed * 100.0),
-						(double)minimumExtrusionCheckLength);
-
-		if (samplesReceived < 2)
-		{
-			reply.cat("no data received");
-		}
-		else
-		{
-			if (calibrationStarted && fabsf(totalMovementMeasured) > 1.0 && totalExtrusionCommanded > 20.0)
-			{
-				const float measuredMmPerPulse = totalExtrusionCommanded/totalMovementMeasured;
-				reply.catf("measured sensitivity %.3fmm/pulse, measured minimum %ld%%, maximum %ld%% over %.1fmm\n",
-					(double)measuredMmPerPulse,
-					lrintf(100 * minMovementRatio),
-					lrintf(100 * maxMovementRatio),
-					(double)totalExtrusionCommanded);
-			}
-			else
-			{
-				reply.cat("no calibration data");
-			}
-		}
+		SensorReport(reply);
 	}
 
 	return false;
@@ -283,8 +256,44 @@ FilamentSensorStatus PulsedFilamentMonitor::Clear()
 void PulsedFilamentMonitor::Diagnostics(MessageType mtype, unsigned int extruder)
 {
 	Poll();
-	const char* const statusText = (samplesReceived < 2) ? "no data received" : "ok";
-	reprap.GetPlatform().MessageF(mtype, "Extruder %u sensor: %s\n", extruder, statusText);
+
+	String<StringLength500> reply;
+
+	reply.printf("Extruder %u ", extruder);
+	SensorReport(reply.GetRef());
+	reprap.GetPlatform().MessageF(mtype, reply.c_str());
+}
+
+void PulsedFilamentMonitor::SensorReport(const StringRef& reply)
+{
+	reply.printf("Pulse-type filament monitor on endstop input %u, %s, sensitivity %.3fmm/pulse, allowed movement %ld%% to %ld%%, check every %.1fmm, ",
+								GetEndstopNumber(),
+								(comparisonEnabled) ? "enabled" : "disabled",
+								(double)mmPerPulse,
+								lrintf(minMovementAllowed * 100.0),
+								lrintf(maxMovementAllowed * 100.0),
+								(double)minimumExtrusionCheckLength);
+
+	if (samplesReceived < 2)
+	{
+		reply.cat("no data received");
+	}
+	else
+	{
+		if (calibrationStarted && fabsf(totalMovementMeasured) > 1.0 && totalExtrusionCommanded > 20.0)
+		{
+			const float measuredMmPerPulse = totalExtrusionCommanded/totalMovementMeasured;
+			reply.catf("measured sensitivity %.3fmm/pulse, measured minimum %ld%%, maximum %ld%% over %.1fmm\n",
+				(double)measuredMmPerPulse,
+				lrintf(100 * minMovementRatio),
+				lrintf(100 * maxMovementRatio),
+				(double)totalExtrusionCommanded);
+		}
+		else
+		{
+			reply.cat("no calibration data");
+		}
+	}
 }
 
 // End

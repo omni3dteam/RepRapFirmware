@@ -285,6 +285,7 @@ void GCodes::Reset()
 #if HAS_VOLTAGE_MONITOR
 	isPowerFailPaused = false;
 #endif
+	isZCalibratedBeforePrint = false;
 	doingToolChange = false;
 	doingManualBedProbe = false;
 	pausePending = filamentChangePausePending = false;
@@ -1186,7 +1187,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 				const float absMean = fabsf(mean);
 				if (absMean >= 0.05 && absMean >= 2 * deviation)
 				{
-					platform.Message(WarningMessage, "the height map has a substantial Z offset. Suggest use Z-probe to establish Z=0 datum, then re-probe the mesh.\n");
+					platform.Message(LogMessage, "the height map has a substantial Z offset. Suggest use Z-probe to establish Z=0 datum, then re-probe the mesh.\n");
 				}
 			}
 			else
@@ -1456,6 +1457,7 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply)
 					zDatumSetByProbing = true;			// if we successfully auto calibrated or adjusted leadscrews, we've set the Z datum by probing
 				}
 			}
+			isZCalibratedBeforePrint = true;
 			gb.SetState(GCodeState::normal);
 		}
 		break;
@@ -1840,7 +1842,6 @@ void GCodes::CheckFilament()
 		&& LockMovement(*autoPauseGCode)							// need to lock movement before executing the pause macro
 	   )
 	{
-		lastFilamentError = FilamentSensorStatus::ok;
 
 		// We have to wait for finish previous macro
 		if (daemonGCode->MachineState().doingFileMacro == false)
@@ -1850,7 +1851,14 @@ void GCodes::CheckFilament()
 
 				DoPause(*autoPauseGCode, PauseReason::filament, nullptr);
 				DoFileMacro(*daemonGCode, filename.c_str(), true);
+
+				// Add out of filament reason
+				platform.MessageF(LogMessage, "Out of filament due to %s error\n", FilamentMonitor::GetErrorMessage(lastFilamentError));
+
+				// Also add extra info what happend
+				FilamentMonitor::Diagnostics(LogMessage, false);
 		}
+		lastFilamentError = FilamentSensorStatus::ok;
 	}
 }
 
@@ -2242,7 +2250,7 @@ void GCodes::SaveZPosition()
 	}
 }
 
-void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
+void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 {
 	const char* const printingFilename = reprap.GetPrintMonitor().GetPrintingFilename();
 	if (printingFilename != nullptr)
@@ -2265,7 +2273,8 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 				buf.catf(" at %04u-%02u-%02u %02u:%02u",
 								timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min);
 			}
-			buf.cat("\nG21\n");												// set units to mm because we will be writing positions in mm
+			buf.cat("\nG21\n");											// set units to mm because we will be writing positions in mm
+																					// clear was filure flag due to resuming print
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
@@ -2390,6 +2399,22 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			}
 			if (ok)
 			{
+				// Volume 0 is mounted at startup. External SD card is not mounted so we need to do before resuming
+				int vol = PrintingVolumeNumber(printingFilename);
+				if (vol > 0)
+				{
+					buf.printf("M21 P%d\n", vol);
+					ok = f->Write(buf.c_str());
+				}
+			}
+			if (ok)
+			{
+
+				buf.printf("M791 S%d\n", !wasPowerFailure);					// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				buf.printf("M23 \"%s\"\nM26 S%" PRIu32, printingFilename, pauseRestorePoint.filePos);
 				if (pauseRestorePoint.proportionDone > 0.0)
 				{
@@ -2499,13 +2524,20 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 			bool ok = f->Write(buf.c_str());
 			if (ok)
 			{
+				// If Z axis is not calibrated or power failure is shutdown reason we need to set S param to 0
+				// After power up it tells firmware that Z axis must be homed
+				buf.printf("\nM791 S%d", !wasPowerFailure && isZCalibratedBeforePrint);
+				ok = f->Write(buf.c_str());
+			}
+			if (ok)
+			{
 				// Write a G92 command to say where the head is. This is useful if we can't Z-home the printer with a print on the bed and the Z steps/mm is high.
 				buf.copy("\nG92");
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
 					if(axis == Z_AXIS)
 					{
-						buf.catf(" Z%.3f    ;%s[%d]\n", isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?", nbr);
+						buf.catf(" Z%.3f    ;%s[%d]\n", isZSaved ? (double)savedZPosition : (double)HideNan(currentUserPosition[axis]), isZSaved ? "OWC" : "source?", savePlace);
 					}
 				}
 				ok = f->Write(buf.c_str());
@@ -2549,9 +2581,11 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t nbr)
 #endif
 }
 
-void GCodes::RunShutdownMacro() {
+void GCodes::RunShutdownMacro()
+{
 	String<StringLength20> filename;
 	filename.printf("%s%s", DEFAULT_SYS_DIR, SHUTDOWN_G);
+	SaveResumeInfo(false, 7);
 	DoFileMacro(*daemonGCode, filename.c_str(), true);
 }
 
@@ -3848,7 +3882,7 @@ GCodeResult GCodes::LoadHeightMap(GCodeBuffer& gb, const StringRef& reply, bool 
 
 		if (!seen)
 		{
-			reply.printf("Mesh compensation data available");
+			reply.printf("Mesh compensation enabled");
 		}
 
 		if (!zDatumSetByProbing && platform.GetZProbeType() != ZProbeType::none)
@@ -3968,6 +4002,30 @@ void GCodes::GetCurrentCoordinates(const StringRef& s) const
 // If successful return true, else write an error message to reply and return false
 bool GCodes::QueueFileToPrint(const char* fileName, const StringRef& reply)
 {
+	// Check extension .g/.gco/.gcode
+	static const char * const extension[] =
+	{
+		".gcode",
+		".gco",
+		".g"
+	};
+
+	bool isCorrectExtension = false;
+	for (size_t i = 0; i < ARRAY_SIZE(extension); ++i)
+	{
+		if (strstr(fileName, extension[i]) != nullptr)
+		{
+			isCorrectExtension = true;
+			break;
+		}
+	}
+
+	if (!isCorrectExtension)
+	{
+		reply.printf("File \"%s\" has incorrect extension\n", fileName);
+		return false;
+	}
+
 	FileStore * const f = platform.OpenFile(platform.GetGCodeDir(), fileName, OpenMode::read);
 	if (f != nullptr)
 	{
@@ -5067,6 +5125,8 @@ void GCodes::StopPrint(StopPrintReason reason)
 		{
 			platform.DeleteSysFile(RESUME_AFTER_POWER_FAIL_G);
 		}
+
+		SavePrintInfoToCSV(printingFilename, reason, printMinutes/60u, printMinutes % 60u);
 	}
 
 	updateFileWhenSimulationComplete = false;
@@ -6007,6 +6067,162 @@ void GCodes::CopyFilesFromDir(const StringRef& reply, const char* sourceDir, con
 bool GCodes::IsConfigFile(const char* filename)
 {
 	return (bool)strstr(filename, ".g");
+}
+
+// Get volume in order to mount necessary SD card before resuming
+int GCodes::PrintingVolumeNumber(const char *filename)
+{
+    int vol = -1;
+
+	if (strlen(filename) > 2 && isdigit(filename[0]) && filename[1] == ':' && filename[2] == '/')
+	{
+	    vol = filename[0] - '0';
+	}
+
+	return vol;
+}
+
+// Save print info to CSV file for some statistics
+void GCodes::SavePrintInfoToCSV(const char *filename, StopPrintReason reason, uint32_t hours, uint32_t minutes)
+{
+	// We need to open in append mode
+	FileStore * const f = platform.OpenSysFile(SavePrintInfoFile, OpenMode::append);
+
+	if (f == nullptr)
+	{
+		return;
+	}
+	else
+	{
+		// Go to end of file
+		size_t fileLength = f->Length();
+		f->Seek(fileLength);
+
+		String<FormatStringLength> bufferSpace;
+		const StringRef buf = bufferSpace.GetRef();
+
+		// Get current date
+		time_t time = platform.GetDateTime();
+
+		if (time == 0)
+		{
+			const uint32_t timeSincePowerUp = (uint32_t)(millis64()/1000u);
+			buf.printf("power up + %02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 "", timeSincePowerUp/3600u, (timeSincePowerUp % 3600u)/60u, timeSincePowerUp % 60u);
+		}
+		else
+		{
+			const struct tm * const timeInfo = gmtime(&time);
+			buf.printf("%04u-%02u-%02u %02u:%02u:%02u",
+							timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+		}
+
+		f->Write(buf.c_str());
+
+		buf.printf(",%s,%s,%" PRIu32 ":%02" PRIu32 "",
+				filename, reason == StopPrintReason::normalCompletion ? "Finished" : "Cancelled", hours, minutes);
+
+		for (size_t extruder = 0; extruder < reprap.GetExtrudersInUse(); extruder++)		// loop through extruders
+		{
+			buf.catf(",%.3f", (double)(GetRawExtruderTotalByDrive(extruder)/1000.0));
+		}
+		buf.cat('\n');
+
+		// Write and close file
+		f->Write(buf.c_str());
+		f->Close();
+	}
+}
+
+// Set default parameters like offsets, filaments
+void GCodes::SetUpDefaultParameters()
+{
+	int machine = static_cast<int>(reprap.GetMachineType());
+	debugPrintf("Static cast machine: %d\n", machine);
+
+	const size_t nrOfOffsetAxes = XYZ_AXES;
+	const float offsets[2][nrOfOffsetAxes] =
+	{
+			{30.0, 0.0, 0.0},
+			{45.0, 0.0, -2.5}
+	};
+
+	// We modify only offsets for right tool, left is reference
+	int rightTool = 1;
+
+	Tool* tool;
+	tool = reprap.GetTool(rightTool);
+
+	for (unsigned int i = 0; i < nrOfOffsetAxes; ++i)
+	{
+		tool->SetOffset(i, offsets[machine][i], false);
+	}
+
+	// Save default Z coefficient offset
+	// Z offset coefficient is the same for those printers
+	float zOffset = -0.3;
+
+	for (Tool *tool = reprap.toolList; tool != nullptr; tool = tool->Next())
+	{
+		int nr = tool->Number();
+		debugPrintf("Tool number: %d", nr);
+		SaveZOffsetsToFile(nr, zOffset);
+		reprap.GetPlatform().switchZProbeParameters.zOffset[nr] = zOffset;
+	}
+
+	// Zero filaments values
+	for (size_t i = 0; i < MaxExtruders; ++i)
+	{
+		FilamentMonitor::SetExtrusionMeasured(i, 0.0);
+	}
+}
+
+// Save Z offsets to file which help while calibrating machine
+void GCodes::SaveZOffsetsToFile(unsigned int ext, float zOffset)
+{
+	const char *file = ext ? T1_Z_OFFSET_G : T0_Z_OFFSET_G;
+
+	FileStore * const f = platform.OpenSysFile(file, OpenMode::write);
+	if (f == nullptr)
+	{
+		platform.MessageF(ErrorMessage, "Failed to create file %s\n", file);
+	}
+	else
+	{
+		String<FormatStringLength> bufferSpace;
+		const StringRef buf = bufferSpace.GetRef();
+
+		// OMNI3D Factory 2.0 NET
+		if (reprap.GetMachineType())
+		{
+			buf.printf("G31 Z%.3f\n", (double)zOffset);
+		}
+		else
+		{
+			// OMNI3D Omni500 Lite
+			if(ext)
+			{
+				// right G1
+				buf.printf("G1 Z%.3f H2\n", (double)zOffset);
+			}
+			else
+			{
+				// left G31
+				buf.printf("G31 Z%.3f\n", (double)zOffset);
+			}
+		}
+
+		bool ok = f->Write(buf.c_str());
+
+		if (!f->Close())
+		{
+			ok = false;
+		}
+		if (!ok)
+		{
+			platform.DeleteSysFile(file);
+			platform.MessageF(ErrorMessage, "Failed to write or close file %s\n", file);
+		}
+	}
 }
 
 void GCodes::UploadProgress(size_t uploaded, size_t postFileLength)

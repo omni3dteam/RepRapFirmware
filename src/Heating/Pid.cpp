@@ -96,11 +96,12 @@ bool PID::SetModel(float gain, float tc, float td, float maxPwm, float voltage, 
 		{
 			const float predictedMaxTemp = gain + NormalAmbientTemperature;
 			const float noWarnTemp = (temperatureLimit - NormalAmbientTemperature) * 1.5 + 50.0;		// allow 50% extra power plus enough for an extra 50C
+			// Due to high value of gain we don't want to display warning any more
 			if (predictedMaxTemp > noWarnTemp)
 			{
-				platform.MessageF(LogMessage,
+				/* platform.MessageF(LogMessage,
 						"Heater %u appears to be over-powered. If left on at full power, its temperature is predicted to reach %dC.\n",
-						heater, (int)predictedMaxTemp);
+						heater, (int)predictedMaxTemp); */
 			}
 		}
 		else

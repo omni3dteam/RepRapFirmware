@@ -5,11 +5,17 @@
 #include "RepRap.h"
 #include "Storage/FileStore.h"
 
-const char lcdFrameBegin = 0xAA;
-
 LcdUpdater::LcdUpdater(UARTClass& port)
 	: uploadPort(port), uploadFile(nullptr), state(UploadState::idle), fileOffset(0)
 {
+	idPackage = 0;
+	fileOffset = 0;
+	retransmissionTry = 0;
+	filePayload = framePayloadLength;
+	retransmission = false;
+	packageAckTimeout = 30;
+
+	memset(payloadBuffer, 0, sizeof(payloadBuffer));
 }
 
 bool LcdUpdater::UpdateLcdModule()
@@ -18,7 +24,7 @@ bool LcdUpdater::UpdateLcdModule()
 	{
 	case UploadState::initPacket:
 	case UploadState::uploading:
-		if (millis() - lastAttemptTime >= (state == UploadState::initPacket ? initWriteInterval : blockWriteInterval))
+		if (millis() - lastAttemptTime >= (state == UploadState::initPacket ? firstAckTimeout : packageAckTimeout))
 		{
 			prepareFrameToLcd();
 			lastAttemptTime = millis();
@@ -60,10 +66,10 @@ bool LcdUpdater::OpenLcdFirmware()
 	retransmission = false;
 	state = UploadState::initPacket;
 	fileOffset = idPackage = retransmissionTry = 0;
-	filePayload = framePayload;
-	blockWriteInterval = 25;
+	filePayload = framePayloadLength;
+	packageAckTimeout = 25;
 
-	memset(payloadBuffer, 0, framePayload);
+	memset(payloadBuffer, 0, framePayloadLength);
 	return true;
 }
 
@@ -72,7 +78,7 @@ LcdUpdater::errorId LcdUpdater::readPacket(uint32_t msTimeout)
 {
 	uint32_t startTime = millis();
 
-	while(1)
+	while(true)
 	{
 		if (millis() - startTime > msTimeout)
 		{
@@ -90,29 +96,29 @@ LcdUpdater::errorId LcdUpdater::readPacket(uint32_t msTimeout)
 
 void LcdUpdater::prepareFrameToLcd()
 {
-	if(fileOffset + framePayload > uploadFile->Length())
+	if(fileOffset + framePayloadLength > uploadFile->Length())
 	{
 		filePayload = uploadFile->Length() - fileOffset;
 
 		// give more time for last frame because LCD need to compute hash
-		blockWriteInterval = 1000;
+		packageAckTimeout = 1000;
 		state = UploadState::done;
 	}
 
 	if(!retransmission)
 	{
-		uploadFile->Read(reinterpret_cast<char *>(payloadBuffer), framePayload);
+		uploadFile->Read(reinterpret_cast<char *>(payloadBuffer), framePayloadLength);
 	}
 
 	flushInput();
-	writePacketRaw(payloadBuffer, framePayload);
+	writePacketRaw(payloadBuffer, framePayloadLength);
 
-	errorId stat = readPacket(state == UploadState::initPacket ? initWriteInterval : blockWriteInterval);
+	errorId stat = readPacket(state == UploadState::initPacket ? firstAckTimeout : packageAckTimeout);
 
 	if(stat == errorId::noError)
 	{
-		memset(payloadBuffer, 0, framePayload);
-		fileOffset += framePayload;
+		memset(payloadBuffer, 0, framePayloadLength);
+		fileOffset += framePayloadLength;
 		retransmission = false;
 		idPackage++;
 
