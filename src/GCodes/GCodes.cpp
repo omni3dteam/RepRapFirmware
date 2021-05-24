@@ -6225,20 +6225,6 @@ void GCodes::SaveZOffsetsToFile(unsigned int ext, float zOffset)
 	}
 }
 
-void GCodes::UploadProgress(size_t uploaded, size_t postFileLength)
-{
-	if (isUsbUpload)
-	{
-		procedureCurrentStep = (uploaded * 100) / postFileLength;
-	}
-}
-
-void GCodes::FinishFileUploadProgrss()
-{
-	platform.GetVirtualStorage()->StopDownloadRequest();
-	isUsbUpload = false;
-}
-
 #if OMNI_GCODES
 //TODO: func...
 #endif

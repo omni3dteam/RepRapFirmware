@@ -1279,14 +1279,11 @@ void HttpResponder::DoUpload()
 		skt->Taken(len);
 		uploadedBytes += len;
 
-		reprap.GetGCodes().UploadProgress(uploadedBytes, postFileLength);
-
 		(void)CheckAuthenticated();							// uploading may take a long time, so make sure the requester IP is not timed out
 		timer = millis();									// reset the timer
 
 		if (!fileBeingUploaded.Write(buffer, len))
 		{
-			reprap.GetGCodes().FinishFileUploadProgrss();
 			uploadError = true;
 			GetPlatform().Message(ErrorMessage, "HTTP: could not write upload data\n");
 			CancelUpload();
@@ -1297,7 +1294,6 @@ void HttpResponder::DoUpload()
 	else if (!skt->CanRead() || millis() - timer >= HttpSessionTimeout)
 	{
 		// Sometimes uploads can get stuck; make sure they are cancelled when that happens
-		reprap.GetGCodes().FinishFileUploadProgrss();
 		ConnectionLost();
 		return;
 	}
@@ -1317,7 +1313,6 @@ void HttpResponder::DoUpload()
 			}
 		}
 
-		//reprap.GetGCodes().FinishFileUploadProgrss();
 		FinishUpload(postFileLength, fileLastModified, postFileGotCrc, postFileExpectedCrc);
 		SendJsonResponse("upload");
 	}
