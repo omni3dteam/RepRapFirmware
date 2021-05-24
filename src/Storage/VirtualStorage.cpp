@@ -62,16 +62,21 @@ bool VirtualStorage::GetVirtualFileList(char dir, OutputBuffer *response, bool l
 						pch = strstr(pch, "\"name\":");
 						if (pch)
 						{
+							const char sep = ',';
+
 							while (*(pch++) != ':')
 								;
-							while (*(pch++) != ',')
+							while (*pch != sep)
 							{
 								while (strchr(" \t=:", *pch) != 0)	// skip the possible separators
 								{
 									pch++;
 								}
 								response->cat(pch, 1);
+
+								pch++;
 							}
+							response->cat(&sep, 1);
 						}
 						else
 						{
