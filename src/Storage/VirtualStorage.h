@@ -11,6 +11,8 @@
 
 #define UPDATE_FIRMWARE_FILE "usbFirmware.bin"
 
+#define MAX_FILE_LENGTH 128
+
 
 class VirtualStorage
 {
@@ -20,7 +22,6 @@ public:
 	bool Mount(size_t card);
 	bool IsDriveMounted(size_t card);
 	bool GetVirtualFileList(char dir, OutputBuffer *response, bool label);
-	void SendDownloadRequest(OutputBuffer *r);
 	void StopDownloadRequest();
 	void UploadRequest();
 	bool SelectFileToPrint(const char *file);
@@ -34,7 +35,7 @@ private:
 	bool enabled;
 	bool uploadFirmware;
 
-	char filename[128];
+	char filename[MAX_FILE_LENGTH];
 
 };
 

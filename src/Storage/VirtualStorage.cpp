@@ -8,7 +8,7 @@ VirtualStorage::VirtualStorage()
 
 void VirtualStorage::Init()
 {
-	virtualDir = '1';
+	virtualDir = '2';
 	enabled = false;
 	uploadFirmware = false;
 	filename[0] = 0;
@@ -95,23 +95,9 @@ bool VirtualStorage::GetVirtualFileList(char dir, OutputBuffer *response, bool l
 	return status;
 }
 
-void VirtualStorage::SendDownloadRequest(OutputBuffer *r)
-{
-	if (filename[0] != 0)
-	{
-		if (uploadFirmware)
-		{
-			r->catf(",\"usbFirmware\":%d", uploadFirmware);
-			//debugPrintf("UPLOAD!\n");
-		}
-		r->cat(",\"getFile\":");
-		r->EncodeString(filename, false);
-	}
-}
-
 void VirtualStorage::SetFileToDownload(const char *name)
 {
-	memcpy(filename, name, 128);
+	memcpy(filename, name, MAX_FILE_LENGTH);
 }
 
 void VirtualStorage::UploadRequest()
@@ -137,7 +123,7 @@ bool VirtualStorage::SelectFileToPrint(const char *file)
 		if (file[1] == ':')
 		{
 			const char *p = file + 3;
-			memcpy(filename, p, 128);
+			memcpy(filename, p, MAX_FILE_LENGTH);
 			//debugPrintf("File to print: %s", filename);
 			status = true;
 		}

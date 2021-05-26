@@ -1319,16 +1319,21 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 
 		// Total and mounted volumes
 		size_t mountedCards = 0;
-		for (size_t i = 0; i < NumSdCards; i++)
+		size_t NumVolumes = NumSdCards;
+		for (size_t i = 0; i < NumVolumes; i++)
 		{
-			//if (platform->GetMassStorage()->IsDriveMounted(i) || platform->GetVirtualStorage()->IsDriveMounted(i))
 			if (platform->GetMassStorage()->IsDriveMounted(i))
 			{
 				mountedCards |= (1 << i);
 			}
 		}
+		if (platform->GetVirtualStorage()->IsDriveMounted(2))
+		{
+			NumVolumes++;
+			mountedCards |= (1 << 2);
+		}
 
-		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u", NumSdCards, mountedCards);
+		response->catf(",\"volumes\":%u,\"mountedVolumes\":%u", NumVolumes, mountedCards);
 
 		// Machine name
 		response->cat(",\"name\":");
@@ -1520,11 +1525,6 @@ OutputBuffer *RepRap::GetStatusResponse(uint8_t type, ResponseSource source)
 			// Based on slicer, most accurate so we calculate and send it to DWC
 			response->catf(",\"slicer\":%.1f}", (double)(printMonitor->EstimateTimeLeft(slicerBased)));
 		}
-	}
-	else if (type == 4)
-	{
-		// Get file from USB drive
-		platform->GetVirtualStorage()->SendDownloadRequest(response);
 	}
 
 #if OMNI_GCODES
