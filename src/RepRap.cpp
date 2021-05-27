@@ -2432,7 +2432,6 @@ void RepRap::SetMachineType(int32_t type)
 {
 	// check boundaries
 	machineType = type > 1 ? 1 : type < 0 ? 0 : type;
-	debugPrintf("Set machine type: %ld\n", machineType);
 }
 
 int32_t RepRap::GetMachineType()
