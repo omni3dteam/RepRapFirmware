@@ -6,7 +6,7 @@
 //#include "GCodes/GCodes.h"
 #include "GCodes/GCodeBuffer.h"
 
-#define FILES_LIST_DIR  "0:/"
+#define FILES_LIST_DIR  "0:/usb/"
 #define FILES_LIST 		"files.usb"
 
 #define UPDATE_FIRMWARE_FILE "usbFirmware.bin"
@@ -22,18 +22,25 @@ public:
 	bool Mount(size_t card);
 	bool IsDriveMounted(size_t card);
 	bool GetVirtualFileList(char dir, OutputBuffer *response, bool label);
-	void StopDownloadRequest();
+	void EndPrinting();
 	void UploadRequest();
 	bool SelectFileToPrint(const char *file);
 	void SetFileToDownload(const char *name);
+	void RequestStartPrinting();
+	void RequestResumePrinting();
+	void RequestPausePrinting();
+	void RequestStopPrinting();
+	bool IsUsbPrinting();
 	GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply);
 
 private:
+	void SendBasicCommand(const char* cmd);
 	const char *GET_FILES_DIR() { return FILES_LIST_DIR; };
 	const char *GET_FILES_LIST() { return FILES_LIST; };
 	char virtualDir;
 	bool enabled;
 	bool uploadFirmware;
+	bool isUsbPrinting;
 
 	char filename[MAX_FILE_LENGTH];
 

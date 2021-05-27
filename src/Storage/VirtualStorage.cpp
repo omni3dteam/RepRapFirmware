@@ -12,6 +12,7 @@ void VirtualStorage::Init()
 	enabled = false;
 	uploadFirmware = false;
 	filename[0] = 0;
+	isUsbPrinting = false;
 }
 
 bool VirtualStorage::GetVirtualFileList(char dir, OutputBuffer *response, bool label)
@@ -108,29 +109,80 @@ void VirtualStorage::UploadRequest()
 	memcpy(filename, firmware, strlen(firmware));
 }
 
-void VirtualStorage::StopDownloadRequest()
+void VirtualStorage::EndPrinting()
 {
 	filename[0] = 0;
-	uploadFirmware = false;
+	isUsbPrinting = false;
 }
 
 bool VirtualStorage::SelectFileToPrint(const char *file)
 {
 	bool status = false;
 
-	if (virtualDir == file[0] && enabled)
+	if (virtualDir == file[0] && enabled && !isUsbPrinting)
 	{
 		if (file[1] == ':')
 		{
 			const char *p = file + 3;
 			memcpy(filename, p, MAX_FILE_LENGTH);
-			//debugPrintf("File to print: %s", filename);
-			status = true;
+			debugPrintf("File to print: %s\n", filename);
+
+			String<FormatStringLength> commandSelect;
+			commandSelect.printf("select \"%s\"\n", filename);
+			reprap.GetPlatform().Message(TelnetMessage, commandSelect.c_str());
+			debugPrintf("Select cmd: %s\n", commandSelect.c_str());
+			isUsbPrinting = status = true;
 		}
 	}
 
 	return status;
 }
+
+void VirtualStorage::RequestStartPrinting()
+{
+	if (enabled && isUsbPrinting)
+	{
+		SendBasicCommand("start");
+		isUsbPrinting = true;
+	}
+}
+
+void VirtualStorage::RequestResumePrinting()
+{
+	RequestStartPrinting();
+}
+
+void VirtualStorage::RequestPausePrinting()
+{
+	if (enabled && isUsbPrinting)
+	{
+		SendBasicCommand("pause");
+		isUsbPrinting = true;
+	}
+}
+
+void VirtualStorage::RequestStopPrinting()
+{
+	if (enabled && isUsbPrinting)
+	{
+		SendBasicCommand("stop");
+		isUsbPrinting = false;
+	}
+}
+
+bool VirtualStorage::IsUsbPrinting()
+{
+	return isUsbPrinting;
+}
+
+void VirtualStorage::SendBasicCommand(const char* cmd)
+{
+	String<FormatStringLength> commandSelect;
+	commandSelect.printf("%s\n", cmd);
+	reprap.GetPlatform().Message(TelnetMessage, commandSelect.c_str());
+	//debugPrintf("Select cmd: %s\n", commandSelect.c_str());
+}
+
 
 GCodeResult VirtualStorage::Configure(GCodeBuffer& gb, const StringRef& reply)
 {

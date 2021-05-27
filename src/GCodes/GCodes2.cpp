@@ -761,9 +761,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			String<MaxFilenameLength> filename;
 			if (gb.GetUnprecedentedString(filename.GetRef()))
 			{
+				bool virtualStorage = false;
 				if (platform.GetVirtualStorage()->SelectFileToPrint(filename.c_str()))
 				{
-					break;
+					virtualStorage = true;
+					filename.printf("%s", "0:/usb/dummy.gcode");
 				}
 
 				if (QueueFileToPrint(filename.c_str(), reply))
@@ -782,6 +784,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 					if (code == 32)
 					{
 						StartPrinting(true);
+
+						if (virtualStorage)
+						{
+							platform.GetVirtualStorage()->RequestStartPrinting();
+						}
 					}
 				}
 				else
@@ -820,6 +827,8 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				else
 #endif
 				{
+
+					platform.GetVirtualStorage()->RequestResumePrinting();
 					gb.SetState(GCodeState::resuming1);
 					if (AllAxesAreHomed())
 					{
@@ -912,6 +921,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		}
 		else
 		{
+			platform.GetVirtualStorage()->RequestPausePrinting();
 			if (!LockMovement(gb))					// lock movement before calling DoPause
 			{
 				return false;
@@ -4651,7 +4661,7 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 		break;
 
 	case 741:
-		platform.GetVirtualStorage()->StopDownloadRequest();
+		platform.GetVirtualStorage()->EndPrinting();
 		break;
 
 #if SUPPORT_SCANNER

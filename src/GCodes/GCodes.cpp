@@ -1646,7 +1646,21 @@ void GCodes::StartNextGCode(GCodeBuffer& gb, const StringRef& reply)
 	}
 	else if (gb.MachineState().fileState.IsLive())
 	{
-		DoFilePrint(gb, reply);
+		if (platform.GetVirtualStorage()->IsUsbPrinting())
+		{
+			if (gb.IsDoingFileMacro())
+			{
+				DoFilePrint(gb, reply);
+			}
+			else
+			{
+				telnetInput->FillBuffer(telnetGCode);
+			}
+		}
+		else
+		{
+			DoFilePrint(gb, reply);
+		}
 	}
 	else if (&gb == queuedGCode)
 	{
@@ -5131,6 +5145,7 @@ void GCodes::StopPrint(StopPrintReason reason)
 
 	updateFileWhenSimulationComplete = false;
 	reprap.GetPrintMonitor().StoppedPrint();		// must do this after printing the simulation details because it clears the filename
+	platform.GetVirtualStorage()->RequestStopPrinting();
 }
 
 // Return true if all the heaters for the specified tool are at their set temperatures
