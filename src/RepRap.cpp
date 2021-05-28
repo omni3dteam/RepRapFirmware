@@ -2072,7 +2072,7 @@ OutputBuffer *RepRap::GetFilesResponse(const char *dir, unsigned int startAt, bo
 	unsigned int err;
 	unsigned int nextFile = 0;
 
-	if (platform->GetVirtualStorage()->GetVirtualFileList(dir[0], response, false))
+	if (platform->GetVirtualStorage()->GetVirtualFileList(dir, response, false))
 	{
 		return response;
 	}
@@ -2150,7 +2150,7 @@ OutputBuffer *RepRap::GetFilelistResponse(const char *dir, unsigned int startAt)
 	unsigned int err;
 	unsigned int nextFile = 0;
 
-	if (platform->GetVirtualStorage()->GetVirtualFileList(dir[0], response, true))
+	if (platform->GetVirtualStorage()->GetVirtualFileList(dir, response, true))
 	{
 		return response;
 	}
@@ -2256,6 +2256,12 @@ bool RepRap::GetFileInfoResponse(const char *filename, OutputBuffer *&response, 
 	if (!OutputBuffer::Allocate(response))
 	{
 		return false;
+	}
+
+	// Check wheather we're looking for info in virtual storage
+	if (platform->GetVirtualStorage()->GetVirtualFileInfo(filename, response))
+	{
+		return true;
 	}
 
 	if (info.isValid)

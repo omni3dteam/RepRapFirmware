@@ -8,6 +8,7 @@
 
 #define FILES_LIST_DIR  "0:/usb/"
 #define FILES_LIST 		"files.usb"
+#define FILES_INFO		"filesinfo.usb"
 
 #define UPDATE_FIRMWARE_FILE "usbFirmware.bin"
 
@@ -21,7 +22,8 @@ public:
 	void Init();
 	bool Mount(size_t card);
 	bool IsDriveMounted(size_t card);
-	bool GetVirtualFileList(char dir, OutputBuffer *response, bool label);
+	bool GetVirtualFileList(const char* dir, OutputBuffer *response, bool label);
+	bool GetVirtualFileInfo(const char* filename, OutputBuffer *response);
 	void EndPrinting();
 	void UploadRequest();
 	bool SelectFileToPrint(const char *file);
@@ -37,6 +39,7 @@ private:
 	void SendBasicCommand(const char* cmd);
 	const char *GET_FILES_DIR() { return FILES_LIST_DIR; };
 	const char *GET_FILES_LIST() { return FILES_LIST; };
+	const char *GET_FILES_INFO() { return FILES_INFO; };
 	char virtualDir;
 	bool enabled;
 	bool uploadFirmware;

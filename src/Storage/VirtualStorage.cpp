@@ -15,11 +15,11 @@ void VirtualStorage::Init()
 	isUsbPrinting = false;
 }
 
-bool VirtualStorage::GetVirtualFileList(char dir, OutputBuffer *response, bool label)
+bool VirtualStorage::GetVirtualFileList(const char* dir, OutputBuffer *response, bool label)
 {
 	bool status = false;
 
-	if (virtualDir == dir && enabled)
+	if (virtualDir == dir[0] && dir[1] == ':' && enabled)
 	{
 		FileStore * const f = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_LIST, OpenMode::read);
 		if (f == nullptr)
@@ -91,6 +91,83 @@ bool VirtualStorage::GetVirtualFileList(char dir, OutputBuffer *response, bool l
 		}
 		f->Close();
 		status = true;
+	}
+
+	return status;
+}
+
+bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *response)
+{
+	bool status = false;
+
+	if (enabled && filename[0] == virtualDir && filename[1] == ':' && filename[2] == '/')
+	{
+		int i = 0;
+		const char* filenameWithoutDir = &filename[3];
+
+		FileStore * const f = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_LIST, OpenMode::read);
+		if (f == nullptr)
+		{
+			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file %s\n", GET_FILES_LIST());
+		}
+		else
+		{
+			const size_t sz = 1024;
+			char buff[sz];
+
+			for (;;)
+			{
+				char* file = nullptr;
+
+				if (f->ReadLine(buff, sz) > 0)
+				{
+					file = strstr(buff, filenameWithoutDir);
+
+					if (file != nullptr)
+					{
+						break;
+					}
+					++i;
+				}
+				else
+				{
+					f->Close();
+					return false;
+				}
+			}
+			f->Close();
+
+			FileStore * const info = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_INFO, OpenMode::read);
+			if (info == nullptr)
+			{
+				reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file %s\n", GET_FILES_INFO());
+			}
+			else
+			{
+				int j = 0;
+
+				for (;;)
+				{
+					if (f->ReadLine(buff, sz) > 0)
+					{
+						if (i == j)
+						{
+							response->cat(buff, strlen(buff));
+							status = true;
+							break;
+						}
+						j++;
+					}
+					else
+					{
+						info->Close();
+						response->cat("{\"err\":1}");
+						return false;
+					}
+				}
+			}
+			info->Close();
+		}
 	}
 
 	return status;
