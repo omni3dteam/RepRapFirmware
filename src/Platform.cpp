@@ -551,6 +551,7 @@ void Platform::Init()
 	activateBoltsState = false;
 	startClosingBoltsDelay = false;
 	bothDoorsClosed = false;
+	invertDoorsPolarity = false;
 #endif
 
 #if OMNI_SERVO_POSITIONING
@@ -1938,6 +1939,7 @@ void Platform::Spin()
 		for (uint8_t i = 0; i < NumberOfDoors; ++i)
 		{
 			doorState[i] = IoPort::ReadPin(doorsDuexPins[i]);
+			if(invertDoorsPolarity)	InvertLogicalState(doorState[i]);
 		}
 
 		if(reprap.GetStatusCharacter() == 'P')
@@ -4516,6 +4518,18 @@ void Platform::SetPressureAdvance(size_t extruder, float factor)
 	{
 		pressureAdvance[extruder] = factor;
 	}
+}
+
+void Platform::SetDoorsConfiguration(uint32_t receivedDoorsConfig[])
+{
+	doorsDuexPins[topDoor] = (uint8_t)receivedDoorsConfig[topDoor];
+	doorsDuexPins[frontDoor] = (uint8_t)receivedDoorsConfig[frontDoor];
+	invertDoorsPolarity = (bool)receivedDoorsConfig[invertDoorPolarity];
+}
+
+void inline Platform::InvertLogicalState(bool &state)
+{
+	state ^= 1;
 }
 
 #if SUPPORT_NONLINEAR_EXTRUSION

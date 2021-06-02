@@ -464,6 +464,8 @@ public:
 	float AxisTotalLength(size_t axis) const;
 	float GetPressureAdvance(size_t extruder) const;
 	void SetPressureAdvance(size_t extruder, float factor);
+	void SetDoorsConfiguration(uint32_t receivedDoorsConfig[]);
+	void InvertLogicalState(bool &state);
 
 	void SetEndStopConfiguration(size_t axis, EndStopPosition endstopPos, EndStopInputType inputType)
 		pre(axis < MaxAxes);
@@ -1000,6 +1002,7 @@ private:
 	bool doorState[NumberOfDoors];
 	bool isDoorAlert;
 	uint8_t doorsDuexPins[NumberOfDoors];
+	bool invertDoorsPolarity;
 	bool areBoltsActive;
 	uint16_t boltsClosingDelay;
 	bool activateBoltsState;

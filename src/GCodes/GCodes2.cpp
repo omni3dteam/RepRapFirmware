@@ -2320,6 +2320,16 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 			}
 
+			if (gb.Seen('D'))
+			{
+				uint32_t receivedDoorsConfig[3];
+				size_t configNumbers = 3;
+				gb.GetUnsignedArray(receivedDoorsConfig, configNumbers, false);
+				platform.SetDoorsConfiguration(receivedDoorsConfig);
+
+				seen = true;
+			}
+
 			if (gb.Seen('T'))
 			{
 				int toolNumber = gb.GetIValue();

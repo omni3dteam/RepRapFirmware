@@ -49,7 +49,7 @@ constexpr size_t NumFirmwareUpdateModules = 5;		// 3 modules, plus one for manua
 
 // The physical capabilities of the machine
 
-constexpr size_t NumDirectDrivers = 12;				// The maximum number of drives supported directly by the electronics
+constexpr size_t NumDirectDrivers = 10;				// The maximum number of drives supported directly by the electronics
 constexpr size_t MaxTotalDrivers = NumDirectDrivers; // The maximum number of drives including CAN expansion
 constexpr size_t MaxSmartDrivers = 10;				// The maximum number of smart drivers
 
@@ -86,9 +86,13 @@ constexpr Pin AdditionalIoExpansionStart = 220;		// Pin numbers 220-235 are on t
 
 // DRIVES
 constexpr Pin GlobalTmc2660EnablePin = 38;			// The pin that drives ENN of all TMC2660 drivers on production boards (on pre-production boards they are grounded)
-constexpr Pin ENABLE_PINS[NumDirectDrivers] = { 78, 41, 42, 49, 57, 87, 88, 89, 90, 31, 82, 60 };
-constexpr Pin STEP_PINS[NumDirectDrivers] = { 70, 71, 72, 69, 68, 66, 65, 64, 67, 91, 84, 85 };
-constexpr Pin DIRECTION_PINS[NumDirectDrivers] = { 75, 76, 77, 01, 73, 92, 86, 80, 81, 32, 83, 25 };
+//Earlier those tables had two more indexes
+//constexpr Pin ENABLE_PINS[NumDirectDrivers] = { 78, 41, 42, 49, 57, 87, 88, 89, 90, 31, 82, 60 };
+//constexpr Pin STEP_PINS[NumDirectDrivers] = { 70, 71, 72, 69, 68, 66, 65, 64, 67, 91, 84, 85 };
+//constexpr Pin DIRECTION_PINS[NumDirectDrivers] = { 75, 76, 77, 01, 73, 92, 86, 80, 81, 32, 83, 25 };
+constexpr Pin ENABLE_PINS[NumDirectDrivers] = { 78, 41, 42, 49, 57, 87, 88, 89, 90, 31 };
+constexpr Pin STEP_PINS[NumDirectDrivers] = { 70, 71, 72, 69, 68, 66, 65, 64, 67, 91 };
+constexpr Pin DIRECTION_PINS[NumDirectDrivers] = { 75, 76, 77, 01, 73, 92, 86, 80, 81, 32 };
 
 // Pin assignments etc. using USART1 in SPI mode
 Usart * const USART_TMC2660 = USART1;
@@ -202,7 +206,7 @@ constexpr Pin DueX5GpioPinMap[] = { 211, 210, 209, 208 };					// Pins 100-103 ma
 constexpr int HighestLogicalPin = 135;										// highest logical pin number on this electronics
 
 // Omni electronics pin map
-constexpr uint8_t topDoor = 0, frontDoor = 1;
+constexpr uint8_t topDoor = 0, frontDoor = 1, invertDoorPolarity = 2;
 
 constexpr Pin fluidLevel = 200;												// Endstop 2
 constexpr Pin turnOffPrinter = 7;											// Endstop 4
