@@ -653,6 +653,7 @@ public:
 #if OMNI_DOORS_CHECK
 	bool GetBoltStatus();
 	bool GetDoorState(uint8_t door) { return door >= NumberOfDoors ? 0 : doorState[door]; }
+	bool bothDoorsClosed;
 #endif
 
 #if OMNI_PUMP_CONTROL

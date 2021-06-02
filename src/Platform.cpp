@@ -550,6 +550,7 @@ void Platform::Init()
 	areBoltsActive = false;
 	activateBoltsState = false;
 	startClosingBoltsDelay = false;
+	bothDoorsClosed = false;
 #endif
 
 #if OMNI_SERVO_POSITIONING
@@ -1947,6 +1948,11 @@ void Platform::Spin()
 				{
 					SendAlert(WarningMessage, "The doors are still open. Close the doors immediately!", "Doors status", 1, 0.0, 0);
 					isDoorAlert = true;
+					bothDoorsClosed = false;
+				}
+				else
+				{
+					bothDoorsClosed = true;
 				}
 			}
 		}
@@ -1964,8 +1970,9 @@ void Platform::Spin()
 		{
 			if(startClosingBoltsDelay)
 			{
-				if(millis() - startClosingBoltsTime > boltsClosingDelay)
+				if((millis() - startClosingBoltsTime > boltsClosingDelay) && bothDoorsClosed )
 				{
+					delay(2000);
 					areBoltsActive = true;
 					if(activateBoltsState)
 					{
