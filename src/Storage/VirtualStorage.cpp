@@ -9,11 +9,14 @@ VirtualStorage::VirtualStorage()
 void VirtualStorage::Init()
 {
 	virtualDir = '2';
-	enabled = false;
-	uploadFirmware = false;
 	filename[0] = 0;
+
+	enabled = false;
 	isUsbPrinting = false;
+	uploadFirmware = false;
 }
+
+
 
 bool VirtualStorage::GetVirtualFileList(const char* dir, OutputBuffer *response, bool label)
 {
@@ -21,10 +24,14 @@ bool VirtualStorage::GetVirtualFileList(const char* dir, OutputBuffer *response,
 
 	if (virtualDir == dir[0] && dir[1] == ':' && enabled)
 	{
-		FileStore * const f = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_LIST, OpenMode::read);
+		String<FormatStringLength> path;
+		path.printf("%s%s/%s", FILES_LIST_DIR, dir[2] == '/' ? &dir[3] : "", FILES_LIST);
+
+		FileStore * const f = reprap.GetPlatform().OpenSysFile(path.c_str(), OpenMode::read);
 		if (f == nullptr)
 		{
-			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file %s\n", GET_FILES_LIST());
+			response->cat("{\"err\":1}");
+			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open list file %s\n", path.c_str());
 		}
 		else
 		{
@@ -45,7 +52,8 @@ bool VirtualStorage::GetVirtualFileList(const char* dir, OutputBuffer *response,
 			}
 			else
 			{
-				const size_t sz = 1024;
+				// Is 256 sufficient?
+				const size_t sz = 256;
 				char buff[sz];
 
 				for (;;)
@@ -96,23 +104,56 @@ bool VirtualStorage::GetVirtualFileList(const char* dir, OutputBuffer *response,
 	return status;
 }
 
+// Use this function in order to find last '/' which helps to find path and file
+int VirtualStorage::getDirectoryOffset(const char* dir)
+{
+	const char sep = '/';
+    char* ptr = nullptr;
+    char* lastSlash = nullptr;
+
+    ptr = strchr(dir, sep);
+    while(ptr != nullptr)
+    {
+        lastSlash = ptr;
+        ptr = strchr(ptr + 1, sep);
+    }
+
+    return lastSlash - dir;
+}
+
+
 bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *response)
 {
 	bool status = false;
 
 	if (enabled && filename[0] == virtualDir && filename[1] == ':' && filename[2] == '/')
 	{
-		int i = 0;
-		const char* filenameWithoutDir = &filename[3];
+		String<FormatStringLength> path;
 
-		FileStore * const f = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_LIST, OpenMode::read);
-		if (f == nullptr)
+		int offset = getDirectoryOffset(filename);
+
+		if (offset > 0)
 		{
-			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file %s\n", GET_FILES_LIST());
+			path.printf("%s%s", FILES_LIST_DIR, &filename[3]);	// create path based on internal usb address
+			path[offset + 5] = 0;								// remove real filename
+			path.cat(FILES_LIST);								// and file with json data
 		}
 		else
 		{
-			const size_t sz = 1024;
+			return status;
+		}
+
+		const char* fileWithExtension = &filename[offset + 1];
+		int i = 0;
+
+		FileStore * const f = reprap.GetPlatform().OpenSysFile(path.c_str(), OpenMode::read);
+		if (f == nullptr)
+		{
+			reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file info %s\n", path.c_str());
+		}
+		else
+		{
+			const size_t sz = 256;
 			char buff[sz];
 
 			for (;;)
@@ -121,7 +162,7 @@ bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *resp
 
 				if (f->ReadLine(buff, sz) > 0)
 				{
-					file = strstr(buff, filenameWithoutDir);
+					file = strstr(buff, fileWithExtension);
 
 					if (file != nullptr)
 					{

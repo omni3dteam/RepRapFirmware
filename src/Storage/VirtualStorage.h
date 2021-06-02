@@ -37,6 +37,7 @@ public:
 
 private:
 	void SendBasicCommand(const char* cmd);
+	int getDirectoryOffset(const char* dir);
 	const char *GET_FILES_DIR() { return FILES_LIST_DIR; };
 	const char *GET_FILES_LIST() { return FILES_LIST; };
 	const char *GET_FILES_INFO() { return FILES_INFO; };
