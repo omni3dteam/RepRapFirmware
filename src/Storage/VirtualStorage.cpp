@@ -178,7 +178,7 @@ bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *resp
 			}
 			f->Close();
 
-			FileStore * const info = reprap.GetPlatform().OpenSysFile(FILES_LIST_DIR FILES_INFO, OpenMode::read);
+			FileStore * const info = reprap.GetPlatform().OpenSysFile(path.c_str(), OpenMode::read);
 			if (info == nullptr)
 			{
 				reprap.GetPlatform().MessageF(ErrorMessage, "Failed to open file %s\n", GET_FILES_INFO());
