@@ -131,11 +131,12 @@ bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *resp
 		String<FormatStringLength> path;
 
 		int offset = getDirectoryOffset(filename);
+		int totalOffset = offset + 5;							// offset needs to be bigger because we have different path
 
 		if (offset > 0)
 		{
 			path.printf("%s%s", FILES_LIST_DIR, &filename[3]);	// create path based on internal usb address
-			path[offset + 5] = 0;								// remove real filename
+			path[totalOffset] = 0;								// remove real filename
 			path.cat(FILES_LIST);								// and file with json data
 		}
 		else
@@ -177,6 +178,9 @@ bool VirtualStorage::GetVirtualFileInfo(const char* filename, OutputBuffer *resp
 				}
 			}
 			f->Close();
+
+			path[totalOffset] = 0;								// remove real filename or files.usb
+			path.cat(FILES_INFO);								// and file with json data
 
 			FileStore * const info = reprap.GetPlatform().OpenSysFile(path.c_str(), OpenMode::read);
 			if (info == nullptr)
