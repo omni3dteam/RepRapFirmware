@@ -296,8 +296,8 @@ void PID::Spin()
 						SetHeater(0.0);					// do this here just to be sure
 						mode = HeaterMode::fault;
 						reprap.GetGCodes().HandleHeaterFault(heater);
-						platform.MessageF(ErrorMessage, "Heating fault on heater %d, temperature excursion exceeded %.1f" DEGREE_SYMBOL "C\n",
-											heater, (double)maxTempExcursion);
+						platform.MessageF(ErrorMessage, "Heating fault on heater %d, temperature excursion exceeded %.1f (t:%.1f err:%.1f)" DEGREE_SYMBOL "C\n",
+											heater, (double)maxTempExcursion, (double)temperature, (double)fabsf(error));
 					}
 				}
 				else if (heatingFaultCount != 0)
