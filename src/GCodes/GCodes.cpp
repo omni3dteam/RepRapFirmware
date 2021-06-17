@@ -2159,12 +2159,11 @@ bool GCodes::LowVoltagePause()
 		isPowerFailPaused = true;
 
 		// Don't do any more here, we want the auto pause thread to run as soon as possible
-	} else {
+	}
+	else
+	{
 		SaveZPosition();
 		SaveResumeInfo(true, 4);
-#if OMNI_TIME
-		platform.GetWorkTime()->Write();
-#endif
 	}
 
 	return true;
@@ -5131,6 +5130,7 @@ void GCodes::StopPrint(StopPrintReason reason)
 
 	updateFileWhenSimulationComplete = false;
 	reprap.GetPrintMonitor().StoppedPrint();		// must do this after printing the simulation details because it clears the filename
+	reprap.GetPlatform().GetWorkTime()->Write();
 }
 
 // Return true if all the heaters for the specified tool are at their set temperatures

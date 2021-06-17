@@ -10,6 +10,14 @@
 
 #include "RepRap.h"
 
+enum class WriteStatus {
+    	WRITE_OK = 0,
+		WRITE_ERR_UNLOCK,
+		WRITE_ERR_LOCK,
+		WRITE_ERR_ERASE,
+		WRITE_ERR_TIME
+    };
+
 class WorkTime
 {
 private:
@@ -20,6 +28,9 @@ private:
     {
     	secondsPrint = s;
     }
+
+    bool SafeFlashWrite(uint32_t address, const void *buffer, uint32_t size);
+
 public:
 	static constexpr uint32_t startAddress = 0x0047F800;
 	static constexpr uint32_t endAddress   = 0x0047FFFF;
@@ -28,7 +39,7 @@ public:
 
 	void Init();
     void Write();
-    void WriteToFlash(uint64_t t, uint64_t p);
+    WriteStatus WriteToFlash(uint64_t t, uint64_t p);
 
     uint64_t GetSeconds()
     {
