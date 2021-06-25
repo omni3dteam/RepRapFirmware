@@ -2323,6 +2323,14 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 			}
 			if (ok)
 			{
+				if (reprap.GetMachineType())
+				{
+					buf.copy("M307 H7 A-1 C-1 D-1\n");
+					ok = f->Write(buf.c_str());
+				}
+			}
+			if (ok)
+			{
 				buf.copy("M116 A1\nM290");									// wait for temperatures and start writing baby stepping offsets
 				for (size_t axis = 0; axis < numVisibleAxes; ++axis)
 				{
@@ -2409,7 +2417,7 @@ void GCodes::SaveResumeInfo(bool wasPowerFailure, uint8_t savePlace)
 			if (ok)
 			{
 
-				buf.printf("M791 S%d\n", !wasPowerFailure);					// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
+				buf.printf("M791 S%d\n", wasPowerFailure);					// If wasPoweraFailure is true lets tell that Z is not calibrated (false)
 				ok = f->Write(buf.c_str());
 			}
 			if (ok)
