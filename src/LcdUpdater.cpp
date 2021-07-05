@@ -96,6 +96,11 @@ LcdUpdater::errorId LcdUpdater::readPacket(uint32_t msTimeout)
 
 void LcdUpdater::prepareFrameToLcd()
 {
+	if(fileOffset + framePayloadLength > uploadFile->Length() - 4*framePayloadLength)
+	{
+		// give more time for last 4 frames
+		packageAckTimeout = 280;
+	}
 	if(fileOffset + framePayloadLength > uploadFile->Length())
 	{
 		filePayload = uploadFile->Length() - fileOffset;
