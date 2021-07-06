@@ -3452,8 +3452,11 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 				if (seen)
 				{
-					// we only need this info when we set up new pass
 					reply.copy("The password has been changed");
+				}
+				else
+				{
+					reply.copy("The password has been restored");
 				}
 				result = GCodeResult::ok;
 			}
@@ -4307,6 +4310,15 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 				}
 
 				passLCD = pass;
+
+				if(gb.Seen('S'))
+				{
+					reply.printf("The LCD Pin has been changed");
+				}
+				else
+				{
+					reply.printf("The LCD Pin has been restored");
+				}
 
 				FileStore * const f = platform.OpenSysFile(LCD_PASS_G, OpenMode::write);
 				if (f == nullptr)
