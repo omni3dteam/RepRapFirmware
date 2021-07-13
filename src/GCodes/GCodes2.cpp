@@ -121,6 +121,30 @@ bool GCodes::HandleGcode(GCodeBuffer& gb, const StringRef& reply)
 			return false;
 		}
 		{
+			// For F2.0Net only
+			if (reprap.GetMachineType())
+			{
+				if (!reprap.GetPrintMonitor().IsPrinting() && gb.Seen('Z'))
+				{
+					Heat& heat = reprap.GetHeat();
+					const uint8_t chamberVirtualTool = heat.GetChamberHeater(0);
+
+					if ((heat.GetTargetTemperature(chamberVirtualTool) - heat.GetTemperature(chamberVirtualTool) > 10.0))
+					{
+						float finalZPosition = gb.GetFValue();
+						if (gb.MachineState().axesRelative)
+						{
+							finalZPosition += currentUserPosition[Z_AXIS];
+						}
+						if (finalZPosition >= (platform.AxisMaximum(Z_AXIS) - 100.0))
+						{
+							platform.SendAlert(WarningMessage, "Cannot move bed that low when chamber heater is enabled. Wait until chamber temperature is stable.", "Chamber heater is enabled", 2, 0.0, 0);
+							break;
+						}
+					}
+				}
+			}
+
 			bool err = DoStraightMove(gb, code == 1);
 			if (err)
 			{
@@ -1500,6 +1524,24 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 						}
 						else
 						{
+							if (reprap.GetMachineType())
+							{
+								if (!IsAxisHomed(Z_AXIS))
+								{
+									platform.SendAlert(WarningMessage, "Please home Z axis before setting chamber temperature.", "Z axis not homed", 2, 0.0, 0);
+									FileMacroCyclesReturn(gb);
+									break;
+								}
+
+								if ((currentUserPosition[Z_AXIS] >= (platform.AxisMaximum(Z_AXIS) - 100.0)) &&
+								(temperature - heat.GetTemperature(currentHeater) > 10.0))
+								{
+									platform.SendAlert(WarningMessage, "Chamber temperature can't be set higher when bed is low. Please move the bed higher.", "Bed too low", 2, 0.0, 0);
+									FileMacroCyclesReturn(gb);
+									break;
+								}
+							}
+
 							heat.SetActiveTemperature(currentHeater, temperature);
 							heat.Activate(currentHeater);
 						}
@@ -1879,6 +1921,24 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply)
 			{
 				seen = true;
 				const float temperature = gb.GetFValue();
+
+				// For F2.0Net and gcode M141 only
+				if (code == 141 && reprap.GetMachineType())
+				{
+					if (!IsAxisHomed(Z_AXIS))
+					{
+						platform.SendAlert(WarningMessage, "Please home Z axis before setting chamber temperature.", "Z axis not homed", 2, 0.0, 0);
+						break;
+					}
+
+					if ((currentUserPosition[Z_AXIS] >= (platform.AxisMaximum(Z_AXIS) - 100.0)) &&
+					(temperature - heat.GetTemperature(currentHeater) > 10.0))
+					{
+						platform.SendAlert(WarningMessage, "Chamber temperature can't be set higher when bed is low. Please move the bed higher.", "Bed too low", 2, 0.0, 0);
+						break;
+					}
+				}
+
 				if (currentHeater < 0)
 				{
 					if (temperature > 0.0)		// turning off a non-existent bed or chamber heater is not an error
